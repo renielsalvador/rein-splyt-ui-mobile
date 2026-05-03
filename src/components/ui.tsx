@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,16 +21,20 @@ export function AppScreen({
   actions?: React.ReactNode;
 }>) {
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+    <SafeAreaView style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="always">
+        <View style={styles.header}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.title}>{title}</Text>
+            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          </View>
+          {actions}
         </View>
-        {actions}
-      </View>
-      {children}
-    </ScrollView>
+        {children}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -177,7 +182,10 @@ const styles = StyleSheet.create({
     backgroundColor: palette.canvas,
   },
   content: {
+    flexGrow: 1,
     padding: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xxxl,
     gap: spacing.lg,
   },
   header: {
