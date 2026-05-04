@@ -13,7 +13,9 @@ import {
   AppToast,
   DataPill,
   EmptyState,
+  HeaderMenuButton,
   InlineError,
+  NotificationButton,
   ScreenBackButton,
   SelectableRow,
   SectionHeading,
@@ -49,6 +51,7 @@ type SelectedMemberDraft =
       kind: 'contact';
       label: string;
       contactId: string;
+      userId?: string;
     }
   | {
       id: string;
@@ -119,6 +122,18 @@ function getAvatarChipOffsetStyle(index: number) {
   return index === 0 ? styles.avatarChipFirst : styles.avatarChipOffset;
 }
 
+function describeInviteDate(createdAt: string, expiresAt: string) {
+  return `Received ${formatDateLabel(createdAt)} • Expires ${formatDateLabel(expiresAt)}`;
+}
+
+function getInvitePreview(pendingInvite: PendingInvite) {
+  if (pendingInvite.event.description?.trim()) {
+    return pendingInvite.event.description.trim();
+  }
+
+  return `${pendingInvite.invitedByUser.displayName} invited you to join ${pendingInvite.event.name}.`;
+}
+
 export function HomeScreen({navigation}: ScreenProps<'Home'>) {
   const {
     currentUser,
@@ -128,11 +143,11 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
     hydrateEvent,
     joinEvent,
     pendingInvites,
-    respondToInvite,
+    refreshPendingInvites,
     error,
   } = useApp();
   const [joinModalVisible, setJoinModalVisible] = useState(false);
-  const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joinFormError, setJoinFormError] = useState<string>();
 
@@ -143,6 +158,14 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
       }
     });
   }, [events, hydrateEvent, summaries]);
+
+  useEffect(() => {
+    if (!notificationModalVisible) {
+      return;
+    }
+
+    refreshPendingInvites().catch(() => undefined);
+  }, [notificationModalVisible, refreshPendingInvites]);
 
   async function handleJoin() {
     const parsed = joinSchema.safeParse({inviteCode});
@@ -165,20 +188,27 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
         title={`Hi, ${currentUser?.displayName ?? 'traveler'}`}
         subtitle="Keep trips, shared spending, and settlement in one place."
         actions={
-          <AppMenu
-            items={[
-              {
-                label: 'Settings',
-                icon: 'settings',
-                onPress: () => navigation.navigate('Settings'),
-              },
-              {
-                label: 'Sign out',
-                icon: 'signout',
-                onPress: () => signOut().catch(() => undefined),
-              },
-            ]}
-          />
+          <View style={styles.homeHeaderActions}>
+            <NotificationButton
+              unreadCount={pendingInvites.length}
+              onPress={() => setNotificationModalVisible(true)}
+            />
+            <AppMenu
+              items={[
+                {
+                  label: 'Settings',
+                  icon: 'settings',
+                  onPress: () => navigation.navigate('Settings'),
+                },
+                {
+                  label: 'Sign out',
+                  icon: 'signout',
+                  onPress: () => signOut().catch(() => undefined),
+                },
+              ]}
+              renderTrigger={({toggle}) => <HeaderMenuButton onPress={toggle} />}
+            />
+          </View>
         }>
         <AppCard tone="accent">
           <Text style={styles.heroValue}>{events.length}</Text>
@@ -204,22 +234,6 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
             </View>
           </View>
         </AppCard>
-
-        {pendingInvites.length > 0 ? (
-          <AppCard tone="warm">
-            <SectionHeading title="Invite notification" detail={`${pendingInvites.length} pending`} />
-            <Text style={styles.eventMeta}>
-              {pendingInvites.length === 1
-                ? `${pendingInvites[0].invitedByUser.displayName} invited you to ${pendingInvites[0].event.name}.`
-                : `You have ${pendingInvites.length} invites waiting for a response.`}
-            </Text>
-            <AppButton
-              label={pendingInvites.length === 1 ? 'Review invite' : 'Review invites'}
-              icon="invite"
-              onPress={() => setInviteModalVisible(true)}
-            />
-          </AppCard>
-        ) : null}
 
         <SectionHeading title="Your events" detail={`${events.length} total`} />
         {events.length === 0 ? (
@@ -271,70 +285,55 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
         })}
       </AppScreen>
       <AppModal
-        visible={inviteModalVisible}
-        title="Pending invites"
-        subtitle="Accept or decline invitations sent to your account."
-        onClose={() => setInviteModalVisible(false)}>
-        <ScrollView contentContainerStyle={styles.memberListContent}>
-          {pendingInvites.map((pendingInvite: PendingInvite) => (
-            <AppCard key={pendingInvite.invite.id}>
-              <View style={styles.inviteNotificationHeader}>
-                <View style={styles.eventIconBadge}>
-                  <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
-                </View>
-                <View style={styles.eventCopy}>
-                  <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
-                  <Text style={styles.eventMeta}>
-                    Invited by {pendingInvite.invitedByUser.displayName}
-                  </Text>
-                </View>
-              </View>
-              {pendingInvite.event.description ? (
-                <Text style={styles.selectedContactSummary}>
-                  {pendingInvite.event.description}
-                </Text>
-              ) : null}
-              <Text style={styles.eventMeta}>
-                Code {pendingInvite.invite.inviteCode} • Expires{' '}
-                {formatDateLabel(pendingInvite.invite.expiresAt)}
-              </Text>
-              <View style={styles.actionRow}>
-                <View style={styles.actionRowItem}>
-                  <AppButton
-                    label="Accept invite"
-                    icon="check"
-                    onPress={() => {
-                      respondToInvite({
-                        inviteId: pendingInvite.invite.id,
-                        action: 'accept',
-                      })
-                        .then(event => {
-                          setInviteModalVisible(false);
-                          if (event) {
-                            navigation.navigate('EventDashboard', {eventId: event.id});
-                          }
-                        })
-                        .catch(() => undefined);
-                    }}
-                  />
-                </View>
-                <View style={styles.actionRowItem}>
-                  <AppButton
-                    label="Decline"
-                    icon="close"
-                    variant="secondary"
-                    onPress={() => {
-                      respondToInvite({
-                        inviteId: pendingInvite.invite.id,
-                        action: 'decline',
-                      }).catch(() => undefined);
-                    }}
-                  />
-                </View>
-              </View>
-            </AppCard>
-          ))}
-        </ScrollView>
+        visible={notificationModalVisible}
+        title="Notifications"
+        subtitle="Unread updates and invites that need your attention."
+        onClose={() => setNotificationModalVisible(false)}>
+        {pendingInvites.length === 0 ? (
+          <EmptyState
+            title="Nothing new"
+            body="Unread invites and other alerts will appear here."
+          />
+        ) : (
+          <ScrollView contentContainerStyle={styles.notificationList}>
+            {pendingInvites.map((pendingInvite: PendingInvite) => (
+              <Pressable
+                key={pendingInvite.invite.id}
+                accessibilityRole="button"
+                onPress={() => {
+                  setNotificationModalVisible(false);
+                  navigation.navigate('NotificationDetail', {
+                    inviteId: pendingInvite.invite.id,
+                  });
+                }}
+                style={({pressed}) => [pressed ? styles.pressed : null]}>
+                <AppCard>
+                  <View style={styles.notificationHeader}>
+                    <View style={styles.notificationLead}>
+                      <View style={styles.eventIconBadge}>
+                        <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
+                      </View>
+                      <View style={styles.eventCopy}>
+                        <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
+                        <Text
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
+                          style={styles.eventMeta}>
+                          {getInvitePreview(pendingInvite)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.notificationUnreadDot} />
+                  </View>
+                  <View style={styles.notificationFooterRow}>
+                    <Text style={styles.notificationTypeLabel}>Invite request</Text>
+                    <Text style={styles.notificationChevron}>›</Text>
+                  </View>
+                </AppCard>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
         <InlineError message={error ?? undefined} />
       </AppModal>
       <AppModal
@@ -362,6 +361,102 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
         />
       </AppModal>
     </>
+  );
+}
+
+export function NotificationDetailScreen({
+  navigation,
+  route,
+}: ScreenProps<'NotificationDetail'>) {
+  const {inviteId} = route.params;
+  const {pendingInvites, refreshPendingInvites, respondToInvite, error} = useApp();
+
+  const pendingInvite = useMemo(
+    () => pendingInvites.find(item => item.invite.id === inviteId),
+    [inviteId, pendingInvites],
+  );
+
+  useEffect(() => {
+    refreshPendingInvites().catch(() => undefined);
+  }, [refreshPendingInvites]);
+
+  return (
+    <AppScreen
+      title="Notification"
+      subtitle="Review the update and take action if needed."
+      headerVariant="detail"
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
+      {!pendingInvite ? (
+        <EmptyState
+          title="Notification unavailable"
+          body="This item may have already been handled or expired."
+        />
+      ) : (
+        <AppCard>
+          <View style={styles.notificationHeader}>
+            <View style={styles.notificationLead}>
+              <View style={styles.eventIconBadge}>
+                <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
+              </View>
+              <View style={styles.eventCopy}>
+                <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
+                <Text style={styles.eventMeta}>
+                  {pendingInvite.invitedByUser.displayName} invited you
+                </Text>
+              </View>
+            </View>
+            <View style={styles.notificationUnreadDot} />
+          </View>
+          <Text style={styles.notificationTypeLabel}>Invite request</Text>
+          <Text style={styles.selectedContactSummary}>{getInvitePreview(pendingInvite)}</Text>
+          <Text style={styles.eventMeta}>Code {pendingInvite.invite.inviteCode}</Text>
+          <Text style={styles.eventMeta}>
+            {describeInviteDate(
+              pendingInvite.invite.createdAt,
+              pendingInvite.invite.expiresAt,
+            )}
+          </Text>
+          <View style={styles.actionRow}>
+            <View style={styles.actionRowItem}>
+              <AppButton
+                label="Accept invite"
+                icon="check"
+                onPress={() => {
+                  respondToInvite({
+                    inviteId: pendingInvite.invite.id,
+                    action: 'accept',
+                  })
+                    .then(event => {
+                      if (event) {
+                        navigation.replace('EventDashboard', {eventId: event.id});
+                      } else {
+                        navigation.goBack();
+                      }
+                    })
+                    .catch(() => undefined);
+                }}
+              />
+            </View>
+            <View style={styles.actionRowItem}>
+              <AppButton
+                label="Decline"
+                icon="close"
+                variant="secondary"
+                onPress={() => {
+                  respondToInvite({
+                    inviteId: pendingInvite.invite.id,
+                    action: 'decline',
+                  })
+                    .then(() => navigation.goBack())
+                    .catch(() => undefined);
+                }}
+              />
+            </View>
+          </View>
+        </AppCard>
+      )}
+      <InlineError message={error ?? undefined} />
+    </AppScreen>
   );
 }
 
@@ -410,6 +505,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
               kind: 'contact',
               label: contact.displayName,
               contactId: contact.id,
+              userId: contact.userId,
             },
           ],
     );
@@ -449,7 +545,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       icon,
       members: selectedMembers.map(member =>
         member.kind === 'contact'
-          ? {kind: 'contact' as const, displayName: member.label}
+          ? {kind: 'contact' as const, displayName: member.label, userId: member.userId}
           : {kind: 'email_invite' as const, email: member.email},
       ),
     });
@@ -628,7 +724,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
               <SelectableRow
                 key={contact.id}
                 label={contact.displayName}
-                detail={contact.userId ? 'Registered contact' : 'Saved contact'}
+                detail="Registered contact"
                 selected={selectedMembers.some(member => member.id === `contact:${contact.id}`)}
                 onPress={() => toggleContact(contact)}
               />
@@ -1154,6 +1250,11 @@ const styles = StyleSheet.create({
     ...typography.display,
     color: palette.primary,
   },
+  homeHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   heroLabel: {
     ...typography.body,
     color: palette.inkMuted,
@@ -1555,11 +1656,42 @@ const styles = StyleSheet.create({
     ...typography.title,
     letterSpacing: 1.1,
   },
-  inviteNotificationHeader: {
+  notificationList: {
+    gap: spacing.sm,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  notificationLead: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.sm,
+    flex: 1,
+  },
+  notificationUnreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radii.pill,
+    backgroundColor: palette.warning,
+    marginTop: spacing.sm,
+  },
+  notificationTypeLabel: {
+    ...typography.eyebrow,
+    color: palette.primary,
+  },
+  notificationFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  notificationChevron: {
+    ...typography.title,
+    color: palette.inkMuted,
+    lineHeight: 20,
   },
   refreshButton: {
     width: 42,

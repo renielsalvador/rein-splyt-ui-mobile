@@ -1,6 +1,7 @@
 import type {
   AppSession,
   AppBackend,
+  InviteRecipient,
 } from './types';
 import type {
   AuthFormValues,
@@ -75,16 +76,30 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function buildContactKey(userId?: string, displayName?: string) {
-  if (userId) {
-    return `user:${userId}`;
-  }
-
-  return `name:${normalizeDisplayName(displayName ?? '').toLowerCase()}`;
+function dedupeContacts(contacts: Contact[]) {
+  return contacts.filter(
+    (contact, index, items) => items.findIndex(item => item.userId === contact.userId) === index,
+  );
 }
 
 export class MockBackend implements AppBackend {
   private state: PersistedState = defaultState;
+
+  private hydrateContact(contact: Contact): Contact {
+    if (!contact.userId) {
+      return contact;
+    }
+
+    const user = this.state.users.find(item => item.id === contact.userId);
+    if (!user) {
+      return contact;
+    }
+
+    return {
+      ...contact,
+      displayName: user.displayName,
+    };
+  }
 
   async initialize() {
     this.state = defaultState;
@@ -240,34 +255,30 @@ export class MockBackend implements AppBackend {
   }
 
   async listContacts(userId: string) {
-    return this.state.contacts
-      .filter(contact => contact.ownerUserId === userId)
-      .slice()
-      .sort((left, right) => left.displayName.localeCompare(right.displayName));
+    return dedupeContacts(
+      this.state.contacts
+        .filter(contact => contact.ownerUserId === userId)
+        .map(contact => this.hydrateContact(contact))
+        .slice()
+        .sort((left, right) => left.displayName.localeCompare(right.displayName)),
+    );
   }
 
   async upsertContacts(
     userId: string,
-    contacts: Array<{displayName: string; userId?: string}>,
+    contacts: Array<{userId: string}>,
   ) {
     const now = new Date().toISOString();
 
     contacts.forEach(contact => {
-      const displayName = normalizeDisplayName(contact.displayName);
-      if (!displayName) {
-        return;
-      }
-
-      const key = buildContactKey(contact.userId, displayName);
       const existing = this.state.contacts.find(
         item =>
           item.ownerUserId === userId &&
-          buildContactKey(item.userId, item.displayName) === key,
+          item.userId === contact.userId,
       );
 
       if (existing) {
-        existing.displayName = displayName;
-        existing.userId = contact.userId ?? existing.userId;
+        existing.displayName = this.getUser(contact.userId).displayName;
         existing.updatedAt = now;
         return;
       }
@@ -276,7 +287,7 @@ export class MockBackend implements AppBackend {
         id: createId('contact'),
         ownerUserId: userId,
         userId: contact.userId,
-        displayName,
+        displayName: this.getUser(contact.userId).displayName,
         createdAt: now,
         updatedAt: now,
       });
@@ -399,7 +410,10 @@ export class MockBackend implements AppBackend {
     return member;
   }
 
-  async createInvite(eventId: string, invitedBy: string, invitedEmail?: string) {
+  async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {
+    const invitedEmail = recipient?.userId
+      ? this.getUser(recipient.userId).email
+      : recipient?.email;
     const invite: Invite = {
       id: createId('invite'),
       eventId,

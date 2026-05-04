@@ -7,6 +7,7 @@ import {
   EventDashboardScreen,
   HomeScreen,
   MembersScreen,
+  NotificationDetailScreen,
 } from '../features/events/EventScreens';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
@@ -16,6 +17,7 @@ import {AppCard, AppScreen} from '../components/ui';
 
 export type AppStackParamList = {
   Home: undefined;
+  NotificationDetail: {inviteId: string};
   CreateEvent: undefined;
   EventDashboard: {eventId: string};
   Members: {eventId: string};
@@ -94,6 +96,8 @@ function AppNavigator() {
   switch (currentRoute.name) {
     case 'Home':
       return <HomeScreen navigation={navigation} route={currentRoute} />;
+    case 'NotificationDetail':
+      return <NotificationDetailScreen navigation={navigation} route={currentRoute} />;
     case 'CreateEvent':
       return <CreateEventScreen navigation={navigation} route={currentRoute} />;
     case 'EventDashboard':

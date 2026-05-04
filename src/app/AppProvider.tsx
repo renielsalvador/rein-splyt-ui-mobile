@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import {getBackend} from '../lib/backend';
 import type {AppBackend} from '../lib/backend/types';
+import type {InviteRecipient} from '../lib/backend/types';
 import type {
   AuthFormValues,
   Contact,
@@ -48,7 +49,7 @@ type AppContextValue = {
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
-  createInvite: (eventId: string, invitedEmail?: string) => Promise<Invite>;
+  createInvite: (eventId: string, recipient?: InviteRecipient) => Promise<Invite>;
   respondToInvite: (input: RespondToInviteInput) => Promise<Event | null>;
   addExpense: (input: CreateExpenseInput) => Promise<void>;
   updateExpense: (input: UpdateExpenseInput) => Promise<void>;
@@ -150,10 +151,9 @@ export function AppProvider({children}: React.PropsWithChildren) {
       }
 
       const contactCandidates = members
-        .filter(member => member.displayName.trim().length > 0 && member.userId !== currentUser.id)
+        .filter(member => !!member.userId && member.userId !== currentUser.id)
         .map(member => ({
-          displayName: member.displayName,
-          userId: member.userId,
+          userId: member.userId as string,
         }));
 
       if (contactCandidates.length === 0) {
@@ -281,21 +281,28 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
         for (const member of initialMembers) {
           if (member.kind === 'contact') {
-            if (member.displayName.trim().length > 0) {
+            if (member.userId) {
+              await backend.createInvite(createdEvent.id, currentUser.id, {
+                userId: member.userId,
+              });
+            } else if (member.displayName.trim().length > 0) {
               await backend.addManualMember(createdEvent.id, member.displayName);
             }
             continue;
           }
 
-          await backend.createInvite(createdEvent.id, currentUser.id, member.email);
+          await backend.createInvite(createdEvent.id, currentUser.id, {
+            email: member.email,
+          });
         }
 
         await refreshEvents();
+        await refreshPendingInvites();
         await hydrateEvent(createdEvent.id);
       });
       return createdEvent;
     },
-    [backend, currentUser, hydrateEvent, mutate, refreshEvents],
+    [backend, currentUser, hydrateEvent, mutate, refreshEvents, refreshPendingInvites],
   );
 
   const joinEvent = useCallback(
@@ -332,14 +339,14 @@ export function AppProvider({children}: React.PropsWithChildren) {
   );
 
   const createInvite = useCallback(
-    async (eventId: string, invitedEmail?: string) => {
+    async (eventId: string, recipient?: InviteRecipient) => {
       if (!backend || !currentUser) {
         throw new Error('You must be signed in.');
       }
 
       let invite!: Invite;
       await mutate(async () => {
-        invite = await backend.createInvite(eventId, currentUser.id, invitedEmail);
+        invite = await backend.createInvite(eventId, currentUser.id, recipient);
         await hydrateEvent(eventId);
         await refreshPendingInvites();
       });

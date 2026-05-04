@@ -2,6 +2,7 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import type {
   AppBackend,
   AppSession,
+  InviteRecipient,
 } from './types';
 import type {
   AuthFormValues,
@@ -32,8 +33,14 @@ type DatabaseUserRow = {
 type ContactRow = {
   id: string;
   owner_user_id: string;
-  contact_user_id: string | null;
-  display_name: string;
+  contact_user_id: string;
+  contact_user:
+    | {
+        display_name: string;
+      }
+    | {
+        display_name: string;
+      }[]
   created_at: string;
   updated_at: string;
 };
@@ -179,12 +186,12 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function buildContactKey(userId?: string, displayName?: string) {
-  if (userId) {
-    return `user:${userId}`;
-  }
-
-  return `name:${normalizeDisplayName(displayName ?? '').toLowerCase()}`;
+function dedupeContacts(contacts: Contact[]) {
+  return contacts
+    .filter((contact, index, items) => items.findIndex(item => item.userId === contact.userId) === index)
+    .sort((left, right) =>
+      left.displayName.localeCompare(right.displayName),
+    );
 }
 
 function mapUser(row: DatabaseUserRow): UserProfile {
@@ -198,11 +205,14 @@ function mapUser(row: DatabaseUserRow): UserProfile {
 }
 
 function mapContact(row: ContactRow): Contact {
+  const linkedUser =
+    Array.isArray(row.contact_user) ? row.contact_user[0] : row.contact_user;
+
   return {
     id: row.id,
     ownerUserId: row.owner_user_id,
-    userId: row.contact_user_id ?? undefined,
-    displayName: row.display_name,
+    userId: row.contact_user_id,
+    displayName: linkedUser?.display_name ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -420,25 +430,24 @@ export class SupabaseBackend implements AppBackend {
   async listContacts(userId: string) {
     const {data, error} = await this.client
       .from('contacts')
-      .select('*')
+      .select('id, owner_user_id, contact_user_id, created_at, updated_at, contact_user:users!contacts_contact_user_id_fkey(display_name)')
       .eq('owner_user_id', userId)
-      .order('display_name', {ascending: true});
+      .not('contact_user_id', 'is', null);
 
     assertNoError(error, 'Unable to load contacts.');
 
-    return (data ?? []).map(item => mapContact(item as ContactRow));
+    return dedupeContacts((data ?? []).map(item => mapContact(item as ContactRow)));
   }
 
   async upsertContacts(
     userId: string,
-    contacts: Array<{displayName: string; userId?: string}>,
+    contacts: Array<{userId: string}>,
   ) {
     const normalizedContacts = contacts
       .map(contact => ({
-        displayName: normalizeDisplayName(contact.displayName),
         userId: contact.userId,
       }))
-      .filter(contact => contact.displayName.length > 0);
+      .filter(contact => contact.userId.length > 0);
 
     if (normalizedContacts.length === 0) {
       return this.listContacts(userId);
@@ -454,57 +463,31 @@ export class SupabaseBackend implements AppBackend {
     const existingByKey = new Map(
       (existingRows ?? []).map(item => {
         const row = item as ContactRow;
-        return [buildContactKey(row.contact_user_id ?? undefined, row.display_name), row] as const;
+        return [row.contact_user_id, row] as const;
       }),
     );
 
     const rowsToInsert: Array<{
       owner_user_id: string;
-      contact_user_id: string | null;
-      display_name: string;
+      contact_user_id: string;
     }> = [];
-    const rowsToUpdate: Array<{id: string; display_name: string; contact_user_id: string | null}> = [];
 
     normalizedContacts.forEach(contact => {
-      const key = buildContactKey(contact.userId, contact.displayName);
-      const existing = existingByKey.get(key);
+      const existing = existingByKey.get(contact.userId);
 
       if (existing) {
-        if (
-          existing.display_name !== contact.displayName ||
-          existing.contact_user_id !== (contact.userId ?? null)
-        ) {
-          rowsToUpdate.push({
-            id: existing.id,
-            display_name: contact.displayName,
-            contact_user_id: contact.userId ?? null,
-          });
-        }
         return;
       }
 
       rowsToInsert.push({
         owner_user_id: userId,
-        contact_user_id: contact.userId ?? null,
-        display_name: contact.displayName,
+        contact_user_id: contact.userId,
       });
     });
 
     if (rowsToInsert.length > 0) {
       const {error} = await this.client.from('contacts').insert(rowsToInsert);
       assertNoError(error, 'Unable to save contacts.');
-    }
-
-    for (const row of rowsToUpdate) {
-      const {error} = await this.client
-        .from('contacts')
-        .update({
-          display_name: row.display_name,
-          contact_user_id: row.contact_user_id,
-        })
-        .eq('id', row.id);
-
-      assertNoError(error, 'Unable to update contacts.');
     }
 
     return this.listContacts(userId);
@@ -634,24 +617,18 @@ export class SupabaseBackend implements AppBackend {
     return mapMember(data as EventMemberRow);
   }
 
-  async createInvite(eventId: string, invitedBy: string, invitedEmail?: string) {
+  async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {
     let attempts = 0;
 
     while (attempts < 3) {
-      const {data, error} = await this.client
-        .from('invites')
-        .insert({
-          event_id: eventId,
-          invited_by: invitedBy,
-          invite_code: createInviteCode(),
-          invited_email: invitedEmail?.trim().toLowerCase() || null,
-          status: 'pending',
-          expires_at: new Date(
-            Date.now() + 1000 * 60 * 60 * 24 * 7,
-          ).toISOString(),
-        })
-        .select('*')
-        .single();
+      const {data, error} = await this.client.rpc('create_event_invite', {
+        p_event_id: eventId,
+        p_invited_by: invitedBy,
+        p_invite_code: createInviteCode(),
+        p_invited_email: recipient?.email?.trim().toLowerCase() || null,
+        p_invited_user_id: recipient?.userId ?? null,
+        p_expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      });
 
       if (!error) {
         return mapInvite(data as InviteRow);

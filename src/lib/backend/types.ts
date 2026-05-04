@@ -17,6 +17,11 @@ import type {
   UserProfile,
 } from '../../types/domain';
 
+export type InviteRecipient = {
+  email?: string;
+  userId?: string;
+};
+
 export type AppSession = {
   user: UserProfile;
 };
@@ -31,12 +36,12 @@ export interface AppBackend {
   respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;
   listEvents(userId: string): Promise<Event[]>;
   listContacts(userId: string): Promise<Contact[]>;
-  upsertContacts(userId: string, contacts: Array<{displayName: string; userId?: string}>): Promise<Contact[]>;
+  upsertContacts(userId: string, contacts: Array<{userId: string}>): Promise<Contact[]>;
   createEvent(userId: string, input: CreateEventInput): Promise<Event>;
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;
-  createInvite(eventId: string, invitedBy: string, invitedEmail?: string): Promise<Invite>;
+  createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient): Promise<Invite>;
   createExpense(userId: string, input: CreateExpenseInput): Promise<void>;
   updateExpense(userId: string, input: UpdateExpenseInput): Promise<void>;
   addCentralFundContribution(

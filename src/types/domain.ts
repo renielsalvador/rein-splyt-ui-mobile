@@ -26,7 +26,7 @@ export type UserProfile = {
 export type Contact = {
   id: string;
   ownerUserId: string;
-  userId?: string;
+  userId: string;
   displayName: string;
   createdAt: string;
   updatedAt: string;
@@ -153,6 +153,7 @@ export type CreateEventInput = {
     | {
         kind: 'contact';
         displayName: string;
+        userId?: string;
       }
     | {
         kind: 'email_invite';
