@@ -16,11 +16,16 @@ This file tracks the implementation of the Splyt MVP foundation described in `PL
 ## In Progress
 
 - [ ] Expand automated coverage beyond the single app-shell render test.
-- [ ] Add a clear Supabase handoff path beyond the current mock-backed adapter.
 
 ## Next
 
-- [ ] Replace the mock backend implementation with live Supabase auth, tables, and RPC-backed calculations.
+- [ ] Run the new Supabase migration in a real project and fill the mobile app config with live keys.
 - [ ] Add role-aware permissions and editing restrictions in the data layer.
 - [ ] Add invite deep links and external delivery flow.
 - [ ] Persist settlement records and paid-status updates.
+
+## Newly Added
+
+- [x] Add a live `SupabaseBackend` that plugs into the existing backend adapter.
+- [x] Add the first SQL migration covering schema, RLS, RPC writes, and database-side balances and settlement calculations.
+- [x] Document the app-side config and Supabase setup handoff.

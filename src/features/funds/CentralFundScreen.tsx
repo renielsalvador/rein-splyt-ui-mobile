@@ -9,6 +9,8 @@ import {
   DataPill,
   EmptyState,
   InlineError,
+  ScreenBackButton,
+  SelectableRow,
   SectionHeading,
 } from '../../components/ui';
 import {contributionSchema} from '../../lib/validation/forms';
@@ -16,7 +18,7 @@ import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
-export function CentralFundScreen({route}: ScreenProps<'CentralFund'>) {
+export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'>) {
   const {eventId} = route.params;
   const {hydrateEvent, summaries, addContribution, error} = useApp();
   const summary = summaries[eventId];
@@ -49,7 +51,11 @@ export function CentralFundScreen({route}: ScreenProps<'CentralFund'>) {
 
   if (!summary || !memberId) {
     return (
-      <AppScreen title="Central fund" subtitle="Loading fund details.">
+      <AppScreen
+        title="Central fund"
+        subtitle="Loading fund details."
+        headerVariant="detail"
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading fund" body="Fetching contributions and fund-paid expenses." />
       </AppScreen>
     );
@@ -78,7 +84,11 @@ export function CentralFundScreen({route}: ScreenProps<'CentralFund'>) {
   }
 
   return (
-      <AppScreen title="Central fund" subtitle="Track who topped up the shared fund and how much remains.">
+    <AppScreen
+      title="Central fund"
+      subtitle="Track who topped up the shared fund and how much remains."
+      headerVariant="detail"
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard tone="accent">
         <Text style={styles.heroValue}>
           {formatCurrency(
@@ -95,18 +105,21 @@ export function CentralFundScreen({route}: ScreenProps<'CentralFund'>) {
       <AppCard>
         <SectionHeading title="Record contribution" />
         <AppInput label="Amount" value={amount} onChangeText={setAmount} placeholder="300" autoCapitalize="none" />
-        <View style={styles.wrapRow}>
-          {summary.members.map(member => (
-            <AppButton
-              key={member.id}
-              label={member.displayName}
-              variant={memberId === member.id ? 'primary' : 'secondary'}
-              onPress={() => setMemberId(member.id)}
-            />
-          ))}
-        </View>
+        {summary.members.map(member => (
+          <SelectableRow
+            key={member.id}
+            label={member.displayName}
+            detail="Contributor"
+            selected={memberId === member.id}
+            onPress={() => setMemberId(member.id)}
+          />
+        ))}
         <InlineError message={formError ?? error ?? undefined} />
-        <AppButton label="Add contribution" onPress={() => handleSubmit().catch(() => undefined)} />
+        <AppButton
+          label="Add contribution"
+          icon="fund"
+          onPress={() => handleSubmit().catch(() => undefined)}
+        />
       </AppCard>
       {summary.contributions.map(contribution => {
         const member = summary.members.find(item => item.id === contribution.memberId);
@@ -136,11 +149,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  wrapRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
   },
   betweenRow: {
     flexDirection: 'row',

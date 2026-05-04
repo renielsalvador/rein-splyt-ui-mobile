@@ -18,6 +18,7 @@ import type {
   JoinEventInput,
   MemberBalance,
   SettlementInstruction,
+  UpdateExpenseInput,
   UserProfile,
 } from '../../types/domain';
 
@@ -199,8 +200,6 @@ export class MockBackend implements AppBackend {
       });
     }
 
-    invite.status = 'accepted';
-
     const event = this.state.events.find(item => item.id === invite.eventId);
 
     if (!event) {
@@ -222,6 +221,11 @@ export class MockBackend implements AppBackend {
       event,
       members: this.state.eventMembers.filter(member => member.eventId === eventId),
       expenses: this.state.expenses.filter(expense => expense.eventId === eventId),
+      expenseSplits: this.state.expenseSplits.filter(split =>
+        this.state.expenses.some(
+          expense => expense.id === split.expenseId && expense.eventId === eventId,
+        ),
+      ),
       invites: this.state.invites.filter(invite => invite.eventId === eventId),
       fund,
       contributions: this.state.contributions.filter(
@@ -294,6 +298,40 @@ export class MockBackend implements AppBackend {
 
     event.updatedAt = now;
     this.state.expenses.push(expense);
+    this.state.expenseSplits.push(...splits);
+  }
+
+  async updateExpense(_userId: string, input: UpdateExpenseInput) {
+    const expense = this.state.expenses.find(item => item.id === input.expenseId);
+
+    if (!expense) {
+      throw new Error('Expense not found.');
+    }
+
+    const now = new Date().toISOString();
+    expense.title = input.title.trim();
+    expense.amount = roundCurrency(input.amount);
+    expense.note = input.note?.trim();
+    expense.paidByMemberId = input.paidByMemberId;
+    expense.paymentSource = input.paymentSource;
+    expense.updatedAt = now;
+
+    this.state.expenseSplits = this.state.expenseSplits.filter(
+      split => split.expenseId !== expense.id,
+    );
+
+    const share = roundCurrency(expense.amount / input.participantMemberIds.length);
+    const splits: ExpenseSplit[] = input.participantMemberIds.map((memberId, index) => ({
+      id: createId('split'),
+      expenseId: expense.id,
+      memberId,
+      splitType: 'equal',
+      shareAmount:
+        index === input.participantMemberIds.length - 1
+          ? roundCurrency(expense.amount - share * index)
+          : share,
+    }));
+
     this.state.expenseSplits.push(...splits);
   }
 

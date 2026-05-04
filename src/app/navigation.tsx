@@ -6,24 +6,24 @@ import {
   CreateEventScreen,
   EventDashboardScreen,
   HomeScreen,
-  JoinEventScreen,
   MembersScreen,
 } from '../features/events/EventScreens';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
+import {SettingsScreen} from '../features/settings/SettingsScreen';
 import {AppCard, AppScreen} from '../components/ui';
 
 export type AppStackParamList = {
   Home: undefined;
   CreateEvent: undefined;
-  JoinEvent: undefined;
   EventDashboard: {eventId: string};
   Members: {eventId: string};
-  AddExpense: {eventId: string};
+  AddExpense: {eventId: string; expenseId?: string};
   CentralFund: {eventId: string};
   Balances: {eventId: string};
   Settlement: {eventId: string};
+  Settings: undefined;
 };
 
 type ScreenName = keyof AppStackParamList;
@@ -96,8 +96,6 @@ function AppNavigator() {
       return <HomeScreen navigation={navigation} route={currentRoute} />;
     case 'CreateEvent':
       return <CreateEventScreen navigation={navigation} route={currentRoute} />;
-    case 'JoinEvent':
-      return <JoinEventScreen navigation={navigation} route={currentRoute} />;
     case 'EventDashboard':
       return <EventDashboardScreen navigation={navigation} route={currentRoute} />;
     case 'Members':
@@ -110,6 +108,8 @@ function AppNavigator() {
       return <BalancesScreen navigation={navigation} route={currentRoute} />;
     case 'Settlement':
       return <SettlementScreen navigation={navigation} route={currentRoute} />;
+    case 'Settings':
+      return <SettingsScreen navigation={navigation} route={currentRoute} />;
     default:
       return null;
   }

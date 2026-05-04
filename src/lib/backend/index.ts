@@ -1,14 +1,16 @@
-import 'react-native-url-polyfill/auto';
-import {createClient} from '@supabase/supabase-js';
-import {appConfig, hasSupabaseConfig} from '../../config/appConfig';
+import {hasSupabaseConfig} from '../../config/appConfig';
 import {MockBackend} from './mockBackend';
+import {getSupabaseClient} from './supabaseClient';
+import {SupabaseBackend} from './supabaseBackend';
 import type {AppBackend} from './types';
 
 let backendPromise: Promise<AppBackend> | undefined;
 
 async function createBackend() {
   if (hasSupabaseConfig()) {
-    createClient(appConfig.supabaseUrl, appConfig.supabaseAnonKey);
+    const backend = new SupabaseBackend(getSupabaseClient());
+    await backend.initialize();
+    return backend;
   }
 
   const backend = new MockBackend();

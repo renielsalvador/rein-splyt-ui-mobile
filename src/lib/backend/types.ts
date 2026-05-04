@@ -10,6 +10,7 @@ import type {
   JoinEventInput,
   MemberBalance,
   SettlementInstruction,
+  UpdateExpenseInput,
   UserProfile,
 } from '../../types/domain';
 
@@ -30,6 +31,7 @@ export interface AppBackend {
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;
   createInvite(eventId: string, invitedBy: string, invitedEmail?: string): Promise<Invite>;
   createExpense(userId: string, input: CreateExpenseInput): Promise<void>;
+  updateExpense(userId: string, input: UpdateExpenseInput): Promise<void>;
   addCentralFundContribution(
     userId: string,
     input: CreateContributionInput,

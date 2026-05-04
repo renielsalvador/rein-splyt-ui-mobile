@@ -86,6 +86,7 @@ export type EventSummary = {
   event: Event;
   members: EventMember[];
   expenses: Expense[];
+  expenseSplits: ExpenseSplit[];
   invites: Invite[];
   fund: CentralFund;
   contributions: CentralFundContribution[];
@@ -132,6 +133,10 @@ export type CreateExpenseInput = {
   paymentSource: PaymentSource;
   participantMemberIds: string[];
   note?: string;
+};
+
+export type UpdateExpenseInput = CreateExpenseInput & {
+  expenseId: string;
 };
 
 export type CreateContributionInput = {

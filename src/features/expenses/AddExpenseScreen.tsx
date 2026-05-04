@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
@@ -9,16 +9,18 @@ import {
   DataPill,
   EmptyState,
   InlineError,
+  ScreenBackButton,
+  SelectableRow,
   SectionHeading,
 } from '../../components/ui';
 import {expenseSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
-import {spacing, typography} from '../../theme/tokens';
+import {typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
 export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>) {
-  const {eventId} = route.params;
-  const {hydrateEvent, summaries, addExpense, error} = useApp();
+  const {eventId, expenseId} = route.params;
+  const {hydrateEvent, summaries, addExpense, updateExpense, error} = useApp();
   const summary = summaries[eventId];
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -29,6 +31,12 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const [payerId, setPayerId] = useState<string>();
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string>();
+  const [didPrefill, setDidPrefill] = useState(false);
+
+  const existingExpense = useMemo(
+    () => summary?.expenses.find(expense => expense.id === expenseId),
+    [expenseId, summary],
+  );
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -39,15 +47,36 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       return;
     }
 
-    setPayerId(current => current ?? summary.members[0]?.id);
-    setSelectedMemberIds(current =>
-      current.length > 0 ? current : summary.members.map(member => member.id),
-    );
-  }, [summary]);
+    if (existingExpense && !didPrefill) {
+      setTitle(existingExpense.title);
+      setAmount(String(existingExpense.amount));
+      setNote(existingExpense.note ?? '');
+      setPaymentSource(existingExpense.paymentSource);
+      setPayerId(existingExpense.paidByMemberId);
+      setSelectedMemberIds(
+        summary.expenseSplits
+          .filter(split => split.expenseId === existingExpense.id)
+          .map(split => split.memberId),
+      );
+      setDidPrefill(true);
+      return;
+    }
+
+    if (!existingExpense) {
+      setPayerId(current => current ?? summary.members[0]?.id);
+      setSelectedMemberIds(current =>
+        current.length > 0 ? current : summary.members.map(member => member.id),
+      );
+    }
+  }, [didPrefill, existingExpense, summary]);
 
   if (!summary || !payerId) {
     return (
-      <AppScreen title="Add expense" subtitle="Loading event details.">
+      <AppScreen
+        title={expenseId ? 'Edit expense' : 'Add expense'}
+        subtitle="Loading event details."
+        headerVariant="detail"
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading event" body="Preparing members and balances for a new expense." />
       </AppScreen>
     );
@@ -76,35 +105,59 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
     }
 
     setFormError(undefined);
-    await addExpense({
-      eventId,
-      title: parsed.data.title,
-      amount: parsed.data.amount,
-      currency: summary.event.currency,
-      paidByMemberId: payerId,
-      paymentSource,
-      participantMemberIds: selectedMemberIds,
-      note: parsed.data.note,
-    });
+    if (expenseId) {
+      await updateExpense({
+        expenseId,
+        eventId,
+        title: parsed.data.title,
+        amount: parsed.data.amount,
+        currency: summary.event.currency,
+        paidByMemberId: payerId,
+        paymentSource,
+        participantMemberIds: selectedMemberIds,
+        note: parsed.data.note,
+      });
+    } else {
+      await addExpense({
+        eventId,
+        title: parsed.data.title,
+        amount: parsed.data.amount,
+        currency: summary.event.currency,
+        paidByMemberId: payerId,
+        paymentSource,
+        participantMemberIds: selectedMemberIds,
+        note: parsed.data.note,
+      });
+    }
 
     navigation.goBack();
   }
 
   return (
-    <AppScreen title="Add expense" subtitle="Equal split only for this MVP slice.">
+    <AppScreen
+      title={expenseId ? 'Edit expense' : 'Add expense'}
+      subtitle={
+        expenseId
+          ? 'Update the amount, payer, and included members.'
+          : 'Track who paid and who joined the split.'
+      }
+      headerVariant="detail"
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
         <AppInput label="Title" value={title} onChangeText={setTitle} placeholder="Villa down payment" />
         <AppInput label="Amount" value={amount} onChangeText={setAmount} placeholder="1200" autoCapitalize="none" />
         <AppInput label="Note" value={note} onChangeText={setNote} placeholder="Optional context" multiline />
         <SectionHeading title="Payment source" />
-        <View style={styles.row}>
+        <View style={styles.toggleRow}>
           <AppButton
             label="Personal"
+            icon="person"
             variant={paymentSource === 'personal' ? 'primary' : 'secondary'}
             onPress={() => setPaymentSource('personal')}
           />
           <AppButton
             label="Central fund"
+            icon="fund"
             variant={paymentSource === 'central_fund' ? 'primary' : 'secondary'}
             onPress={() => setPaymentSource('central_fund')}
           />
@@ -114,10 +167,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       <AppCard>
         <SectionHeading title="Payer" />
         {summary.members.map(member => (
-          <AppButton
+          <SelectableRow
             key={member.id}
             label={member.displayName}
-            variant={payerId === member.id ? 'primary' : 'secondary'}
+            detail="Paid for this expense"
+            selected={payerId === member.id}
             onPress={() => setPayerId(member.id)}
           />
         ))}
@@ -129,10 +183,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           const selected = selectedMemberIds.includes(member.id);
 
           return (
-            <AppButton
+            <SelectableRow
               key={member.id}
               label={member.displayName}
-              variant={selected ? 'primary' : 'secondary'}
+              detail={selected ? 'Included in split' : 'Tap to include'}
+              selected={selected}
               onPress={() =>
                 setSelectedMemberIds(current =>
                   selected
@@ -146,7 +201,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       </AppCard>
 
       <InlineError message={formError ?? error ?? undefined} />
-      <AppButton label="Save expense" onPress={() => handleSubmit().catch(() => undefined)} />
+      <AppButton
+        label={expenseId ? 'Update expense' : 'Save expense'}
+        icon="expense"
+        onPress={() => handleSubmit().catch(() => undefined)}
+      />
 
       <AppCard tone="warm">
         <Text style={{...typography.bodyStrong}}>Preview</Text>
@@ -167,8 +226,9 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
 }
 
 const styles = StyleSheet.create({
-  row: {
+  toggleRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 8,
+    flexWrap: 'wrap',
   },
 });

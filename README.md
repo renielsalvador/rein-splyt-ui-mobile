@@ -69,4 +69,11 @@ The current backend adapter lives under `src/lib/backend`.
 - `src/lib/backend/index.ts` is the backend entrypoint
 - `src/config/appConfig.ts` is the single config read point for Supabase credentials
 
+Create a root `.env` file from `.env.example` and set:
+
+```dotenv
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
+
 To switch from mock to live Supabase, the next implementation step is to replace the mock-backed methods behind the `AppBackend` interface with real auth, table, and RPC operations.

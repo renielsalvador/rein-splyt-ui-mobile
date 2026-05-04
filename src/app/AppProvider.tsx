@@ -20,6 +20,7 @@ import type {
   JoinEventInput,
   MemberBalance,
   SettlementInstruction,
+  UpdateExpenseInput,
   UserProfile,
 } from '../types/domain';
 
@@ -40,11 +41,9 @@ type AppContextValue = {
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
-  createInvite: (
-    eventId: string,
-    invitedEmail?: string,
-  ) => Promise<Invite>;
+  createInvite: (eventId: string) => Promise<Invite>;
   addExpense: (input: CreateExpenseInput) => Promise<void>;
+  updateExpense: (input: UpdateExpenseInput) => Promise<void>;
   addContribution: (input: CreateContributionInput) => Promise<void>;
 };
 
@@ -245,14 +244,14 @@ export function AppProvider({children}: React.PropsWithChildren) {
   );
 
   const createInvite = useCallback(
-    async (eventId: string, invitedEmail?: string) => {
+    async (eventId: string) => {
       if (!backend || !currentUser) {
         throw new Error('You must be signed in.');
       }
 
       let invite!: Invite;
       await mutate(async () => {
-        invite = await backend.createInvite(eventId, currentUser.id, invitedEmail);
+        invite = await backend.createInvite(eventId, currentUser.id);
         await hydrateEvent(eventId);
       });
       return invite;
@@ -268,6 +267,21 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
       await mutate(async () => {
         await backend.createExpense(currentUser.id, input);
+        await hydrateEvent(input.eventId);
+        await refreshEvents();
+      });
+    },
+    [backend, currentUser, hydrateEvent, mutate, refreshEvents],
+  );
+
+  const updateExpense = useCallback(
+    async (input: UpdateExpenseInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        await backend.updateExpense(currentUser.id, input);
         await hydrateEvent(input.eventId);
         await refreshEvents();
       });
@@ -309,11 +323,13 @@ export function AppProvider({children}: React.PropsWithChildren) {
       addManualMember,
       createInvite,
       addExpense,
+      updateExpense,
       addContribution,
     }),
     [
       addContribution,
       addExpense,
+      updateExpense,
       addManualMember,
       backendReady,
       createEvent,
@@ -329,6 +345,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signOut,
       signUp,
       summaries,
+      updateExpense,
       balances,
     ],
   );

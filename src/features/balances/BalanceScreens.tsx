@@ -1,12 +1,19 @@
 import React, {useEffect} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
-import {AppCard, AppScreen, DataPill, EmptyState, SectionHeading} from '../../components/ui';
+import {
+  AppCard,
+  AppScreen,
+  DataPill,
+  EmptyState,
+  ScreenBackButton,
+  SectionHeading,
+} from '../../components/ui';
 import {formatCurrency} from '../../lib/utils/format';
 import {typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
-export function BalancesScreen({route}: ScreenProps<'Balances'>) {
+export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   const {eventId} = route.params;
   const {hydrateEvent, summaries, balances} = useApp();
   const summary = summaries[eventId];
@@ -18,14 +25,22 @@ export function BalancesScreen({route}: ScreenProps<'Balances'>) {
 
   if (!summary) {
     return (
-      <AppScreen title="Balances" subtitle="Loading computed balances.">
+      <AppScreen
+        title="Balances"
+        subtitle="Loading computed balances."
+        headerVariant="detail"
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading balances" body="Computing who paid more and who still owes." />
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen title="Balances" subtitle="Each member’s running net position for this event.">
+    <AppScreen
+      title="Balances"
+      subtitle="Each member’s running net position for this event."
+      headerVariant="detail"
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       {eventBalances.map(balance => (
         <AppCard key={balance.memberId}>
           <View style={styles.row}>
@@ -47,7 +62,7 @@ export function BalancesScreen({route}: ScreenProps<'Balances'>) {
   );
 }
 
-export function SettlementScreen({route}: ScreenProps<'Settlement'>) {
+export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>) {
   const {eventId} = route.params;
   const {hydrateEvent, summaries, settlements} = useApp();
   const summary = summaries[eventId];
@@ -59,14 +74,22 @@ export function SettlementScreen({route}: ScreenProps<'Settlement'>) {
 
   if (!summary) {
     return (
-      <AppScreen title="Settlement summary" subtitle="Loading suggested settlement instructions.">
+      <AppScreen
+        title="Settlement summary"
+        subtitle="Loading suggested settlement instructions."
+        headerVariant="detail"
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading settlement" body="Computing the minimum payment instructions for the group." />
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen title="Settlement summary" subtitle="Simplified payment instructions generated from net balances.">
+    <AppScreen
+      title="Settlement summary"
+      subtitle="Simplified payment instructions generated from net balances."
+      headerVariant="detail"
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <SectionHeading title="Suggested transfers" detail={`${instructions.length} payments`} />
       {instructions.length === 0 ? (
         <EmptyState title="No settlement needed" body="This event is already balanced." />
