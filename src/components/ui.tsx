@@ -1,5 +1,7 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   SafeAreaView,
@@ -251,15 +253,73 @@ export function AppModal({
   subtitle?: string;
   onClose: () => void;
 }>) {
+  const [rendered, setRendered] = useState(visible);
+  const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : 28)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setRendered(true);
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetTranslateY, {
+          toValue: 0,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: 28,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({finished}) => {
+      if (finished) {
+        setRendered(false);
+      }
+    });
+  }, [backdropOpacity, sheetTranslateY, visible]);
+
+  if (!rendered) {
+    return null;
+  }
+
   return (
     <Modal
-      visible={visible}
+      visible={rendered}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}>
       <View style={styles.modalRoot}>
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.modalBackdropTint, {opacity: backdropOpacity}]}
+        />
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
-        <View style={styles.modalSheet}>
+        <Animated.View
+          style={[
+            styles.modalSheet,
+            {
+              transform: [{translateY: sheetTranslateY}],
+            },
+          ]}>
           <View style={styles.modalHandle} />
           <View style={[surfaces.card, styles.modalCard]}>
             <View style={styles.modalHeader}>
@@ -275,7 +335,7 @@ export function AppModal({
             </View>
             <View style={styles.modalBody}>{children}</View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -639,8 +699,11 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     flex: 1,
-    backgroundColor: 'rgba(28, 28, 30, 0.22)',
     justifyContent: 'flex-end',
+  },
+  modalBackdropTint: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(28, 28, 30, 0.22)',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFill,
