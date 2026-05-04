@@ -1,5 +1,6 @@
 import type {
   AuthFormValues,
+  Contact,
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
@@ -9,6 +10,8 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  PendingInvite,
+  RespondToInviteInput,
   SettlementInstruction,
   UpdateExpenseInput,
   UserProfile,
@@ -24,7 +27,11 @@ export interface AppBackend {
   signIn(input: AuthFormValues): Promise<AppSession>;
   signUp(input: Required<AuthFormValues>): Promise<AppSession>;
   signOut(): Promise<void>;
+  listPendingInvites(email: string): Promise<PendingInvite[]>;
+  respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;
   listEvents(userId: string): Promise<Event[]>;
+  listContacts(userId: string): Promise<Contact[]>;
+  upsertContacts(userId: string, contacts: Array<{displayName: string; userId?: string}>): Promise<Contact[]>;
   createEvent(userId: string, input: CreateEventInput): Promise<Event>;
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;

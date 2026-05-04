@@ -1,10 +1,11 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Clipboard, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Clipboard, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
   AppButton,
   AppCard,
   AppIcon,
+  type AppIconName,
   AppInput,
   AppMenu,
   AppModal,
@@ -14,13 +15,55 @@ import {
   EmptyState,
   InlineError,
   ScreenBackButton,
+  SelectableRow,
   SectionHeading,
 } from '../../components/ui';
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
-import type {CurrencyCode, MemberBalance, SettlementInstruction} from '../../types/domain';
+import type {
+  Contact,
+  CurrencyCode,
+  EventIconName,
+  MemberBalance,
+  PendingInvite,
+  SettlementInstruction,
+} from '../../types/domain';
+
+const EVENT_ICON_OPTIONS: Array<{name: EventIconName; label: string}> = [
+  {name: 'event', label: 'Classic'},
+  {name: 'trip', label: 'Trip'},
+  {name: 'plane', label: 'Flight'},
+  {name: 'beach', label: 'Beach'},
+  {name: 'food', label: 'Food'},
+  {name: 'party', label: 'Party'},
+  {name: 'work', label: 'Work'},
+  {name: 'home', label: 'Home'},
+  {name: 'gift', label: 'Gift'},
+];
+
+type SelectedMemberDraft =
+  | {
+      id: string;
+      kind: 'contact';
+      label: string;
+      contactId: string;
+    }
+  | {
+      id: string;
+      kind: 'email_invite';
+      label: string;
+      email: string;
+    };
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function isEmailAddress(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
+}
 
 function buildSettlementInstructions(balances: MemberBalance[]): SettlementInstruction[] {
   const creditors = balances
@@ -72,9 +115,24 @@ function getAvatarTone(index: number) {
   return tones[index % tones.length];
 }
 
+function getAvatarChipOffsetStyle(index: number) {
+  return index === 0 ? styles.avatarChipFirst : styles.avatarChipOffset;
+}
+
 export function HomeScreen({navigation}: ScreenProps<'Home'>) {
-  const {currentUser, events, signOut, summaries, hydrateEvent, joinEvent, error} = useApp();
+  const {
+    currentUser,
+    events,
+    signOut,
+    summaries,
+    hydrateEvent,
+    joinEvent,
+    pendingInvites,
+    respondToInvite,
+    error,
+  } = useApp();
   const [joinModalVisible, setJoinModalVisible] = useState(false);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joinFormError, setJoinFormError] = useState<string>();
 
@@ -147,6 +205,22 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
           </View>
         </AppCard>
 
+        {pendingInvites.length > 0 ? (
+          <AppCard tone="warm">
+            <SectionHeading title="Invite notification" detail={`${pendingInvites.length} pending`} />
+            <Text style={styles.eventMeta}>
+              {pendingInvites.length === 1
+                ? `${pendingInvites[0].invitedByUser.displayName} invited you to ${pendingInvites[0].event.name}.`
+                : `You have ${pendingInvites.length} invites waiting for a response.`}
+            </Text>
+            <AppButton
+              label={pendingInvites.length === 1 ? 'Review invite' : 'Review invites'}
+              icon="invite"
+              onPress={() => setInviteModalVisible(true)}
+            />
+          </AppCard>
+        ) : null}
+
         <SectionHeading title="Your events" detail={`${events.length} total`} />
         {events.length === 0 ? (
           <EmptyState
@@ -166,11 +240,16 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
               style={({pressed}) => [pressed ? styles.pressed : null]}>
               <AppCard>
                 <View style={styles.eventHeaderRow}>
-                  <View style={styles.eventCopy}>
-                    <Text style={styles.eventName}>{event.name}</Text>
-                    <Text style={styles.eventMeta}>
-                      {event.description || 'Shared expense workspace'}
-                    </Text>
+                  <View style={styles.eventLeadRow}>
+                    <View style={styles.eventIconBadge}>
+                      <AppIcon name={event.icon} tone="accent" size={20} />
+                    </View>
+                    <View style={styles.eventCopy}>
+                      <Text style={styles.eventName}>{event.name}</Text>
+                      <Text style={styles.eventMeta}>
+                        {event.description || 'Shared expense workspace'}
+                      </Text>
+                    </View>
                   </View>
                   <DataPill label={event.currency} tone="accent" />
                 </View>
@@ -191,6 +270,73 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
           );
         })}
       </AppScreen>
+      <AppModal
+        visible={inviteModalVisible}
+        title="Pending invites"
+        subtitle="Accept or decline invitations sent to your account."
+        onClose={() => setInviteModalVisible(false)}>
+        <ScrollView contentContainerStyle={styles.memberListContent}>
+          {pendingInvites.map((pendingInvite: PendingInvite) => (
+            <AppCard key={pendingInvite.invite.id}>
+              <View style={styles.inviteNotificationHeader}>
+                <View style={styles.eventIconBadge}>
+                  <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
+                </View>
+                <View style={styles.eventCopy}>
+                  <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
+                  <Text style={styles.eventMeta}>
+                    Invited by {pendingInvite.invitedByUser.displayName}
+                  </Text>
+                </View>
+              </View>
+              {pendingInvite.event.description ? (
+                <Text style={styles.selectedContactSummary}>
+                  {pendingInvite.event.description}
+                </Text>
+              ) : null}
+              <Text style={styles.eventMeta}>
+                Code {pendingInvite.invite.inviteCode} • Expires{' '}
+                {formatDateLabel(pendingInvite.invite.expiresAt)}
+              </Text>
+              <View style={styles.actionRow}>
+                <View style={styles.actionRowItem}>
+                  <AppButton
+                    label="Accept invite"
+                    icon="check"
+                    onPress={() => {
+                      respondToInvite({
+                        inviteId: pendingInvite.invite.id,
+                        action: 'accept',
+                      })
+                        .then(event => {
+                          setInviteModalVisible(false);
+                          if (event) {
+                            navigation.navigate('EventDashboard', {eventId: event.id});
+                          }
+                        })
+                        .catch(() => undefined);
+                    }}
+                  />
+                </View>
+                <View style={styles.actionRowItem}>
+                  <AppButton
+                    label="Decline"
+                    icon="close"
+                    variant="secondary"
+                    onPress={() => {
+                      respondToInvite({
+                        inviteId: pendingInvite.invite.id,
+                        action: 'decline',
+                      }).catch(() => undefined);
+                    }}
+                  />
+                </View>
+              </View>
+            </AppCard>
+          ))}
+        </ScrollView>
+        <InlineError message={error ?? undefined} />
+      </AppModal>
       <AppModal
         visible={joinModalVisible}
         title="Join event"
@@ -220,11 +366,74 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
 }
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
-  const {createEvent, error} = useApp();
+  const {contacts, createEvent, error} = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('PHP');
+  const [icon, setIcon] = useState<EventIconName>('event');
   const [formError, setFormError] = useState<string>();
+  const [iconModalVisible, setIconModalVisible] = useState(false);
+  const [memberModalVisible, setMemberModalVisible] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<SelectedMemberDraft[]>([]);
+
+  const filteredContacts = useMemo(() => {
+    const query = memberSearch.trim().toLowerCase();
+    return contacts
+      .slice()
+      .sort((left, right) => left.displayName.localeCompare(right.displayName))
+      .filter(contact =>
+        query.length === 0 ? true : contact.displayName.toLowerCase().includes(query),
+      );
+  }, [contacts, memberSearch]);
+
+  const normalizedMemberSearch = useMemo(() => normalizeEmail(memberSearch), [memberSearch]);
+  const canInviteByEmail = isEmailAddress(memberSearch);
+  const hasSelectedEmailInvite = useMemo(
+    () =>
+      selectedMembers.some(
+        member => member.kind === 'email_invite' && member.email === normalizedMemberSearch,
+      ),
+    [normalizedMemberSearch, selectedMembers],
+  );
+
+  function toggleContact(contact: Contact) {
+    const draftId = `contact:${contact.id}`;
+
+    setSelectedMembers(current =>
+      current.some(member => member.id === draftId)
+        ? current.filter(member => member.id !== draftId)
+        : [
+            ...current,
+            {
+              id: draftId,
+              kind: 'contact',
+              label: contact.displayName,
+              contactId: contact.id,
+            },
+          ],
+    );
+  }
+
+  function addEmailInvite() {
+    if (!canInviteByEmail || hasSelectedEmailInvite) {
+      return;
+    }
+
+    setSelectedMembers(current => [
+      ...current,
+      {
+        id: `invite:${normalizedMemberSearch}`,
+        kind: 'email_invite',
+        label: normalizedMemberSearch,
+        email: normalizedMemberSearch,
+      },
+    ]);
+  }
+
+  function removeSelectedMember(memberId: string) {
+    setSelectedMembers(current => current.filter(member => member.id !== memberId));
+  }
 
   async function handleCreate() {
     const parsed = eventSchema.safeParse({name, description, currency});
@@ -235,7 +444,15 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
     }
 
     setFormError(undefined);
-    const event = await createEvent(parsed.data);
+    const event = await createEvent({
+      ...parsed.data,
+      icon,
+      members: selectedMembers.map(member =>
+        member.kind === 'contact'
+          ? {kind: 'contact' as const, displayName: member.label}
+          : {kind: 'email_invite' as const, email: member.email},
+      ),
+    });
     navigation.replace('EventDashboard', {eventId: event.id});
   }
 
@@ -246,6 +463,19 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setIconModalVisible(true)}
+          style={({pressed}) => [
+            styles.eventIconSelector,
+            pressed ? styles.pressed : null,
+          ]}>
+          <View style={styles.eventIconSelectorBadge}>
+            <AppIcon name={icon} tone="accent" size={28} />
+          </View>
+          <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+          <Text style={styles.eventMeta}>Optional. A default icon is already set.</Text>
+        </Pressable>
         <AppInput
           label="Event name"
           value={name}
@@ -259,11 +489,51 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           placeholder="Flights, villa, food, and shared activities"
           multiline
         />
+        <View style={styles.memberPickerBlock}>
+          <SectionHeading
+            title="Add members"
+            detail={
+              selectedMembers.length > 0
+                ? `${selectedMembers.length} pending additions`
+                : 'Optional'
+            }
+          />
+          <Text style={styles.eventMeta}>
+            Search contacts or type an email address to queue an invite for this event.
+          </Text>
+          <AppButton
+            label={
+              selectedMembers.length > 0
+                ? `Add members (${selectedMembers.length})`
+                : 'Add members'
+            }
+            icon="members"
+            variant="secondary"
+            onPress={() => setMemberModalVisible(true)}
+          />
+          {selectedMembers.length > 0 ? (
+            <View style={styles.selectedMemberChipRow}>
+              {selectedMembers.map(member => (
+                <Pressable
+                  key={member.id}
+                  accessibilityRole="button"
+                  onPress={() => removeSelectedMember(member.id)}
+                  style={({pressed}) => [
+                    styles.selectedMemberChip,
+                    pressed ? styles.pressed : null,
+                  ]}>
+                  <Text style={styles.selectedMemberChipText}>{member.label}</Text>
+                  <AppIcon name="close" tone="accent" size={12} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </View>
         <View style={styles.actionRow}>
           <View style={styles.actionRowItem}>
             <AppButton
               label={`Currency: ${currency}`}
-              icon="event"
+              icon={icon}
               variant="secondary"
               onPress={() => setCurrency(currency === 'USD' ? 'PHP' : 'USD')}
             />
@@ -278,6 +548,102 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         </View>
         <InlineError message={formError ?? error ?? undefined} />
       </AppCard>
+      <AppModal
+        visible={iconModalVisible}
+        title="Choose an event icon"
+        subtitle="Pick a visual marker for this event."
+        onClose={() => setIconModalVisible(false)}>
+        <View style={styles.iconGrid}>
+          {EVENT_ICON_OPTIONS.map(option => (
+            <Pressable
+              key={option.name}
+              accessibilityRole="button"
+              onPress={() => {
+                setIcon(option.name);
+                setIconModalVisible(false);
+              }}
+              style={({pressed}) => [
+                styles.iconOptionCard,
+                icon === option.name ? styles.iconOptionCardActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <AppIcon
+                name={option.name as AppIconName}
+                tone={icon === option.name ? 'inverted' : 'accent'}
+                size={24}
+              />
+              <Text
+                style={[
+                  styles.iconOptionLabel,
+                  icon === option.name ? styles.iconOptionLabelActive : null,
+                ]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </AppModal>
+      <AppModal
+        visible={memberModalVisible}
+        title="Add members"
+        subtitle={`${selectedMembers.length} queued for this event`}
+        onClose={() => {
+          setMemberModalVisible(false);
+          setMemberSearch('');
+        }}>
+        <AppInput
+          label="Search contacts or invite email"
+          value={memberSearch}
+          onChangeText={setMemberSearch}
+          placeholder="Search by name or type email@example.com"
+          autoCapitalize="none"
+          autoFocus
+        />
+        <View style={styles.memberModalHeader}>
+          <Text style={styles.memberModalCount}>
+            {selectedMembers.length} member{selectedMembers.length === 1 ? '' : 's'} queued
+          </Text>
+        </View>
+        {canInviteByEmail && !hasSelectedEmailInvite ? (
+          <SelectableRow
+            label={`Invite ${normalizedMemberSearch}`}
+            detail="Sends an invite they can accept or decline after signing in."
+            icon="invite"
+            onPress={addEmailInvite}
+          />
+        ) : null}
+        {contacts.length === 0 && !canInviteByEmail ? (
+          <EmptyState
+            title="No contacts yet"
+            body="Type an email address to send an invite, or build up reusable contacts from your events."
+          />
+        ) : filteredContacts.length === 0 && !canInviteByEmail ? (
+          <EmptyState
+            title="Nothing matched"
+            body="Try a different name, or enter an email address to invite someone directly."
+          />
+        ) : (
+          <ScrollView style={styles.memberList} contentContainerStyle={styles.memberListContent}>
+            {filteredContacts.map(contact => (
+              <SelectableRow
+                key={contact.id}
+                label={contact.displayName}
+                detail={contact.userId ? 'Registered contact' : 'Saved contact'}
+                selected={selectedMembers.some(member => member.id === `contact:${contact.id}`)}
+                onPress={() => toggleContact(contact)}
+              />
+            ))}
+          </ScrollView>
+        )}
+        <AppButton
+          label={`Done${selectedMembers.length > 0 ? ` (${selectedMembers.length})` : ''}`}
+          icon="check"
+          onPress={() => {
+            setMemberModalVisible(false);
+            setMemberSearch('');
+          }}
+        />
+      </AppModal>
     </AppScreen>
   );
 }
@@ -290,7 +656,7 @@ export function EventDashboardScreen({
   const {hydrateEvent, summaries, balances, currentUser} = useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
   const summary = summaries[eventId];
-  const eventBalances = balances[eventId] ?? [];
+  const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
   const event = summary?.event;
 
   useEffect(() => {
@@ -377,6 +743,12 @@ export function EventDashboardScreen({
           </Pressable>
         }>
         <AppCard tone="accent">
+          <View style={styles.dashboardEventHeader}>
+            <View style={styles.dashboardEventIcon}>
+              <AppIcon name={event.icon} tone="accent" size={22} />
+            </View>
+            <DataPill label={event.currency} />
+          </View>
           <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
           <Text style={styles.heroLabel}>Tracked event spending</Text>
           <View style={styles.dashboardMetricRow}>
@@ -402,10 +774,8 @@ export function EventDashboardScreen({
                       key={member.id}
                       style={[
                         styles.avatarChip,
-                        {
-                          marginLeft: index === 0 ? 0 : -10,
-                          backgroundColor: tone.backgroundColor,
-                        },
+                        getAvatarChipOffsetStyle(index),
+                        {backgroundColor: tone.backgroundColor},
                       ]}>
                       <Text style={[styles.avatarText, {color: tone.textColor}]}>
                         {member.displayName.slice(0, 1).toUpperCase()}
@@ -816,6 +1186,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
+  eventLeadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  eventIconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surfaceSoft,
+  },
   eventCopy: {
     flex: 1,
     gap: spacing.xs,
@@ -832,6 +1216,93 @@ const styles = StyleSheet.create({
   metricRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  eventIconSelector: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  eventIconSelectorBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surfaceSoft,
+  },
+  eventIconSelectorTitle: {
+    ...typography.bodyStrong,
+    color: palette.ink,
+  },
+  memberPickerBlock: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+  },
+  selectedMemberChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  selectedMemberChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: palette.surfaceSoft,
+  },
+  selectedMemberChipText: {
+    ...typography.eyebrow,
+    color: palette.ink,
+  },
+  selectedContactSummary: {
+    ...typography.eyebrow,
+    color: palette.ink,
+  },
+  memberModalHeader: {
+    paddingVertical: spacing.xs,
+  },
+  memberModalCount: {
+    ...typography.bodyStrong,
+    color: palette.ink,
+  },
+  memberList: {
+    maxHeight: 320,
+  },
+  memberListContent: {
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  iconOptionCard: {
+    width: '31%',
+    minWidth: 88,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: palette.surfaceSoft,
+  },
+  iconOptionCardActive: {
+    backgroundColor: palette.primary,
+  },
+  iconOptionLabel: {
+    ...typography.eyebrow,
+    color: palette.ink,
+  },
+  iconOptionLabelActive: {
+    color: palette.surface,
   },
   metricPanel: {
     flex: 1,
@@ -851,6 +1322,20 @@ const styles = StyleSheet.create({
   dashboardMetricRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  dashboardEventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  dashboardEventIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   dashboardMetricCard: {
     flex: 1,
@@ -902,6 +1387,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: palette.surface,
+  },
+  avatarChipFirst: {
+    marginLeft: 0,
+  },
+  avatarChipOffset: {
+    marginLeft: -10,
   },
   avatarOverflowChip: {
     minWidth: 34,
@@ -1063,6 +1554,12 @@ const styles = StyleSheet.create({
   inviteCodeValue: {
     ...typography.title,
     letterSpacing: 1.1,
+  },
+  inviteNotificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   refreshButton: {
     width: 42,

@@ -1,9 +1,19 @@
 export type CurrencyCode = 'USD' | 'PHP';
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
 export type MemberStatus = 'invited' | 'joined' | 'declined' | 'removed';
-export type InviteStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked';
 export type PaymentSource = 'personal' | 'central_fund';
 export type SplitType = 'equal';
+export type EventIconName =
+  | 'event'
+  | 'trip'
+  | 'plane'
+  | 'beach'
+  | 'food'
+  | 'party'
+  | 'work'
+  | 'home'
+  | 'gift';
 
 export type UserProfile = {
   id: string;
@@ -13,11 +23,21 @@ export type UserProfile = {
   createdAt: string;
 };
 
+export type Contact = {
+  id: string;
+  ownerUserId: string;
+  userId?: string;
+  displayName: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Event = {
   id: string;
   name: string;
   description?: string;
   currency: CurrencyCode;
+  icon: EventIconName;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -42,6 +62,16 @@ export type Invite = {
   status: InviteStatus;
   expiresAt: string;
   createdAt: string;
+};
+
+export type PendingInvite = {
+  invite: Invite;
+  event: Event;
+  invitedByUser: {
+    id: string;
+    displayName: string;
+    email: string;
+  };
 };
 
 export type Expense = {
@@ -118,10 +148,26 @@ export type CreateEventInput = {
   name: string;
   description?: string;
   currency: CurrencyCode;
+  icon?: EventIconName;
+  members?: Array<
+    | {
+        kind: 'contact';
+        displayName: string;
+      }
+    | {
+        kind: 'email_invite';
+        email: string;
+      }
+  >;
 };
 
 export type JoinEventInput = {
   inviteCode: string;
+};
+
+export type RespondToInviteInput = {
+  inviteId: string;
+  action: 'accept' | 'decline';
 };
 
 export type CreateExpenseInput = {

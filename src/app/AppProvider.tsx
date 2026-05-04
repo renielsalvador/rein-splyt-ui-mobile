@@ -10,6 +10,7 @@ import {getBackend} from '../lib/backend';
 import type {AppBackend} from '../lib/backend/types';
 import type {
   AuthFormValues,
+  Contact,
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
@@ -19,6 +20,8 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  PendingInvite,
+  RespondToInviteInput,
   SettlementInstruction,
   UpdateExpenseInput,
   UserProfile,
@@ -28,6 +31,8 @@ type AppContextValue = {
   backendReady: boolean;
   currentUser: UserProfile | null;
   events: Event[];
+  contacts: Contact[];
+  pendingInvites: PendingInvite[];
   summaries: Record<string, EventSummary>;
   balances: Record<string, MemberBalance[]>;
   settlements: Record<string, SettlementInstruction[]>;
@@ -37,11 +42,14 @@ type AppContextValue = {
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
   signOut: () => Promise<void>;
   refreshEvents: () => Promise<void>;
+  refreshContacts: () => Promise<void>;
+  refreshPendingInvites: () => Promise<void>;
   createEvent: (input: CreateEventInput) => Promise<Event>;
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
-  createInvite: (eventId: string) => Promise<Invite>;
+  createInvite: (eventId: string, invitedEmail?: string) => Promise<Invite>;
+  respondToInvite: (input: RespondToInviteInput) => Promise<Event | null>;
   addExpense: (input: CreateExpenseInput) => Promise<void>;
   updateExpense: (input: UpdateExpenseInput) => Promise<void>;
   addContribution: (input: CreateContributionInput) => Promise<void>;
@@ -54,6 +62,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
   const [backendReady, setBackendReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [summaries, setSummaries] = useState<Record<string, EventSummary>>({});
   const [balances, setBalances] = useState<Record<string, MemberBalance[]>>({});
   const [settlements, setSettlements] = useState<
@@ -75,6 +85,12 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
         setBackend(nextBackend);
         setCurrentUser(session?.user ?? null);
+        if (session?.user.email) {
+          const nextPendingInvites = await nextBackend.listPendingInvites(session.user.email);
+          if (isMounted) {
+            setPendingInvites(nextPendingInvites);
+          }
+        }
       } catch (bootstrapError) {
         if (isMounted) {
           setError(
@@ -107,11 +123,60 @@ export function AppProvider({children}: React.PropsWithChildren) {
     setEvents(nextEvents);
   }, [backend, currentUser]);
 
+  const refreshContacts = useCallback(async () => {
+    if (!backend || !currentUser) {
+      setContacts([]);
+      return;
+    }
+
+    const nextContacts = await backend.listContacts(currentUser.id);
+    setContacts(nextContacts);
+  }, [backend, currentUser]);
+
+  const refreshPendingInvites = useCallback(async () => {
+    if (!backend || !currentUser) {
+      setPendingInvites([]);
+      return;
+    }
+
+    const nextPendingInvites = await backend.listPendingInvites(currentUser.email);
+    setPendingInvites(nextPendingInvites);
+  }, [backend, currentUser]);
+
+  const syncContactsFromMembers = useCallback(
+    async (members: EventSummary['members']) => {
+      if (!backend || !currentUser) {
+        return;
+      }
+
+      const contactCandidates = members
+        .filter(member => member.displayName.trim().length > 0 && member.userId !== currentUser.id)
+        .map(member => ({
+          displayName: member.displayName,
+          userId: member.userId,
+        }));
+
+      if (contactCandidates.length === 0) {
+        return;
+      }
+
+      const nextContacts = await backend.upsertContacts(currentUser.id, contactCandidates);
+      setContacts(nextContacts);
+    },
+    [backend, currentUser],
+  );
+
   useEffect(() => {
     refreshEvents().catch(nextError => {
       setError(nextError instanceof Error ? nextError.message : 'Unable to load events.');
     });
   }, [refreshEvents]);
+
+  useEffect(() => {
+    refreshContacts().catch(nextError => {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to load contacts.');
+    });
+  }, [refreshContacts]);
 
   const mutate = useCallback(
     async (work: () => Promise<void>) => {
@@ -137,6 +202,10 @@ export function AppProvider({children}: React.PropsWithChildren) {
         setCurrentUser(session.user);
         const nextEvents = await backend.listEvents(session.user.id);
         setEvents(nextEvents);
+        const nextContacts = await backend.listContacts(session.user.id);
+        setContacts(nextContacts);
+        const nextPendingInvites = await backend.listPendingInvites(session.user.email);
+        setPendingInvites(nextPendingInvites);
       });
     },
     [backend, mutate],
@@ -152,6 +221,9 @@ export function AppProvider({children}: React.PropsWithChildren) {
         const session = await backend.signUp(input);
         setCurrentUser(session.user);
         setEvents([]);
+        setContacts([]);
+        const nextPendingInvites = await backend.listPendingInvites(session.user.email);
+        setPendingInvites(nextPendingInvites);
       });
     },
     [backend, mutate],
@@ -166,6 +238,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       await backend.signOut();
       setCurrentUser(null);
       setEvents([]);
+      setContacts([]);
+      setPendingInvites([]);
       setSummaries({});
       setBalances({});
       setSettlements({});
@@ -188,9 +262,10 @@ export function AppProvider({children}: React.PropsWithChildren) {
         setSummaries(current => ({...current, [eventId]: summary}));
         setBalances(current => ({...current, [eventId]: nextBalances}));
         setSettlements(current => ({...current, [eventId]: nextSettlements}));
+        await syncContactsFromMembers(summary.members);
       });
     },
-    [backend, mutate],
+    [backend, mutate, syncContactsFromMembers],
   );
 
   const createEvent = useCallback(
@@ -202,6 +277,19 @@ export function AppProvider({children}: React.PropsWithChildren) {
       let createdEvent!: Event;
       await mutate(async () => {
         createdEvent = await backend.createEvent(currentUser.id, input);
+        const initialMembers = input.members ?? [];
+
+        for (const member of initialMembers) {
+          if (member.kind === 'contact') {
+            if (member.displayName.trim().length > 0) {
+              await backend.addManualMember(createdEvent.id, member.displayName);
+            }
+            continue;
+          }
+
+          await backend.createInvite(createdEvent.id, currentUser.id, member.email);
+        }
+
         await refreshEvents();
         await hydrateEvent(createdEvent.id);
       });
@@ -244,19 +332,40 @@ export function AppProvider({children}: React.PropsWithChildren) {
   );
 
   const createInvite = useCallback(
-    async (eventId: string) => {
+    async (eventId: string, invitedEmail?: string) => {
       if (!backend || !currentUser) {
         throw new Error('You must be signed in.');
       }
 
       let invite!: Invite;
       await mutate(async () => {
-        invite = await backend.createInvite(eventId, currentUser.id);
+        invite = await backend.createInvite(eventId, currentUser.id, invitedEmail);
         await hydrateEvent(eventId);
+        await refreshPendingInvites();
       });
       return invite;
     },
-    [backend, currentUser, hydrateEvent, mutate],
+    [backend, currentUser, hydrateEvent, mutate, refreshPendingInvites],
+  );
+
+  const respondToInvite = useCallback(
+    async (input: RespondToInviteInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      let event: Event | null = null;
+      await mutate(async () => {
+        event = await backend.respondToInvite(currentUser.id, input);
+        await refreshPendingInvites();
+        await refreshEvents();
+        if (event) {
+          await hydrateEvent(event.id);
+        }
+      });
+      return event;
+    },
+    [backend, currentUser, hydrateEvent, mutate, refreshEvents, refreshPendingInvites],
   );
 
   const addExpense = useCallback(
@@ -308,6 +417,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       backendReady,
       currentUser,
       events,
+      contacts,
+      pendingInvites,
       summaries,
       balances,
       settlements,
@@ -317,11 +428,14 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signUp,
       signOut,
       refreshEvents,
+      refreshContacts,
+      refreshPendingInvites,
       createEvent,
       joinEvent,
       hydrateEvent,
       addManualMember,
       createInvite,
+      respondToInvite,
       addExpense,
       updateExpense,
       addContribution,
@@ -335,17 +449,21 @@ export function AppProvider({children}: React.PropsWithChildren) {
       createEvent,
       createInvite,
       currentUser,
+      contacts,
+      pendingInvites,
       error,
       events,
       hydrateEvent,
       joinEvent,
       refreshEvents,
+      refreshContacts,
+      refreshPendingInvites,
+      respondToInvite,
       settlements,
       signIn,
       signOut,
       signUp,
       summaries,
-      updateExpense,
       balances,
     ],
   );

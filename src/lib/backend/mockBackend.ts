@@ -6,6 +6,7 @@ import type {
   AuthFormValues,
   CentralFund,
   CentralFundContribution,
+  Contact,
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
@@ -17,6 +18,8 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  PendingInvite,
+  RespondToInviteInput,
   SettlementInstruction,
   UpdateExpenseInput,
   UserProfile,
@@ -26,6 +29,7 @@ type PersistedState = {
   users: UserProfile[];
   credentials: Array<{userId: string; email: string; password: string}>;
   sessionUserId?: string;
+  contacts: Contact[];
   events: Event[];
   eventMembers: EventMember[];
   invites: Invite[];
@@ -39,6 +43,7 @@ const defaultState: PersistedState = {
   users: [],
   credentials: [],
   sessionUserId: undefined,
+  contacts: [],
   events: [],
   eventMembers: [],
   invites: [],
@@ -60,6 +65,22 @@ function createInviteCode() {
 
 function roundCurrency(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function normalizeDisplayName(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function buildContactKey(userId?: string, displayName?: string) {
+  if (userId) {
+    return `user:${userId}`;
+  }
+
+  return `name:${normalizeDisplayName(displayName ?? '').toLowerCase()}`;
 }
 
 export class MockBackend implements AppBackend {
@@ -122,6 +143,90 @@ export class MockBackend implements AppBackend {
     this.state.sessionUserId = undefined;
   }
 
+  async listPendingInvites(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+
+    return this.state.invites
+      .filter(
+        invite =>
+          invite.status === 'pending' &&
+          invite.invitedEmail?.toLowerCase() === normalizedEmail,
+      )
+      .map(invite => {
+        const event = this.state.events.find(item => item.id === invite.eventId);
+        const invitedByUser = this.state.users.find(item => item.id === invite.invitedBy);
+
+        if (!event || !invitedByUser) {
+          throw new Error('Invite references missing event or user.');
+        }
+
+        const pendingInvite: PendingInvite = {
+          invite,
+          event,
+          invitedByUser: {
+            id: invitedByUser.id,
+            displayName: invitedByUser.displayName,
+            email: invitedByUser.email,
+          },
+        };
+
+        return pendingInvite;
+      })
+      .sort(
+        (left, right) =>
+          new Date(right.invite.createdAt).getTime() -
+          new Date(left.invite.createdAt).getTime(),
+      );
+  }
+
+  async respondToInvite(userId: string, input: RespondToInviteInput) {
+    const invite = this.state.invites.find(item => item.id === input.inviteId);
+
+    if (!invite || invite.status !== 'pending') {
+      throw new Error('Invite is no longer available.');
+    }
+
+    const user = this.getUser(userId);
+
+    if (normalizeEmail(invite.invitedEmail ?? '') !== normalizeEmail(user.email)) {
+      throw new Error('This invite was sent to a different email address.');
+    }
+
+    if (input.action === 'decline') {
+      invite.status = 'declined';
+      return null;
+    }
+
+    const existing = this.state.eventMembers.find(
+      member => member.eventId === invite.eventId && member.userId === user.id,
+    );
+
+    if (existing) {
+      existing.status = 'joined';
+      existing.displayName = user.displayName;
+    } else {
+      this.state.eventMembers.push({
+        id: createId('member'),
+        eventId: invite.eventId,
+        userId: user.id,
+        displayName: user.displayName,
+        role: 'member',
+        status: 'joined',
+        joinedAt: new Date().toISOString(),
+      });
+    }
+
+    invite.status = 'accepted';
+
+    const event = this.state.events.find(item => item.id === invite.eventId);
+
+    if (!event) {
+      throw new Error('Event not found.');
+    }
+
+    return event;
+  }
+
   async listEvents(userId: string) {
     const eventIds = new Set(
       this.state.eventMembers
@@ -134,6 +239,52 @@ export class MockBackend implements AppBackend {
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
+  async listContacts(userId: string) {
+    return this.state.contacts
+      .filter(contact => contact.ownerUserId === userId)
+      .slice()
+      .sort((left, right) => left.displayName.localeCompare(right.displayName));
+  }
+
+  async upsertContacts(
+    userId: string,
+    contacts: Array<{displayName: string; userId?: string}>,
+  ) {
+    const now = new Date().toISOString();
+
+    contacts.forEach(contact => {
+      const displayName = normalizeDisplayName(contact.displayName);
+      if (!displayName) {
+        return;
+      }
+
+      const key = buildContactKey(contact.userId, displayName);
+      const existing = this.state.contacts.find(
+        item =>
+          item.ownerUserId === userId &&
+          buildContactKey(item.userId, item.displayName) === key,
+      );
+
+      if (existing) {
+        existing.displayName = displayName;
+        existing.userId = contact.userId ?? existing.userId;
+        existing.updatedAt = now;
+        return;
+      }
+
+      this.state.contacts.push({
+        id: createId('contact'),
+        ownerUserId: userId,
+        userId: contact.userId,
+        displayName,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    return this.listContacts(userId);
+  }
+
   async createEvent(userId: string, input: CreateEventInput) {
     const now = new Date().toISOString();
     const event: Event = {
@@ -141,6 +292,7 @@ export class MockBackend implements AppBackend {
       name: input.name.trim(),
       description: input.description?.trim(),
       currency: input.currency,
+      icon: input.icon ?? 'event',
       createdBy: userId,
       createdAt: now,
       updatedAt: now,
@@ -238,7 +390,7 @@ export class MockBackend implements AppBackend {
     const member: EventMember = {
       id: createId('member'),
       eventId,
-      displayName: displayName.trim(),
+      displayName: normalizeDisplayName(displayName),
       role: 'member',
       status: 'invited',
       joinedAt: new Date().toISOString(),
@@ -253,7 +405,7 @@ export class MockBackend implements AppBackend {
       eventId,
       invitedBy,
       inviteCode: createInviteCode(),
-      invitedEmail: invitedEmail?.trim() || undefined,
+      invitedEmail: invitedEmail ? normalizeEmail(invitedEmail) : undefined,
       status: 'pending',
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
       createdAt: new Date().toISOString(),

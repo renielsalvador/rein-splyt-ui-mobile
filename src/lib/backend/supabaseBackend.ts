@@ -5,6 +5,7 @@ import type {
 } from './types';
 import type {
   AuthFormValues,
+  Contact,
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
@@ -13,6 +14,8 @@ import type {
   EventSummary,
   ExpenseSplit,
   Invite,
+  PendingInvite,
+  RespondToInviteInput,
   SettlementInstruction,
   UpdateExpenseInput,
   UserProfile,
@@ -26,11 +29,21 @@ type DatabaseUserRow = {
   created_at: string;
 };
 
+type ContactRow = {
+  id: string;
+  owner_user_id: string;
+  contact_user_id: string | null;
+  display_name: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type EventRow = {
   id: string;
   name: string;
   description: string | null;
   currency: 'USD' | 'PHP';
+  icon: 'event' | 'trip' | 'plane' | 'beach' | 'food' | 'party' | 'work' | 'home' | 'gift';
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -52,9 +65,21 @@ type InviteRow = {
   invited_by: string;
   invite_code: string;
   invited_email: string | null;
-  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked';
   expires_at: string;
   created_at: string;
+};
+
+type PendingInviteRow = InviteRow & {
+  event_name: string;
+  event_description: string | null;
+  event_currency: 'USD' | 'PHP';
+  event_icon: EventRow['icon'];
+  event_created_by: string;
+  event_created_at: string;
+  event_updated_at: string;
+  invited_by_display_name: string;
+  invited_by_email: string;
 };
 
 type ExpenseRow = {
@@ -146,6 +171,22 @@ function createInviteCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
+function normalizeDisplayName(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function buildContactKey(userId?: string, displayName?: string) {
+  if (userId) {
+    return `user:${userId}`;
+  }
+
+  return `name:${normalizeDisplayName(displayName ?? '').toLowerCase()}`;
+}
+
 function mapUser(row: DatabaseUserRow): UserProfile {
   return {
     id: row.id,
@@ -156,12 +197,24 @@ function mapUser(row: DatabaseUserRow): UserProfile {
   };
 }
 
+function mapContact(row: ContactRow): Contact {
+  return {
+    id: row.id,
+    ownerUserId: row.owner_user_id,
+    userId: row.contact_user_id ?? undefined,
+    displayName: row.display_name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 function mapEvent(row: EventRow): Event {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? undefined,
     currency: row.currency,
+    icon: row.icon,
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -306,6 +359,53 @@ export class SupabaseBackend implements AppBackend {
     assertNoError(error, 'Unable to sign out.');
   }
 
+  async listPendingInvites(email: string) {
+    const {data, error} = await this.client.rpc('list_pending_invites_for_email', {
+      p_email: normalizeEmail(email),
+    });
+
+    assertNoError(error, 'Unable to load pending invites.');
+
+    return (data ?? []).map((item: unknown) => {
+      const row = item as PendingInviteRow;
+      const pendingInvite: PendingInvite = {
+        invite: mapInvite(row),
+        event: mapEvent({
+          id: row.event_id,
+          name: row.event_name,
+          description: row.event_description,
+          currency: row.event_currency,
+          icon: row.event_icon,
+          created_by: row.event_created_by,
+          created_at: row.event_created_at,
+          updated_at: row.event_updated_at,
+        }),
+        invitedByUser: {
+          id: row.invited_by,
+          displayName: row.invited_by_display_name,
+          email: row.invited_by_email,
+        },
+      };
+
+      return pendingInvite;
+    });
+  }
+
+  async respondToInvite(_userId: string, input: RespondToInviteInput) {
+    const {data, error} = await this.client.rpc('respond_to_event_invite', {
+      p_invite_id: input.inviteId,
+      p_action: input.action,
+    });
+
+    assertNoError(error, 'Unable to update the invite.');
+
+    if (!data) {
+      return null;
+    }
+
+    return mapEvent((Array.isArray(data) ? data[0] : data) as EventRow);
+  }
+
   async listEvents(_userId: string) {
     const {data, error} = await this.client
       .from('events')
@@ -317,11 +417,105 @@ export class SupabaseBackend implements AppBackend {
     return (data ?? []).map(item => mapEvent(item as EventRow));
   }
 
+  async listContacts(userId: string) {
+    const {data, error} = await this.client
+      .from('contacts')
+      .select('*')
+      .eq('owner_user_id', userId)
+      .order('display_name', {ascending: true});
+
+    assertNoError(error, 'Unable to load contacts.');
+
+    return (data ?? []).map(item => mapContact(item as ContactRow));
+  }
+
+  async upsertContacts(
+    userId: string,
+    contacts: Array<{displayName: string; userId?: string}>,
+  ) {
+    const normalizedContacts = contacts
+      .map(contact => ({
+        displayName: normalizeDisplayName(contact.displayName),
+        userId: contact.userId,
+      }))
+      .filter(contact => contact.displayName.length > 0);
+
+    if (normalizedContacts.length === 0) {
+      return this.listContacts(userId);
+    }
+
+    const {data: existingRows, error: existingError} = await this.client
+      .from('contacts')
+      .select('*')
+      .eq('owner_user_id', userId);
+
+    assertNoError(existingError, 'Unable to load existing contacts.');
+
+    const existingByKey = new Map(
+      (existingRows ?? []).map(item => {
+        const row = item as ContactRow;
+        return [buildContactKey(row.contact_user_id ?? undefined, row.display_name), row] as const;
+      }),
+    );
+
+    const rowsToInsert: Array<{
+      owner_user_id: string;
+      contact_user_id: string | null;
+      display_name: string;
+    }> = [];
+    const rowsToUpdate: Array<{id: string; display_name: string; contact_user_id: string | null}> = [];
+
+    normalizedContacts.forEach(contact => {
+      const key = buildContactKey(contact.userId, contact.displayName);
+      const existing = existingByKey.get(key);
+
+      if (existing) {
+        if (
+          existing.display_name !== contact.displayName ||
+          existing.contact_user_id !== (contact.userId ?? null)
+        ) {
+          rowsToUpdate.push({
+            id: existing.id,
+            display_name: contact.displayName,
+            contact_user_id: contact.userId ?? null,
+          });
+        }
+        return;
+      }
+
+      rowsToInsert.push({
+        owner_user_id: userId,
+        contact_user_id: contact.userId ?? null,
+        display_name: contact.displayName,
+      });
+    });
+
+    if (rowsToInsert.length > 0) {
+      const {error} = await this.client.from('contacts').insert(rowsToInsert);
+      assertNoError(error, 'Unable to save contacts.');
+    }
+
+    for (const row of rowsToUpdate) {
+      const {error} = await this.client
+        .from('contacts')
+        .update({
+          display_name: row.display_name,
+          contact_user_id: row.contact_user_id,
+        })
+        .eq('id', row.id);
+
+      assertNoError(error, 'Unable to update contacts.');
+    }
+
+    return this.listContacts(userId);
+  }
+
   async createEvent(_userId: string, input: CreateEventInput) {
     const {data, error} = await this.client.rpc('create_event_with_owner', {
       p_name: input.name.trim(),
       p_description: input.description?.trim() || null,
       p_currency: input.currency,
+      p_icon: input.icon ?? 'event',
     });
 
     assertNoError(error, 'Unable to create the event.');
@@ -428,7 +622,7 @@ export class SupabaseBackend implements AppBackend {
       .from('event_members')
       .insert({
         event_id: eventId,
-        display_name: displayName.trim(),
+        display_name: normalizeDisplayName(displayName),
         role: 'member',
         status: 'invited',
       })
