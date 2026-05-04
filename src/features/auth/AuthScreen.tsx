@@ -46,7 +46,7 @@ export function AuthScreen() {
     <AppScreen
       title="Splyt"
       subtitle="Group expenses, balances, invites, and settlement summaries in one flow.">
-      <AppCard tone="warm">
+      <AppCard tone="accent">
         <Text style={styles.heading}>{mode === 'login' ? 'Sign in' : 'Create account'}</Text>
         {mode === 'signup' ? (
           <AppInput
@@ -100,5 +100,6 @@ const styles = StyleSheet.create({
     ...typography.title,
     fontSize: 22,
     lineHeight: 26,
+    color: palette.primary,
   },
 });

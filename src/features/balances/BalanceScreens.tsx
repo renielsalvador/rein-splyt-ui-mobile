@@ -10,7 +10,7 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {formatCurrency} from '../../lib/utils/format';
-import {typography} from '../../theme/tokens';
+import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
 export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
@@ -44,9 +44,9 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
       {eventBalances.map(balance => (
         <AppCard key={balance.memberId}>
           <View style={styles.row}>
-            <View>
+            <View style={styles.copy}>
               <Text style={styles.memberName}>{balance.displayName}</Text>
-              <Text style={{...typography.eyebrow}}>
+              <Text style={styles.meta}>
                 Paid {formatCurrency(balance.paid, summary.event.currency)} • Owes{' '}
                 {formatCurrency(balance.owed, summary.event.currency)}
               </Text>
@@ -96,12 +96,17 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
       ) : null}
       {instructions.map((instruction, index) => (
         <AppCard key={`${instruction.fromMemberId}-${instruction.toMemberId}-${index}`}>
-          <Text style={styles.memberName}>
-            {instruction.fromDisplayName} pays {instruction.toDisplayName}
-          </Text>
-          <Text style={styles.amount}>
-            {formatCurrency(instruction.amount, summary.event.currency)}
-          </Text>
+          <View style={styles.row}>
+            <View style={styles.copy}>
+              <Text style={styles.memberName}>
+                {instruction.fromDisplayName} pays {instruction.toDisplayName}
+              </Text>
+              <Text style={styles.meta}>Suggested transfer</Text>
+            </View>
+            <Text style={styles.amount}>
+              {formatCurrency(instruction.amount, summary.event.currency)}
+            </Text>
+          </View>
         </AppCard>
       ))}
     </AppScreen>
@@ -113,15 +118,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+  },
+  copy: {
+    flex: 1,
+    gap: spacing.xs,
   },
   memberName: {
     ...typography.title,
-    fontSize: 20,
+    fontSize: 19,
     lineHeight: 24,
   },
+  meta: {
+    ...typography.eyebrow,
+    color: palette.inkMuted,
+  },
   amount: {
-    ...typography.display,
-    fontSize: 28,
-    lineHeight: 32,
+    ...typography.title,
+    fontSize: 20,
+    lineHeight: 26,
+    color: palette.primary,
   },
 });

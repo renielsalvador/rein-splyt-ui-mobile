@@ -2,13 +2,14 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {Clipboard, Pressable, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
-  AppIcon,
   AppButton,
   AppCard,
+  AppIcon,
   AppInput,
-  AppModal,
   AppMenu,
+  AppModal,
   AppScreen,
+  AppToast,
   DataPill,
   EmptyState,
   InlineError,
@@ -18,8 +19,8 @@ import {
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
-import type {CurrencyCode, MemberBalance, SettlementInstruction} from '../../types/domain';
 import type {ScreenProps} from '../../app/navigation';
+import type {CurrencyCode, MemberBalance, SettlementInstruction} from '../../types/domain';
 
 function buildSettlementInstructions(balances: MemberBalance[]): SettlementInstruction[] {
   const creditors = balances
@@ -63,9 +64,9 @@ function buildSettlementInstructions(balances: MemberBalance[]): SettlementInstr
 
 function getAvatarTone(index: number) {
   const tones = [
-    {backgroundColor: '#D9F1FF', textColor: '#2F7AC7'},
-    {backgroundColor: '#E9F7E7', textColor: '#2D8A4F'},
-    {backgroundColor: '#F7EAFE', textColor: '#7B4BC2'},
+    {backgroundColor: '#DDEDE6', textColor: palette.primary},
+    {backgroundColor: '#E8F0FE', textColor: palette.blue},
+    {backgroundColor: '#E8F6EE', textColor: palette.greenAccent},
   ] as const;
 
   return tones[index % tones.length];
@@ -121,74 +122,74 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
             ]}
           />
         }>
-      <AppCard tone="accent">
-        <Text style={styles.heroValue}>{events.length}</Text>
-        <Text style={styles.heroLabel}>Active events in your workspace</Text>
-        <View style={styles.actionRow}>
-          <View style={styles.actionRowItem}>
-            <AppButton
-              label="Create event"
-              icon="create"
-              onPress={() => navigation.navigate('CreateEvent')}
-            />
+        <AppCard tone="accent">
+          <Text style={styles.heroValue}>{events.length}</Text>
+          <Text style={styles.heroLabel}>Active events in your workspace</Text>
+          <View style={styles.actionRow}>
+            <View style={styles.actionRowItem}>
+              <AppButton
+                label="Create event"
+                icon="create"
+                onPress={() => navigation.navigate('CreateEvent')}
+              />
+            </View>
+            <View style={styles.actionRowItem}>
+              <AppButton
+                label="Join by code"
+                icon="join"
+                variant="secondary"
+                onPress={() => {
+                  setJoinFormError(undefined);
+                  setJoinModalVisible(true);
+                }}
+              />
+            </View>
           </View>
-          <View style={styles.actionRowItem}>
-            <AppButton
-              label="Join by code"
-              icon="join"
-              variant="secondary"
-              onPress={() => {
-                setJoinFormError(undefined);
-                setJoinModalVisible(true);
-              }}
-            />
-          </View>
-        </View>
-      </AppCard>
+        </AppCard>
 
-      <SectionHeading title="Your events" detail={`${events.length} total`} />
-      {events.length === 0 ? (
-        <EmptyState
-          title="No events yet"
-          body="Create a trip or join one with an invite code to start tracking shared spending."
-        />
-      ) : null}
-      {events.map(event => {
-        const summary = summaries[event.id];
-        const totalSpend =
-          summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
+        <SectionHeading title="Your events" detail={`${events.length} total`} />
+        {events.length === 0 ? (
+          <EmptyState
+            title="No events yet"
+            body="Create a trip or join one with an invite code to start tracking shared spending."
+          />
+        ) : null}
+        {events.map(event => {
+          const summary = summaries[event.id];
+          const totalSpend =
+            summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
 
-        return (
-          <Pressable
-            key={event.id}
-            onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
-            style={({pressed}) => [pressed ? styles.pressed : null]}>
-            <AppCard>
-              <View style={styles.eventHeaderRow}>
-                <View style={styles.eventCopy}>
-                  <Text style={styles.eventName}>{event.name}</Text>
-                  <Text style={styles.eventMeta}>
-                    {event.description || 'Shared expense workspace'}
-                  </Text>
+          return (
+            <Pressable
+              key={event.id}
+              onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
+              style={({pressed}) => [pressed ? styles.pressed : null]}>
+              <AppCard>
+                <View style={styles.eventHeaderRow}>
+                  <View style={styles.eventCopy}>
+                    <Text style={styles.eventName}>{event.name}</Text>
+                    <Text style={styles.eventMeta}>
+                      {event.description || 'Shared expense workspace'}
+                    </Text>
+                  </View>
+                  <DataPill label={event.currency} tone="accent" />
                 </View>
-                <DataPill label={event.currency} tone="accent" />
-              </View>
-              <View style={styles.eventMetrics}>
-                <View style={styles.metricGroup}>
-                  <Text style={styles.metricLabel}>Members</Text>
-                  <Text style={styles.metricText}>{summary?.members.length ?? 1}</Text>
+                <View style={styles.metricRow}>
+                  <View style={styles.metricPanel}>
+                    <Text style={styles.metricLabel}>Members</Text>
+                    <Text style={styles.metricText}>{summary?.members.length ?? 1}</Text>
+                  </View>
+                  <View style={styles.metricPanel}>
+                    <Text style={styles.metricLabel}>Tracked spend</Text>
+                    <Text style={styles.metricText}>
+                      {formatCurrency(totalSpend, event.currency)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.metricGroup}>
-                  <Text style={styles.metricLabel}>Tracked spend</Text>
-                  <Text style={styles.metricText}>
-                    {formatCurrency(totalSpend, event.currency)}
-                  </Text>
-                </View>
-              </View>
-            </AppCard>
-          </Pressable>
-        );
-      })}
+              </AppCard>
+            </Pressable>
+          );
+        })}
       </AppScreen>
       <AppModal
         visible={joinModalVisible}
@@ -288,14 +289,13 @@ export function EventDashboardScreen({
   const {eventId} = route.params;
   const {hydrateEvent, summaries, balances, currentUser} = useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
+  const summary = summaries[eventId];
+  const eventBalances = balances[eventId] ?? [];
+  const event = summary?.event;
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
   }, [eventId, hydrateEvent]);
-
-  const summary = summaries[eventId];
-  const eventBalances = balances[eventId] ?? [];
-  const event = summary?.event;
 
   const totalSpend = useMemo(
     () => summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0,
@@ -316,23 +316,23 @@ export function EventDashboardScreen({
         : undefined,
     [currentMember, eventBalances],
   );
+  const instructions = useMemo(
+    () => buildSettlementInstructions(eventBalances),
+    [eventBalances],
+  );
   const youOwe = useMemo(
     () =>
       currentMember
-        ? buildSettlementInstructions(eventBalances).filter(
-            item => item.fromMemberId === currentMember.id,
-          )
+        ? instructions.filter(item => item.fromMemberId === currentMember.id)
         : [],
-    [currentMember, eventBalances],
+    [currentMember, instructions],
   );
   const owesYou = useMemo(
     () =>
       currentMember
-        ? buildSettlementInstructions(eventBalances).filter(
-            item => item.toMemberId === currentMember.id,
-          )
+        ? instructions.filter(item => item.toMemberId === currentMember.id)
         : [],
-    [currentMember, eventBalances],
+    [currentMember, instructions],
   );
 
   if (!summary || !event) {
@@ -350,234 +350,261 @@ export function EventDashboardScreen({
     );
   }
 
-  return (
-    <AppScreen
-      title={event.name}
-      subtitle={event.description || 'Shared expense workspace'}
-      headerVariant="detail"
-      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
-      actions={
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('AddExpense', {eventId})}
-          style={({pressed}) => [
-            styles.headerActionButton,
-            pressed ? styles.pressed : null,
-          ]}>
-          <AppIcon name="expense" tone="inverted" size={14} />
-          <Text style={styles.headerActionText}>Add expense</Text>
-        </Pressable>
-      }>
-      <AppCard tone="warm">
-        <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
-        <Text style={styles.heroLabel}>Tracked event spending</Text>
-        <View style={styles.eventMetrics}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('Members', {eventId})}
-            style={({pressed}) => [
-              styles.metricGroup,
-              styles.metricGroupMembers,
-              pressed ? styles.pressed : null,
-            ]}>
-            <View style={styles.metricActionRow}>
-              <Text style={styles.metricLabelStrong}>Members</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => navigation.navigate('Members', {eventId})}
-                style={({pressed}) => [
-                  styles.metricAddButton,
-                  pressed ? styles.pressed : null,
-                ]}>
-                <AppIcon name="create" size={12} />
-              </Pressable>
-            </View>
-            <Text style={styles.metricTextLarge}>{summary.members.length}</Text>
-            <View style={styles.avatarStackRow}>
-              {summary.members.slice(0, 3).map((member, index) => {
-                const tone = getAvatarTone(index);
-                return (
-                <View
-                  key={member.id}
-                  style={[
-                    styles.avatarChip,
-                    {
-                      marginLeft: index === 0 ? 0 : -16,
-                      backgroundColor: tone.backgroundColor,
-                    },
-                  ]}>
-                  <Text style={[styles.avatarText, {color: tone.textColor}]}>
-                    {member.displayName.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-                );
-              })}
-              {summary.members.length > 3 ? (
-                <View style={styles.avatarOverflowChip}>
-                  <Text style={styles.avatarOverflowText}>+{summary.members.length - 3}</Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('CentralFund', {eventId})}
-            style={({pressed}) => [
-              styles.metricGroup,
-              styles.metricGroupFund,
-              pressed ? styles.pressed : null,
-            ]}>
-            <Text style={styles.metricLabelStrong}>Fund contributed</Text>
-            <Text style={styles.metricText}>{formatCurrency(fundTotal, event.currency)}</Text>
-            <Text style={styles.metricFootnote}>Tap to manage the shared fund</Text>
-          </Pressable>
-        </View>
-      </AppCard>
+  const balanceLabel =
+    currentBalance?.net && currentBalance.net > 0
+      ? 'People owe me'
+      : currentBalance?.net && currentBalance.net < 0
+        ? 'I owe the group'
+        : 'No payments needed right now';
 
-      {currentBalance ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setShowBalanceDetails(current => !current)}
-          style={({pressed}) => [pressed ? styles.pressed : null]}>
-          <AppCard>
-            <View style={styles.balanceSummaryRow}>
-              <View style={styles.balanceLead}>
-                <View
-                  style={[
-                    styles.summaryIconBubble,
-                    currentBalance.net > 0
-                      ? styles.summaryIconPositive
-                      : currentBalance.net < 0
-                        ? styles.summaryIconNegative
-                        : styles.summaryIconNeutral,
-                  ]}>
-                  <AppIcon name="balances" tone="default" size={16} />
-                </View>
-                <View style={styles.eventCopy}>
-                  <Text style={styles.balanceTitle}>My balance</Text>
-                  <Text style={styles.eventMeta}>
-                    {currentBalance.net > 0
-                      ? 'People owe me'
-                      : currentBalance.net < 0
-                        ? 'I owe the group'
-                        : 'I am settled up'}
-                  </Text>
+  return (
+    <>
+      <AppScreen
+        title={event.name}
+        subtitle={event.description || 'Shared expense workspace'}
+        headerVariant="detail"
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
+        actions={
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('AddExpense', {eventId})}
+            style={({pressed}) => [
+              styles.headerActionButton,
+              pressed ? styles.pressed : null,
+            ]}>
+            <AppIcon name="expense" tone="inverted" size={14} />
+            <Text style={styles.headerActionText}>Add expense</Text>
+          </Pressable>
+        }>
+        <AppCard tone="accent">
+          <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
+          <Text style={styles.heroLabel}>Tracked event spending</Text>
+          <View style={styles.dashboardMetricRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Members', {eventId})}
+              style={({pressed}) => [
+                styles.dashboardMetricCard,
+                pressed ? styles.pressed : null,
+              ]}>
+              <View style={styles.metricActionRow}>
+                <Text style={styles.metricLabelStrong}>Members</Text>
+                <View style={styles.metricMiniButton}>
+                  <AppIcon name="create" tone="accent" size={12} />
                 </View>
               </View>
-              <Text
-                style={[
-                  styles.balanceAmount,
-                  currentBalance.net > 0
-                    ? styles.balanceAmountPositive
-                    : currentBalance.net < 0
-                      ? styles.balanceAmountNegative
-                      : styles.balanceAmountNeutral,
-                ]}>
-                {formatCurrency(Math.abs(currentBalance.net), event.currency)}
-              </Text>
-            </View>
-            {showBalanceDetails ? (
-              <View style={styles.balanceDetails}>
-                {owesYou.map(item => (
-                  <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceDetailRow}>
-                    <Text style={styles.balanceDetailText}>
-                      {item.fromDisplayName} owes you
-                    </Text>
-                    <Text style={styles.balanceDetailPositive}>
-                      {formatCurrency(item.amount, event.currency)}
-                    </Text>
+              <Text style={styles.metricTextLarge}>{summary.members.length}</Text>
+              <View style={styles.avatarStackRow}>
+                {summary.members.slice(0, 3).map((member, index) => {
+                  const tone = getAvatarTone(index);
+                  return (
+                    <View
+                      key={member.id}
+                      style={[
+                        styles.avatarChip,
+                        {
+                          marginLeft: index === 0 ? 0 : -10,
+                          backgroundColor: tone.backgroundColor,
+                        },
+                      ]}>
+                      <Text style={[styles.avatarText, {color: tone.textColor}]}>
+                        {member.displayName.slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                  );
+                })}
+                {summary.members.length > 3 ? (
+                  <View style={styles.avatarOverflowChip}>
+                    <Text style={styles.avatarOverflowText}>+{summary.members.length - 3}</Text>
                   </View>
-                ))}
-                {youOwe.map(item => (
-                  <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceDetailRow}>
-                    <Text style={styles.balanceDetailText}>
-                      You owe {item.toDisplayName}
-                    </Text>
-                    <Text style={styles.balanceDetailNegative}>
-                      {formatCurrency(item.amount, event.currency)}
-                    </Text>
-                  </View>
-                ))}
-                {owesYou.length === 0 && youOwe.length === 0 ? (
-                  <Text style={styles.eventMeta}>No payments needed right now.</Text>
                 ) : null}
               </View>
-            ) : null}
-          </AppCard>
-        </Pressable>
-      ) : null}
-
-      <View style={styles.compactActionList}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Balances', {eventId})}
-          style={({pressed}) => [pressed ? styles.pressed : null]}>
-          <AppCard>
-            <View style={styles.compactActionRow}>
-              <View style={[styles.summaryIconBubble, styles.summaryIconBalances]}>
-                <AppIcon name="balances" tone="default" size={16} />
-              </View>
-              <View style={styles.eventCopy}>
-                <Text style={styles.compactActionTitle}>Balances</Text>
-                <Text style={styles.eventMeta}>See who is up or down</Text>
-              </View>
-            </View>
-          </AppCard>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Settlement', {eventId})}
-          style={({pressed}) => [pressed ? styles.pressed : null]}>
-          <AppCard>
-            <View style={styles.compactActionRow}>
-              <View style={[styles.summaryIconBubble, styles.summaryIconSettlement]}>
-                <AppIcon name="settlement" tone="default" size={16} />
-              </View>
-              <View style={styles.eventCopy}>
-                <Text style={styles.compactActionTitle}>Settlement</Text>
-                <Text style={styles.eventMeta}>Suggested payback plan</Text>
-              </View>
-            </View>
-          </AppCard>
-        </Pressable>
-      </View>
-
-      <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
-      {summary.expenses.length === 0 ? (
-        <EmptyState
-          title="No expenses yet"
-          body="Record the first shared purchase to start balance tracking."
-        />
-      ) : null}
-      {summary.expenses
-        .slice()
-        .reverse()
-        .slice(0, 4)
-        .map(expense => {
-          const payer = summary.members.find(member => member.id === expense.paidByMemberId);
-          return (
-            <Pressable
-              key={expense.id}
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('AddExpense', {eventId, expenseId: expense.id})}
-              style={({pressed}) => [pressed ? styles.pressed : null]}>
-              <AppCard>
-                <View style={styles.eventHeaderRow}>
-                  <View style={styles.eventCopy}>
-                    <Text style={styles.eventName}>{expense.title}</Text>
-                    <Text style={styles.eventMeta}>
-                      {payer?.displayName || 'Unknown payer'} •{' '}
-                      {formatDateLabel(expense.createdAt)}
-                      {expense.updatedAt !== expense.createdAt ? ' • Edited' : ''}
-                    </Text>
-                  </View>
-                  <DataPill label={formatCurrency(expense.amount, event.currency)} />
-                </View>
-              </AppCard>
             </Pressable>
-          );
-        })}
-    </AppScreen>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('CentralFund', {eventId})}
+              style={({pressed}) => [
+                styles.dashboardMetricCard,
+                styles.dashboardMetricCardSoft,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text style={styles.metricLabelStrong}>Fund contributed</Text>
+              <Text style={styles.metricText}>{formatCurrency(fundTotal, event.currency)}</Text>
+              <Text style={styles.metricFootnote}>Tap to manage the shared fund</Text>
+            </Pressable>
+          </View>
+        </AppCard>
+
+        {currentBalance ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setShowBalanceDetails(true)}
+            style={({pressed}) => [pressed ? styles.pressed : null]}>
+            <AppCard>
+              <View style={styles.balanceSummaryRow}>
+                <View style={styles.balanceLead}>
+                  <View
+                    style={[
+                      styles.summaryIconBubble,
+                      currentBalance.net > 0
+                        ? styles.summaryIconPositive
+                        : currentBalance.net < 0
+                          ? styles.summaryIconNegative
+                          : styles.summaryIconNeutral,
+                    ]}>
+                    <AppIcon name="balances" tone="accent" size={16} />
+                  </View>
+                  <View style={styles.eventCopy}>
+                    <Text style={styles.balanceTitle}>My balance</Text>
+                    <Text style={styles.eventMeta}>{balanceLabel}</Text>
+                  </View>
+                </View>
+                <View style={styles.balanceAmountWrap}>
+                  <Text
+                    style={[
+                      styles.balanceAmount,
+                      currentBalance.net > 0
+                        ? styles.balanceAmountPositive
+                        : currentBalance.net < 0
+                          ? styles.balanceAmountNegative
+                          : styles.balanceAmountNeutral,
+                    ]}>
+                    {formatCurrency(Math.abs(currentBalance.net), event.currency)}
+                  </Text>
+                  <Text style={styles.balanceHint}>Tap for details</Text>
+                </View>
+              </View>
+            </AppCard>
+          </Pressable>
+        ) : null}
+
+        <View style={styles.compactActionList}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Balances', {eventId})}
+            style={({pressed}) => [pressed ? styles.pressed : null]}>
+            <AppCard>
+              <View style={styles.compactActionRow}>
+                <View style={[styles.summaryIconBubble, styles.summaryIconBalances]}>
+                  <AppIcon name="balances" tone="accent" size={16} />
+                </View>
+                <View style={styles.eventCopy}>
+                  <Text style={styles.compactActionTitle}>Balances</Text>
+                  <Text style={styles.eventMeta}>See who is up or down</Text>
+                </View>
+              </View>
+            </AppCard>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Settlement', {eventId})}
+            style={({pressed}) => [pressed ? styles.pressed : null]}>
+            <AppCard>
+              <View style={styles.compactActionRow}>
+                <View style={[styles.summaryIconBubble, styles.summaryIconSettlement]}>
+                  <AppIcon name="settlement" tone="accent" size={16} />
+                </View>
+                <View style={styles.eventCopy}>
+                  <Text style={styles.compactActionTitle}>Settlement</Text>
+                  <Text style={styles.eventMeta}>Suggested payback plan</Text>
+                </View>
+              </View>
+            </AppCard>
+          </Pressable>
+        </View>
+
+        <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
+        {summary.expenses.length === 0 ? (
+          <EmptyState
+            title="No expenses yet"
+            body="Record the first shared purchase to start balance tracking."
+          />
+        ) : null}
+        {summary.expenses
+          .slice()
+          .reverse()
+          .slice(0, 4)
+          .map(expense => {
+            const payer = summary.members.find(member => member.id === expense.paidByMemberId);
+            return (
+              <Pressable
+                key={expense.id}
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('AddExpense', {eventId, expenseId: expense.id})}
+                style={({pressed}) => [pressed ? styles.pressed : null]}>
+                <AppCard>
+                  <View style={styles.eventHeaderRow}>
+                    <View style={styles.eventCopy}>
+                      <Text style={styles.eventName}>{expense.title}</Text>
+                      <Text style={styles.eventMeta}>
+                        {payer?.displayName || 'Unknown payer'} • {formatDateLabel(expense.createdAt)}
+                        {expense.updatedAt !== expense.createdAt ? ' • Edited' : ''}
+                      </Text>
+                    </View>
+                    <DataPill label={formatCurrency(expense.amount, event.currency)} />
+                  </View>
+                </AppCard>
+              </Pressable>
+            );
+          })}
+      </AppScreen>
+      <AppModal
+        visible={showBalanceDetails}
+        title="My balance"
+        subtitle="See who owes you and who you still need to pay."
+        onClose={() => setShowBalanceDetails(false)}>
+        <View style={styles.balanceSheetSummary}>
+          <Text style={styles.balanceSheetSummaryLabel}>Net position</Text>
+          <Text
+            style={[
+              styles.balanceSheetSummaryAmount,
+              currentBalance?.net && currentBalance.net > 0
+                ? styles.balanceAmountPositive
+                : currentBalance?.net && currentBalance.net < 0
+                  ? styles.balanceAmountNegative
+                  : styles.balanceAmountNeutral,
+            ]}>
+            {formatCurrency(Math.abs(currentBalance?.net ?? 0), event.currency)}
+          </Text>
+        </View>
+
+        <View style={styles.balanceSheetSection}>
+          <SectionHeading title="People who owe me" detail={`${owesYou.length}`} />
+          {owesYou.length === 0 ? (
+            <Text style={styles.balanceSheetEmpty}>Nobody owes you right now.</Text>
+          ) : null}
+          {owesYou.map(item => (
+            <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
+              <View style={styles.balanceSheetRowCopy}>
+                <Text style={styles.balanceSheetRowTitle}>{item.fromDisplayName}</Text>
+                <Text style={styles.balanceSheetRowSubtitle}>Needs to pay you</Text>
+              </View>
+              <Text style={styles.balanceDetailPositive}>
+                {formatCurrency(item.amount, event.currency)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.balanceSheetSection}>
+          <SectionHeading title="People I owe" detail={`${youOwe.length}`} />
+          {youOwe.length === 0 ? (
+            <Text style={styles.balanceSheetEmpty}>You do not owe anyone right now.</Text>
+          ) : null}
+          {youOwe.map(item => (
+            <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
+              <View style={styles.balanceSheetRowCopy}>
+                <Text style={styles.balanceSheetRowTitle}>{item.toDisplayName}</Text>
+                <Text style={styles.balanceSheetRowSubtitle}>You need to pay</Text>
+              </View>
+              <Text style={styles.balanceDetailNegative}>
+                {formatCurrency(item.amount, event.currency)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </AppModal>
+    </>
   );
 }
 
@@ -629,13 +656,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       subtitle="Keep registered and placeholder members in one shared roster."
       headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
-      footerOverlay={
-        toastMessage ? (
-          <View pointerEvents="none" style={styles.toast}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
-          </View>
-        ) : null
-      }>
+      footerOverlay={toastMessage ? <AppToast message={toastMessage} /> : null}>
       <AppCard>
         <SectionHeading title="Add member manually" />
         <AppInput
@@ -654,7 +675,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           }}
         />
       </AppCard>
-      <AppCard>
+
+      <AppCard tone="warm">
         <SectionHeading title="Event code" />
         <Text style={styles.eventMeta}>
           Generate a code for this event, then copy and share it with members.
@@ -680,7 +702,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
                   styles.refreshButton,
                   pressed ? styles.pressed : null,
                 ]}>
-                <Text style={styles.refreshButtonIcon}>↻</Text>
+                <AppIcon name="refresh" tone="inverted" size={16} />
               </Pressable>
             ) : null}
           </View>
@@ -739,6 +761,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         />
         <InlineError message={error ?? undefined} />
       </AppCard>
+
       {summary.members.map(member => (
         <AppCard key={member.id}>
           <View style={styles.eventHeaderRow}>
@@ -759,18 +782,17 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
 const styles = StyleSheet.create({
   heroValue: {
     ...typography.display,
-    fontSize: 30,
-    lineHeight: 34,
+    color: palette.primary,
   },
   heroLabel: {
     ...typography.body,
     color: palette.inkMuted,
   },
   headerActionButton: {
-    minHeight: 38,
+    minHeight: 40,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
-    backgroundColor: '#C9453E',
+    backgroundColor: palette.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -786,15 +808,7 @@ const styles = StyleSheet.create({
   },
   actionRowItem: {
     flex: 1,
-    minWidth: 140,
-  },
-  tileGrid: {
-    gap: spacing.sm,
-  },
-  tileRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
+    minWidth: 148,
   },
   eventHeaderRow: {
     flexDirection: 'row',
@@ -808,44 +822,55 @@ const styles = StyleSheet.create({
   },
   eventName: {
     ...typography.title,
-    fontSize: 20,
+    fontSize: 19,
     lineHeight: 24,
   },
   eventMeta: {
     ...typography.eyebrow,
+    color: palette.inkMuted,
   },
-  eventMetrics: {
+  metricRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  metricGroup: {
+  metricPanel: {
     flex: 1,
     gap: spacing.xs,
     padding: spacing.md,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-  },
-  metricGroupMembers: {
-    backgroundColor: '#F4FBFF',
-  },
-  metricGroupFund: {
-    backgroundColor: '#F4FAF2',
+    backgroundColor: palette.surfaceSoft,
   },
   metricLabel: {
     ...typography.eyebrow,
+  },
+  metricText: {
+    ...typography.bodyStrong,
+    fontSize: 16,
+    color: palette.ink,
+  },
+  dashboardMetricRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dashboardMetricCard: {
+    flex: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+  },
+  dashboardMetricCardSoft: {
+    backgroundColor: '#F1F7F4',
   },
   metricLabelStrong: {
     ...typography.bodyStrong,
     color: palette.inkMuted,
   },
-  metricText: {
-    ...typography.bodyStrong,
-  },
   metricTextLarge: {
     ...typography.title,
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '700',
   },
   metricFootnote: {
     ...typography.eyebrow,
@@ -856,22 +881,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  metricAddButton: {
+  metricMiniButton: {
     width: 28,
     height: 28,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E8F1FF',
+    backgroundColor: palette.surface,
   },
   avatarStackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   avatarChip: {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -879,17 +904,18 @@ const styles = StyleSheet.create({
     borderColor: palette.surface,
   },
   avatarOverflowChip: {
-    minWidth: 32,
-    height: 28,
+    minWidth: 34,
+    height: 30,
     paddingHorizontal: spacing.sm,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.xs,
-    backgroundColor: '#EEF2F4',
+    backgroundColor: palette.surface,
   },
   avatarText: {
     ...typography.eyebrow,
+    fontWeight: '700',
   },
   avatarOverflowText: {
     ...typography.eyebrow,
@@ -908,71 +934,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryIconBubble: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  summaryIconGlyph: {
-    ...typography.bodyStrong,
-    fontSize: 18,
-  },
   summaryIconPositive: {
-    backgroundColor: '#E6F7EC',
+    backgroundColor: '#E7F5EB',
   },
   summaryIconNegative: {
-    backgroundColor: '#FCE7E5',
+    backgroundColor: '#FCE8E5',
   },
   summaryIconNeutral: {
-    backgroundColor: '#ECEFF1',
+    backgroundColor: '#EFF2F4',
   },
   summaryIconBalances: {
-    backgroundColor: '#F1EAFF',
+    backgroundColor: '#E8F0FE',
   },
   summaryIconSettlement: {
-    backgroundColor: '#EEF2F4',
+    backgroundColor: '#EEF4F1',
   },
   balanceTitle: {
     ...typography.title,
-    fontSize: 22,
+    fontSize: 20,
     lineHeight: 26,
+  },
+  balanceAmountWrap: {
+    alignItems: 'flex-end',
+    gap: 2,
   },
   balanceAmount: {
     ...typography.title,
     fontSize: 24,
-    lineHeight: 28,
+    lineHeight: 30,
+    fontWeight: '700',
   },
   balanceAmountPositive: {
-    color: '#1E8E4D',
+    color: palette.success,
   },
   balanceAmountNegative: {
-    color: '#C9453E',
+    color: palette.warning,
   },
   balanceAmountNeutral: {
     color: palette.inkMuted,
   },
-  balanceDetails: {
-    gap: spacing.sm,
-    paddingTop: spacing.md,
-  },
-  balanceDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  balanceDetailText: {
-    ...typography.body,
-    flex: 1,
-  },
-  balanceDetailPositive: {
-    ...typography.bodyStrong,
-    color: '#1E8E4D',
-  },
-  balanceDetailNegative: {
-    ...typography.bodyStrong,
-    color: '#C9453E',
+  balanceHint: {
+    ...typography.eyebrow,
   },
   compactActionList: {
     gap: spacing.sm,
@@ -984,13 +992,63 @@ const styles = StyleSheet.create({
   },
   compactActionTitle: {
     ...typography.title,
-    fontSize: 20,
+    fontSize: 19,
     lineHeight: 24,
+  },
+  balanceSheetSummary: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: palette.surfaceSoft,
+  },
+  balanceSheetSummaryLabel: {
+    ...typography.eyebrow,
+  },
+  balanceSheetSummaryAmount: {
+    ...typography.display,
+    fontSize: 30,
+    lineHeight: 36,
+  },
+  balanceSheetSection: {
+    gap: spacing.sm,
+  },
+  balanceSheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: palette.surfaceMuted,
+  },
+  balanceSheetRowCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  balanceSheetRowTitle: {
+    ...typography.bodyStrong,
+  },
+  balanceSheetRowSubtitle: {
+    ...typography.eyebrow,
+  },
+  balanceSheetEmpty: {
+    ...typography.body,
+    color: palette.inkMuted,
+  },
+  balanceDetailPositive: {
+    ...typography.bodyStrong,
+    color: palette.success,
+  },
+  balanceDetailNegative: {
+    ...typography.bodyStrong,
+    color: palette.warning,
   },
   inviteCodeCard: {
     padding: spacing.md,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.border,
     gap: spacing.xs,
   },
   inviteCodeHeader: {
@@ -1004,40 +1062,18 @@ const styles = StyleSheet.create({
   },
   inviteCodeValue: {
     ...typography.title,
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
   },
   refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.ink,
+    backgroundColor: palette.primary,
     flexShrink: 0,
   },
-  refreshButtonIcon: {
-    ...typography.bodyStrong,
-    color: palette.surface,
-    fontSize: 18,
-    lineHeight: 18,
-  },
-  toast: {
-    alignSelf: 'center',
-    backgroundColor: palette.ink,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    shadowColor: palette.ink,
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: {width: 0, height: 8},
-    elevation: 6,
-  },
-  toastText: {
-    ...typography.bodyStrong,
-    color: palette.surface,
-  },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.82,
   },
 });

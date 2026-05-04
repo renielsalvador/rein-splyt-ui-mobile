@@ -15,19 +15,20 @@ const iconMap = {
   back: '‹',
   menu: '⋯',
   create: '+',
-  join: '#',
-  members: '@',
-  expense: '+',
-  fund: '$',
-  balances: '=',
+  join: '⌁',
+  members: '◌',
+  expense: '＋',
+  fund: '◍',
+  balances: '⊜',
   settlement: '⇄',
-  settings: '⚙',
-  signout: '↪',
-  person: '•',
+  settings: '⌘',
+  signout: '↗',
+  person: '◦',
   invite: '⌁',
-  event: '◌',
+  event: '○',
   check: '✓',
-  close: '×',
+  close: '✕',
+  refresh: '↻',
 } as const;
 
 export type AppIconName = keyof typeof iconMap;
@@ -52,7 +53,8 @@ export function AppScreen({
     <SafeAreaView style={styles.screen}>
       <ScrollView
         contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="always">
+        contentInsetAdjustmentBehavior="always"
+        keyboardShouldPersistTaps="handled">
         {headerVariant === 'detail' ? (
           <View style={styles.detailHeader}>
             <View style={styles.detailHeaderRow}>
@@ -130,8 +132,8 @@ export function AppButton({
         {icon ? (
           <AppIcon
             name={icon}
-            tone={variant === 'primary' ? 'inverted' : 'default'}
-            size={16}
+            tone={variant === 'primary' ? 'inverted' : 'accent'}
+            size={15}
           />
         ) : null}
         <Text
@@ -253,11 +255,12 @@ export function AppModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
         <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
           <View style={[surfaces.card, styles.modalCard]}>
             <View style={styles.modalHeader}>
               <View style={styles.modalCopy}>
@@ -278,6 +281,14 @@ export function AppModal({
   );
 }
 
+export function AppToast({message}: {message: string}) {
+  return (
+    <View pointerEvents="none" style={styles.toast}>
+      <Text style={styles.toastText}>{message}</Text>
+    </View>
+  );
+}
+
 export function AppIcon({
   name,
   size = 18,
@@ -287,22 +298,17 @@ export function AppIcon({
   size?: number;
   tone?: 'default' | 'muted' | 'inverted' | 'accent';
 }) {
+  const color =
+    tone === 'inverted'
+      ? palette.surface
+      : tone === 'muted'
+        ? palette.inkMuted
+        : tone === 'accent'
+          ? palette.accent
+          : palette.ink;
+
   return (
-    <Text
-      style={[
-        styles.icon,
-        {
-          fontSize: size,
-          color:
-            tone === 'inverted'
-              ? palette.surface
-              : tone === 'muted'
-                ? palette.inkMuted
-                : tone === 'accent'
-                  ? palette.accent
-                  : palette.ink,
-        },
-      ]}>
+    <Text style={[styles.icon, {fontSize: size, color}]}>
       {iconMap[name]}
     </Text>
   );
@@ -323,7 +329,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       style={({pressed}) => [styles.iconButton, pressed ? styles.buttonPressed : null]}>
-      <AppIcon name={icon} />
+      <AppIcon name={icon} tone="accent" />
     </Pressable>
   );
 }
@@ -369,7 +375,7 @@ export function AppMenu({
                 item.disabled ? styles.buttonDisabled : null,
                 pressed ? styles.buttonPressed : null,
               ]}>
-              <AppIcon name={item.icon} tone="muted" />
+              <AppIcon name={item.icon} tone="accent" />
               <Text style={styles.menuItemLabel}>{item.label}</Text>
             </Pressable>
           ))}
@@ -451,16 +457,18 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
+    padding: spacing.md,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xxxl,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   header: {
     gap: spacing.sm,
+    paddingTop: spacing.xs,
   },
   detailHeader: {
     gap: spacing.sm,
+    paddingTop: spacing.xs,
   },
   detailHeaderRow: {
     flexDirection: 'row',
@@ -496,84 +504,46 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.display,
-    fontSize: 32,
-    lineHeight: 36,
   },
   detailTitle: {
     ...typography.title,
-    fontSize: 26,
-    lineHeight: 30,
-  },
-  footerOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    bottom: spacing.xl,
-    pointerEvents: 'box-none',
-  },
-  modalRoot: {
-    flex: 1,
-    backgroundColor: 'rgba(12, 35, 42, 0.18)',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFill,
-  },
-  modalSheet: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    gap: spacing.lg,
-    width: '100%',
-    maxWidth: 420,
-    padding: spacing.xl,
-  },
-  modalBody: {
-    gap: spacing.md,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  modalCopy: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  modalTitle: {
-    ...typography.title,
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
   },
   subtitle: {
     ...typography.body,
     color: palette.inkMuted,
   },
+  footerOverlay: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.xl,
+    pointerEvents: 'box-none',
+  },
   card: {
-    padding: spacing.lg,
+    padding: spacing.md,
     gap: spacing.md,
   },
   cardWarm: {
-    backgroundColor: palette.canvasWarm,
+    backgroundColor: palette.surfaceSoft,
   },
   cardAccent: {
     backgroundColor: palette.accentSoft,
+    borderColor: 'rgba(47, 111, 87, 0.12)',
   },
   button: {
-    minHeight: 48,
-    borderRadius: radii.md,
+    minHeight: 50,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
   },
   buttonPrimary: {
-    backgroundColor: palette.ink,
-    borderColor: palette.ink,
+    backgroundColor: palette.primary,
+    borderColor: palette.primary,
   },
   buttonSecondary: {
     backgroundColor: palette.surface,
@@ -588,6 +558,7 @@ const styles = StyleSheet.create({
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
   },
   buttonText: {
@@ -597,72 +568,62 @@ const styles = StyleSheet.create({
     color: palette.surface,
   },
   buttonTextSecondary: {
-    color: palette.ink,
+    color: palette.primary,
   },
   field: {
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   fieldLabel: {
     ...typography.bodyStrong,
+    fontSize: 14,
+    color: palette.inkMuted,
   },
   input: {
+    minHeight: 52,
     borderWidth: 1,
     borderColor: palette.border,
-    backgroundColor: palette.surface,
+    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     ...typography.body,
   },
   inputMultiline: {
-    minHeight: 96,
+    minHeight: 108,
     textAlignVertical: 'top',
   },
   errorText: {
     ...typography.eyebrow,
-    color: '#A33535',
+    color: palette.warning,
   },
   sectionHeading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
   },
   sectionTitle: {
     ...typography.title,
     fontSize: 20,
-    lineHeight: 24,
+    lineHeight: 26,
   },
   sectionDetail: {
     ...typography.eyebrow,
-    color: palette.accent,
-  },
-  icon: {
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    color: palette.primary,
   },
   pill: {
     alignSelf: 'flex-start',
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: palette.surfaceMuted,
+    backgroundColor: palette.surfaceSoft,
   },
   pillAccent: {
-    backgroundColor: palette.ink,
+    backgroundColor: palette.primary,
   },
   pillText: {
     ...typography.eyebrow,
-    color: palette.ink,
+    color: palette.primary,
   },
   pillTextAccent: {
     color: palette.surface,
@@ -670,26 +631,105 @@ const styles = StyleSheet.create({
   emptyTitle: {
     ...typography.title,
     fontSize: 20,
-    lineHeight: 24,
+    lineHeight: 26,
   },
   emptyBody: {
     ...typography.body,
     color: palette.inkMuted,
+  },
+  modalRoot: {
+    flex: 1,
+    backgroundColor: 'rgba(28, 28, 30, 0.22)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
+  modalSheet: {
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  modalHandle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 5,
+    borderRadius: radii.pill,
+    backgroundColor: '#C9CDD2',
+    marginBottom: spacing.xs,
+  },
+  modalCard: {
+    width: '100%',
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    borderBottomLeftRadius: radii.xl,
+    borderBottomRightRadius: radii.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  modalCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  modalTitle: {
+    ...typography.title,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+  modalBody: {
+    gap: spacing.md,
+  },
+  toast: {
+    alignSelf: 'center',
+    backgroundColor: palette.ink,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    shadowColor: palette.shadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 6,
+  },
+  toastText: {
+    ...typography.bodyStrong,
+    color: palette.surface,
+  },
+  icon: {
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuWrap: {
     position: 'relative',
   },
   menuCard: {
     position: 'absolute',
-    top: 48,
+    top: 52,
     right: 0,
-    minWidth: 176,
+    minWidth: 188,
     padding: spacing.xs,
     gap: spacing.xs,
     zIndex: 10,
   },
   menuItem: {
-    minHeight: 44,
+    minHeight: 46,
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     flexDirection: 'row',
@@ -700,15 +740,15 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
   },
   actionTile: {
-    minHeight: 136,
-    padding: spacing.lg,
-    gap: spacing.lg,
+    minHeight: 132,
+    padding: spacing.md,
+    gap: spacing.md,
     flex: 1,
   },
   actionTileIcon: {
     width: 42,
     height: 42,
-    borderRadius: radii.md,
+    borderRadius: 14,
     backgroundColor: palette.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
@@ -719,13 +759,13 @@ const styles = StyleSheet.create({
   actionTileTitle: {
     ...typography.bodyStrong,
     fontSize: 18,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   actionTileSubtitle: {
     ...typography.eyebrow,
   },
   selectableRow: {
-    minHeight: 64,
+    minHeight: 66,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: palette.border,
@@ -739,7 +779,7 @@ const styles = StyleSheet.create({
   },
   selectableRowSelected: {
     backgroundColor: palette.accentSoft,
-    borderColor: palette.accent,
+    borderColor: 'rgba(47, 111, 87, 0.35)',
   },
   selectableRowLead: {
     flex: 1,
@@ -748,9 +788,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   selectableRowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
+    width: 38,
+    height: 38,
+    borderRadius: 14,
     backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -776,7 +816,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectionMarkActive: {
-    backgroundColor: palette.ink,
-    borderColor: palette.ink,
+    backgroundColor: palette.primary,
+    borderColor: palette.primary,
   },
 });

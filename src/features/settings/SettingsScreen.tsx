@@ -9,7 +9,7 @@ import {
   ScreenBackButton,
   SectionHeading,
 } from '../../components/ui';
-import {typography} from '../../theme/tokens';
+import {palette, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
 export function SettingsScreen({navigation}: ScreenProps<'Settings'>) {
@@ -23,8 +23,8 @@ export function SettingsScreen({navigation}: ScreenProps<'Settings'>) {
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
         <SectionHeading title="Account" />
-        <Text style={typography.title}>{currentUser?.displayName ?? 'Traveler'}</Text>
-        <Text style={typography.body}>{currentUser?.email ?? 'No email available'}</Text>
+        <Text style={styles.name}>{currentUser?.displayName ?? 'Traveler'}</Text>
+        <Text style={styles.email}>{currentUser?.email ?? 'No email available'}</Text>
         <DataPill label="Signed in" tone="accent" />
       </AppCard>
 
@@ -40,3 +40,14 @@ export function SettingsScreen({navigation}: ScreenProps<'Settings'>) {
     </AppScreen>
   );
 }
+
+const styles = {
+  name: {
+    ...typography.title,
+    color: palette.primary,
+  },
+  email: {
+    ...typography.body,
+    color: palette.inkMuted,
+  },
+};

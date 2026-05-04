@@ -15,7 +15,7 @@ import {
 } from '../../components/ui';
 import {expenseSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
-import {typography} from '../../theme/tokens';
+import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
 export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>) {
@@ -208,8 +208,8 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       />
 
       <AppCard tone="warm">
-        <Text style={{...typography.bodyStrong}}>Preview</Text>
-        <Text style={{...typography.body}}>
+        <Text style={styles.previewTitle}>Preview</Text>
+        <Text style={styles.previewBody}>
           Total {formatCurrency(toAmount(amount), summary.event.currency)} split across {selectedMemberIds.length || 0} participants.
         </Text>
         {selectedMemberIds.length > 0 ? (
@@ -228,7 +228,15 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
 const styles = StyleSheet.create({
   toggleRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
     flexWrap: 'wrap',
+  },
+  previewTitle: {
+    ...typography.bodyStrong,
+    color: palette.primary,
+  },
+  previewBody: {
+    ...typography.body,
+    color: palette.inkMuted,
   },
 });

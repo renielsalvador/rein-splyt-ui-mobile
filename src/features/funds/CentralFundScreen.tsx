@@ -15,7 +15,7 @@ import {
 } from '../../components/ui';
 import {contributionSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
-import {spacing, typography} from '../../theme/tokens';
+import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
 
 export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'>) {
@@ -96,7 +96,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
             summary.event.currency,
           )}
         </Text>
-        <Text style={{...typography.body}}>Available shared fund balance</Text>
+        <Text style={styles.heroLabel}>Available shared fund balance</Text>
         <View style={styles.row}>
           <DataPill label={`In: ${formatCurrency(contributionTotal, summary.event.currency)}`} />
           <DataPill label={`Out: ${formatCurrency(fundExpenseTotal, summary.event.currency)}`} />
@@ -129,7 +129,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
             <View style={styles.betweenRow}>
               <View>
                 <Text style={styles.memberName}>{member?.displayName || 'Unknown member'}</Text>
-                <Text style={{...typography.eyebrow}}>Contribution</Text>
+                <Text style={styles.contributionLabel}>Contribution</Text>
               </View>
               <DataPill label={formatCurrency(contribution.amount, summary.event.currency)} tone="accent" />
             </View>
@@ -143,21 +143,30 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
 const styles = StyleSheet.create({
   heroValue: {
     ...typography.display,
-    fontSize: 30,
-    lineHeight: 34,
+    color: palette.primary,
+  },
+  heroLabel: {
+    ...typography.body,
+    color: palette.inkMuted,
   },
   row: {
     flexDirection: 'row',
     gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   betweenRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
   },
   memberName: {
     ...typography.title,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 19,
+    lineHeight: 24,
+  },
+  contributionLabel: {
+    ...typography.eyebrow,
+    color: palette.inkMuted,
   },
 });
