@@ -18,9 +18,14 @@ export function AppButton({
   variant?: ButtonVariant;
   disabled?: boolean;
   icon?: AppIconName;
-  size?: 'default' | 'sm';
+  size?: 'default' | 'sm' | 'compact';
 }) {
-  const baseStyle = size === 'sm' ? styles.buttonSm : styles.button;
+  const baseStyle =
+    size === 'sm'
+      ? styles.buttonSm
+      : size === 'compact'
+        ? styles.buttonCompact
+        : styles.button;
 
   const variantStyle =
     variant === 'primary'

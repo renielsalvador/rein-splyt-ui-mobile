@@ -179,6 +179,7 @@ export function HomeScreen({
               <AppButton
                 label="New event"
                 icon="create"
+                size="compact"
                 onPress={() => navigation.navigate('CreateEvent')}
               />
             </View>
@@ -187,6 +188,7 @@ export function HomeScreen({
                 label="Join code"
                 icon="join"
                 variant="secondary"
+                size="compact"
                 onPress={() => {
                   setJoinFormError(undefined);
                   setJoinModalVisible(true);

@@ -54,18 +54,25 @@ export const styles = StyleSheet.create({
 
   // ─── buttons ────────────────────────────────────────────────────────────────
   button: {
-    height: 52,
-    borderRadius: radii.pill,
+    height: 48,
+    borderRadius: radii.md,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
   },
   buttonSm: {
-    height: 44,
-    borderRadius: radii.pill,
+    height: 40,
+    borderRadius: radii.md,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  buttonCompact: {
+    height: 44,
+    borderRadius: radii.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
   },
   buttonPrimary: {
     backgroundColor: palette.primary,
