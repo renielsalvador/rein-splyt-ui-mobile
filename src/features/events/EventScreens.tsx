@@ -22,11 +22,11 @@ import {
 } from '../../components/ui';
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
-import {palette} from '../../theme/tokens';
 import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
 import {
   BalanceDetailsContent,
   DashboardBalanceSummaryCard,
+  DashboardFundOverviewCard,
   EventIconPicker,
   HomeEventCard,
   MemberRosterList,
@@ -613,13 +613,21 @@ export function EventDashboardScreen({
     setEditIcon(event.icon);
   }, [event]);
 
-  const totalSpend = useMemo(
-    () => summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0,
-    [summary],
-  );
   const fundTotal = useMemo(
     () => summary?.contributions.reduce((sum, item) => sum + item.amount, 0) ?? 0,
     [summary],
+  );
+  const fundSpent = useMemo(
+    () =>
+      summary?.expenses
+        .filter(expense => expense.paymentSource === 'central_fund')
+        .reduce((sum, expense) => sum + expense.amount, 0) ?? 0,
+    [summary],
+  );
+  const availableFund = useMemo(() => fundTotal - fundSpent, [fundSpent, fundTotal]);
+  const fundProgressRatio = useMemo(
+    () => (fundTotal > 0 ? Math.min(fundSpent / fundTotal, 1) : 0),
+    [fundSpent, fundTotal],
   );
   const currentMember = useMemo(
     () => summary?.members.find(member => member.userId === currentUser?.id),
@@ -704,41 +712,14 @@ export function EventDashboardScreen({
               <Text style={styles.dashboardEditText}>Edit</Text>
             </Pressable>
           </View>
-
-          <Text style={styles.dashboardMemberCount}>
-            {summary.members.length} member{summary.members.length === 1 ? '' : 's'}
-          </Text>
-
-          <View style={styles.dashboardMetrics}>
-            <View style={styles.dashboardMetricItem}>
-              <Text style={styles.dashboardMetricLabel}>Spend</Text>
-              <Text style={styles.dashboardMetricValue}>
-                {formatCurrency(totalSpend, event.currency)}
-              </Text>
-            </View>
-            <View style={styles.dashboardMetricItem}>
-              <Text style={styles.dashboardMetricLabel}>Fund</Text>
-              <Text style={styles.dashboardMetricValue}>
-                {formatCurrency(fundTotal, event.currency)}
-              </Text>
-            </View>
-            {currentBalance ? (
-              <View style={styles.dashboardMetricItem}>
-                <Text style={styles.dashboardMetricLabel}>My balance</Text>
-                <Text
-                  style={[
-                    styles.dashboardMetricValue,
-                    currentBalance.net > 0
-                      ? styles.dashboardMetricPositive
-                      : currentBalance.net < 0
-                        ? {color: palette.danger}
-                        : null,
-                  ]}>
-                  {formatCurrency(Math.abs(currentBalance.net), event.currency)}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          <DashboardFundOverviewCard
+            currency={event.currency}
+            availableAmount={availableFund}
+            contributedAmount={fundTotal}
+            spentAmount={fundSpent}
+            progressRatio={fundProgressRatio}
+            onPress={() => navigation.navigate('CentralFund', {eventId})}
+          />
         </AppCard>
 
         {currentBalance ? (

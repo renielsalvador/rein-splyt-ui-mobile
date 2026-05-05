@@ -289,6 +289,73 @@ export function DashboardBalanceSummaryCard({
   );
 }
 
+export function DashboardFundOverviewCard({
+  currency,
+  availableAmount,
+  contributedAmount,
+  spentAmount,
+  progressRatio,
+  onPress,
+}: {
+  currency: CurrencyCode;
+  availableAmount: number;
+  contributedAmount: number;
+  spentAmount: number;
+  progressRatio: number;
+  onPress: () => void;
+}) {
+  const clampedRatio = Math.min(Math.max(progressRatio, 0), 1);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({pressed}) => [pressed && styles.pressed]}>
+      <View style={componentStyles.fundOverviewBlock}>
+        <View style={componentStyles.fundOverviewHeader}>
+          <View style={componentStyles.fundOverviewTitleBlock}>
+            <Text style={componentStyles.fundOverviewLabel}>Available balance</Text>
+            <Text style={componentStyles.fundOverviewAmount}>
+              {formatCurrency(availableAmount, currency)}
+            </Text>
+            <Text style={componentStyles.fundOverviewMeta}>
+              {formatCurrency(contributedAmount, currency)} contributed ·{' '}
+            </Text>
+          </View>
+          <View style={componentStyles.fundOverviewAction}>
+            <DataPill label="Manage fund" tone="outline" />
+          </View>
+        </View>
+
+        <View style={componentStyles.fundProgressTrack}>
+          <View
+            style={[
+              componentStyles.fundProgressSpent,
+              spentAmount > 0 ? null : componentStyles.fundProgressSpentHidden,
+              {flex: clampedRatio},
+            ]}
+          />
+          <View
+            style={[
+              componentStyles.fundProgressAvailable,
+              {flex: Math.max(1 - clampedRatio, 0.0001)},
+            ]}
+          />
+        </View>
+
+        <View style={componentStyles.fundProgressLabels}>
+          <Text style={componentStyles.fundProgressLabel}>
+            Spent · {formatCurrency(spentAmount, currency)}
+          </Text>
+          <Text style={componentStyles.fundProgressLabel}>
+            Available · {formatCurrency(availableAmount, currency)}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export function DashboardShortcutCard({
   iconName,
   title,
@@ -530,6 +597,64 @@ const componentStyles = StyleSheet.create({
   },
   balanceHint: {
     ...typography.caption,
+    color: palette.inkMuted,
+  },
+  fundOverviewBlock: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  fundOverviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  fundOverviewTitleBlock: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  fundOverviewLabel: {
+    ...typography.label,
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  fundOverviewAmount: {
+    ...typography.display,
+    fontSize: 34,
+    lineHeight: 40,
+    color: palette.ink,
+  },
+  fundOverviewMeta: {
+    ...typography.body,
+    color: palette.inkMuted,
+  },
+  fundOverviewAction: {
+    paddingTop: spacing.xs,
+  },
+  fundProgressTrack: {
+    flexDirection: 'row',
+    height: 10,
+    borderRadius: radii.pill,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(47,111,87,0.12)',
+  },
+  fundProgressSpent: {
+    backgroundColor: palette.primary,
+  },
+  fundProgressSpentHidden: {
+    opacity: 0,
+  },
+  fundProgressAvailable: {
+    backgroundColor: palette.greenAccent,
+  },
+  fundProgressLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  fundProgressLabel: {
+    ...typography.body,
     color: palette.inkMuted,
   },
   shortcutRow: {
