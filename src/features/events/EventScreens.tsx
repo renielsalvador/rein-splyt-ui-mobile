@@ -1,17 +1,16 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Clipboard, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Clipboard, Pressable, ScrollView, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
+import type {ScreenProps} from '../../app/navigation';
 import {
   AppButton,
   AppCard,
   AppIcon,
-  type AppIconName,
   AppInput,
   AppMenu,
   AppModal,
   AppScreen,
   AppToast,
-  DataPill,
   EmptyState,
   HeaderMenuButton,
   InlineError,
@@ -22,124 +21,27 @@ import {
 } from '../../components/ui';
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
-import {palette, radii, spacing, typography} from '../../theme/tokens';
-import type {ScreenProps} from '../../app/navigation';
-import type {
-  Contact,
-  CurrencyCode,
-  EventIconName,
-  MemberBalance,
-  PendingInvite,
-  SettlementInstruction,
-} from '../../types/domain';
-
-const EVENT_ICON_OPTIONS: Array<{name: EventIconName; label: string}> = [
-  {name: 'event', label: 'Classic'},
-  {name: 'trip', label: 'Trip'},
-  {name: 'plane', label: 'Flight'},
-  {name: 'beach', label: 'Beach'},
-  {name: 'food', label: 'Food'},
-  {name: 'party', label: 'Party'},
-  {name: 'work', label: 'Work'},
-  {name: 'home', label: 'Home'},
-  {name: 'gift', label: 'Gift'},
-];
-
-type SelectedMemberDraft =
-  | {
-      id: string;
-      kind: 'contact';
-      label: string;
-      contactId: string;
-      userId?: string;
-    }
-  | {
-      id: string;
-      kind: 'email_invite';
-      label: string;
-      email: string;
-    };
-
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function isEmailAddress(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
-}
-
-function buildSettlementInstructions(balances: MemberBalance[]): SettlementInstruction[] {
-  const creditors = balances
-    .filter(balance => balance.net > 0)
-    .map(balance => ({...balance}));
-  const debtors = balances
-    .filter(balance => balance.net < 0)
-    .map(balance => ({...balance, net: Math.abs(balance.net)}));
-  const instructions: SettlementInstruction[] = [];
-
-  let creditorIndex = 0;
-  let debtorIndex = 0;
-
-  while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
-    const creditor = creditors[creditorIndex];
-    const debtor = debtors[debtorIndex];
-    const amount = Math.round(Math.min(creditor.net, debtor.net) * 100) / 100;
-
-    instructions.push({
-      fromMemberId: debtor.memberId,
-      fromDisplayName: debtor.displayName,
-      toMemberId: creditor.memberId,
-      toDisplayName: creditor.displayName,
-      amount,
-    });
-
-    creditor.net = Math.round((creditor.net - amount) * 100) / 100;
-    debtor.net = Math.round((debtor.net - amount) * 100) / 100;
-
-    if (creditor.net === 0) {
-      creditorIndex += 1;
-    }
-
-    if (debtor.net === 0) {
-      debtorIndex += 1;
-    }
-  }
-
-  return instructions;
-}
-
-function getAvatarTone(index: number) {
-  const tones = [
-    {backgroundColor: '#DDEDE6', textColor: palette.primary},
-    {backgroundColor: '#E8F0FE', textColor: palette.blue},
-    {backgroundColor: '#E8F6EE', textColor: palette.greenAccent},
-  ] as const;
-
-  return tones[index % tones.length];
-}
-
-function getAvatarChipOffsetStyle(index: number) {
-  return index === 0 ? styles.avatarChipFirst : styles.avatarChipOffset;
-}
-
-function formatAmountValue(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function describeInviteDate(createdAt: string, expiresAt: string) {
-  return `Received ${formatDateLabel(createdAt)} • Expires ${formatDateLabel(expiresAt)}`;
-}
-
-function getInvitePreview(pendingInvite: PendingInvite) {
-  if (pendingInvite.event.description?.trim()) {
-    return pendingInvite.event.description.trim();
-  }
-
-  return `${pendingInvite.invitedByUser.displayName} invited you to join ${pendingInvite.event.name}.`;
-}
+import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
+import {
+  BalanceDetailsContent,
+  DashboardBalanceSummaryCard,
+  DashboardMembersMetricCard,
+  DashboardShortcutCard,
+  EventIconPicker,
+  HomeEventCard,
+  MemberRosterList,
+  PendingInviteDetailCard,
+  PendingInviteListItem,
+  RecentExpenseListItem,
+  SelectedMembersPreview,
+} from './EventScreenComponents';
+import {styles} from './EventScreenStyles';
+import {
+  buildSettlementInstructions,
+  isEmailAddress,
+  normalizeEmail,
+  type SelectedMemberDraft,
+} from './EventScreenShared';
 
 export function HomeScreen({navigation}: ScreenProps<'Home'>) {
   const {
@@ -261,60 +163,13 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
             summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
 
           return (
-            <Pressable
+            <HomeEventCard
               key={event.id}
+              event={event}
+              members={summary?.members ?? []}
+              totalSpend={totalSpend}
               onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
-              style={({pressed}) => [pressed ? styles.pressed : null]}>
-              <AppCard>
-                <View style={styles.eventHeaderRow}>
-                  <View style={styles.eventLeadRow}>
-                    <View style={styles.eventIconBadge}>
-                      <AppIcon name={event.icon} tone="accent" size={20} />
-                    </View>
-                  <View style={styles.eventCopy}>
-                      <Text style={styles.eventName}>{event.name}</Text>
-                      <Text style={styles.eventMeta}>
-                        {event.description || 'Shared expense workspace'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={styles.metricRow}>
-                  <View style={styles.metricPanel}>
-                    <Text style={styles.metricLabel}>Members</Text>
-                    <View style={styles.avatarStackRow}>
-                      {(summary?.members ?? []).slice(0, 3).map((member, index) => {
-                        const tone = getAvatarTone(index);
-                        return (
-                          <View
-                            key={member.id}
-                            style={[
-                              styles.avatarChip,
-                              getAvatarChipOffsetStyle(index),
-                              {backgroundColor: tone.backgroundColor},
-                            ]}>
-                            <Text style={[styles.avatarText, {color: tone.textColor}]}>
-                              {member.displayName.slice(0, 1).toUpperCase()}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                      {(summary?.members.length ?? 0) > 3 ? (
-                        <View style={styles.avatarOverflowChip}>
-                          <Text style={styles.avatarOverflowText}>
-                            +{(summary?.members.length ?? 0) - 3}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                  <View style={styles.metricPanel}>
-                    <Text style={styles.metricLabel}>Tracked spend</Text>
-                    <Text style={styles.metricText}>{formatAmountValue(totalSpend)}</Text>
-                  </View>
-                </View>
-              </AppCard>
-            </Pressable>
+            />
           );
         })}
       </AppScreen>
@@ -330,41 +185,17 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
           />
         ) : (
           <ScrollView contentContainerStyle={styles.notificationList}>
-            {pendingInvites.map((pendingInvite: PendingInvite) => (
-              <Pressable
+            {pendingInvites.map(pendingInvite => (
+              <PendingInviteListItem
                 key={pendingInvite.invite.id}
-                accessibilityRole="button"
+                pendingInvite={pendingInvite}
                 onPress={() => {
                   setNotificationModalVisible(false);
                   navigation.navigate('NotificationDetail', {
                     inviteId: pendingInvite.invite.id,
                   });
                 }}
-                style={({pressed}) => [pressed ? styles.pressed : null]}>
-                <AppCard>
-                  <View style={styles.notificationHeader}>
-                    <View style={styles.notificationLead}>
-                      <View style={styles.eventIconBadge}>
-                        <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
-                      </View>
-                      <View style={styles.eventCopy}>
-                        <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
-                        <Text
-                          numberOfLines={2}
-                          ellipsizeMode="tail"
-                          style={styles.eventMeta}>
-                          {getInvitePreview(pendingInvite)}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.notificationUnreadDot} />
-                  </View>
-                  <View style={styles.notificationFooterRow}>
-                    <Text style={styles.notificationTypeLabel}>Invite request</Text>
-                    <Text style={styles.notificationChevron}>›</Text>
-                  </View>
-                </AppCard>
-              </Pressable>
+              />
             ))}
           </ScrollView>
         )}
@@ -426,68 +257,31 @@ export function NotificationDetailScreen({
           body="This item may have already been handled or expired."
         />
       ) : (
-        <AppCard>
-          <View style={styles.notificationHeader}>
-            <View style={styles.notificationLead}>
-              <View style={styles.eventIconBadge}>
-                <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
-              </View>
-              <View style={styles.eventCopy}>
-                <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
-                <Text style={styles.eventMeta}>
-                  {pendingInvite.invitedByUser.displayName} invited you
-                </Text>
-              </View>
-            </View>
-            <View style={styles.notificationUnreadDot} />
-          </View>
-          <Text style={styles.notificationTypeLabel}>Invite request</Text>
-          <Text style={styles.selectedContactSummary}>{getInvitePreview(pendingInvite)}</Text>
-          <Text style={styles.eventMeta}>Code {pendingInvite.invite.inviteCode}</Text>
-          <Text style={styles.eventMeta}>
-            {describeInviteDate(
-              pendingInvite.invite.createdAt,
-              pendingInvite.invite.expiresAt,
-            )}
-          </Text>
-          <View style={styles.actionRow}>
-            <View style={styles.actionRowItem}>
-              <AppButton
-                label="Accept invite"
-                icon="check"
-                onPress={() => {
-                  respondToInvite({
-                    inviteId: pendingInvite.invite.id,
-                    action: 'accept',
-                  })
-                    .then(event => {
-                      if (event) {
-                        navigation.replace('EventDashboard', {eventId: event.id});
-                      } else {
-                        navigation.goBack();
-                      }
-                    })
-                    .catch(() => undefined);
-                }}
-              />
-            </View>
-            <View style={styles.actionRowItem}>
-              <AppButton
-                label="Decline"
-                icon="close"
-                variant="secondary"
-                onPress={() => {
-                  respondToInvite({
-                    inviteId: pendingInvite.invite.id,
-                    action: 'decline',
-                  })
-                    .then(() => navigation.goBack())
-                    .catch(() => undefined);
-                }}
-              />
-            </View>
-          </View>
-        </AppCard>
+        <PendingInviteDetailCard
+          pendingInvite={pendingInvite}
+          onAccept={() => {
+            respondToInvite({
+              inviteId: pendingInvite.invite.id,
+              action: 'accept',
+            })
+              .then(event => {
+                if (event) {
+                  navigation.replace('EventDashboard', {eventId: event.id});
+                } else {
+                  navigation.goBack();
+                }
+              })
+              .catch(() => undefined);
+          }}
+          onDecline={() => {
+            respondToInvite({
+              inviteId: pendingInvite.invite.id,
+              action: 'decline',
+            })
+              .then(() => navigation.goBack())
+              .catch(() => undefined);
+          }}
+        />
       )}
       <InlineError message={error ?? undefined} />
     </AppScreen>
@@ -515,7 +309,6 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         query.length === 0 ? true : contact.displayName.toLowerCase().includes(query),
       );
   }, [contacts, memberSearch]);
-
   const normalizedMemberSearch = useMemo(() => normalizeEmail(memberSearch), [memberSearch]);
   const canInviteByEmail = isEmailAddress(memberSearch);
   const hasSelectedEmailInvite = useMemo(
@@ -641,23 +434,10 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             variant="secondary"
             onPress={() => setMemberModalVisible(true)}
           />
-          {selectedMembers.length > 0 ? (
-            <View style={styles.selectedMemberChipRow}>
-              {selectedMembers.map(member => (
-                <Pressable
-                  key={member.id}
-                  accessibilityRole="button"
-                  onPress={() => removeSelectedMember(member.id)}
-                  style={({pressed}) => [
-                    styles.selectedMemberChip,
-                    pressed ? styles.pressed : null,
-                  ]}>
-                  <Text style={styles.selectedMemberChipText}>{member.label}</Text>
-                  <AppIcon name="close" tone="accent" size={12} />
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+          <SelectedMembersPreview
+            selectedMembers={selectedMembers}
+            onRemoveMember={removeSelectedMember}
+          />
         </View>
         <View style={styles.actionRow}>
           <View style={styles.actionRowItem}>
@@ -683,35 +463,13 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         title="Choose an event icon"
         subtitle="Pick a visual marker for this event."
         onClose={() => setIconModalVisible(false)}>
-        <View style={styles.iconGrid}>
-          {EVENT_ICON_OPTIONS.map(option => (
-            <Pressable
-              key={option.name}
-              accessibilityRole="button"
-              onPress={() => {
-                setIcon(option.name);
-                setIconModalVisible(false);
-              }}
-              style={({pressed}) => [
-                styles.iconOptionCard,
-                icon === option.name ? styles.iconOptionCardActive : null,
-                pressed ? styles.pressed : null,
-              ]}>
-              <AppIcon
-                name={option.name as AppIconName}
-                tone={icon === option.name ? 'inverted' : 'accent'}
-                size={24}
-              />
-              <Text
-                style={[
-                  styles.iconOptionLabel,
-                  icon === option.name ? styles.iconOptionLabelActive : null,
-                ]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <EventIconPicker
+          selectedIcon={icon}
+          onSelect={nextIcon => {
+            setIcon(nextIcon);
+            setIconModalVisible(false);
+          }}
+        />
       </AppModal>
       <AppModal
         visible={memberModalVisible}
@@ -911,44 +669,10 @@ export function EventDashboardScreen({
           <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
           <Text style={styles.heroLabel}>Tracked event spending</Text>
           <View style={styles.dashboardMetricRow}>
-            <Pressable
-              accessibilityRole="button"
+            <DashboardMembersMetricCard
+              members={summary.members}
               onPress={() => navigation.navigate('Members', {eventId})}
-              style={({pressed}) => [
-                styles.dashboardMetricCard,
-                pressed ? styles.pressed : null,
-              ]}>
-              <View style={styles.metricActionRow}>
-                <Text style={styles.metricLabelStrong}>Members</Text>
-                <View style={styles.metricMiniButton}>
-                  <AppIcon name="create" tone="accent" size={12} />
-                </View>
-              </View>
-              <Text style={styles.metricTextLarge}>{summary.members.length}</Text>
-              <View style={styles.avatarStackRow}>
-                {summary.members.slice(0, 3).map((member, index) => {
-                  const tone = getAvatarTone(index);
-                  return (
-                    <View
-                      key={member.id}
-                      style={[
-                        styles.avatarChip,
-                        getAvatarChipOffsetStyle(index),
-                        {backgroundColor: tone.backgroundColor},
-                      ]}>
-                      <Text style={[styles.avatarText, {color: tone.textColor}]}>
-                        {member.displayName.slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                  );
-                })}
-                {summary.members.length > 3 ? (
-                  <View style={styles.avatarOverflowChip}>
-                    <Text style={styles.avatarOverflowText}>+{summary.members.length - 3}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </Pressable>
+            />
             <Pressable
               accessibilityRole="button"
               onPress={() => navigation.navigate('CentralFund', {eventId})}
@@ -965,81 +689,29 @@ export function EventDashboardScreen({
         </AppCard>
 
         {currentBalance ? (
-          <Pressable
-            accessibilityRole="button"
+          <DashboardBalanceSummaryCard
+            currentBalance={currentBalance}
+            currency={event.currency}
+            balanceLabel={balanceLabel}
             onPress={() => setShowBalanceDetails(true)}
-            style={({pressed}) => [pressed ? styles.pressed : null]}>
-            <AppCard>
-              <View style={styles.balanceSummaryRow}>
-                <View style={styles.balanceLead}>
-                  <View
-                    style={[
-                      styles.summaryIconBubble,
-                      currentBalance.net > 0
-                        ? styles.summaryIconPositive
-                        : currentBalance.net < 0
-                          ? styles.summaryIconNegative
-                          : styles.summaryIconNeutral,
-                    ]}>
-                    <AppIcon name="balances" tone="accent" size={16} />
-                  </View>
-                  <View style={styles.eventCopy}>
-                    <Text style={styles.balanceTitle}>My balance</Text>
-                    <Text style={styles.eventMeta}>{balanceLabel}</Text>
-                  </View>
-                </View>
-                <View style={styles.balanceAmountWrap}>
-                  <Text
-                    style={[
-                      styles.balanceAmount,
-                      currentBalance.net > 0
-                        ? styles.balanceAmountPositive
-                        : currentBalance.net < 0
-                          ? styles.balanceAmountNegative
-                          : styles.balanceAmountNeutral,
-                    ]}>
-                    {formatCurrency(Math.abs(currentBalance.net), event.currency)}
-                  </Text>
-                  <Text style={styles.balanceHint}>Tap for details</Text>
-                </View>
-              </View>
-            </AppCard>
-          </Pressable>
+          />
         ) : null}
 
         <View style={styles.compactActionList}>
-          <Pressable
-            accessibilityRole="button"
+          <DashboardShortcutCard
+            iconName="balances"
+            title="Balances"
+            subtitle="See who is up or down"
+            variant="balances"
             onPress={() => navigation.navigate('Balances', {eventId})}
-            style={({pressed}) => [pressed ? styles.pressed : null]}>
-            <AppCard>
-              <View style={styles.compactActionRow}>
-                <View style={[styles.summaryIconBubble, styles.summaryIconBalances]}>
-                  <AppIcon name="balances" tone="accent" size={16} />
-                </View>
-                <View style={styles.eventCopy}>
-                  <Text style={styles.compactActionTitle}>Balances</Text>
-                  <Text style={styles.eventMeta}>See who is up or down</Text>
-                </View>
-              </View>
-            </AppCard>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
+          />
+          <DashboardShortcutCard
+            iconName="settlement"
+            title="Settlement"
+            subtitle="Suggested payback plan"
+            variant="settlement"
             onPress={() => navigation.navigate('Settlement', {eventId})}
-            style={({pressed}) => [pressed ? styles.pressed : null]}>
-            <AppCard>
-              <View style={styles.compactActionRow}>
-                <View style={[styles.summaryIconBubble, styles.summaryIconSettlement]}>
-                  <AppIcon name="settlement" tone="accent" size={16} />
-                </View>
-                <View style={styles.eventCopy}>
-                  <Text style={styles.compactActionTitle}>Settlement</Text>
-                  <Text style={styles.eventMeta}>Suggested payback plan</Text>
-                </View>
-              </View>
-            </AppCard>
-          </Pressable>
+          />
         </View>
 
         <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
@@ -1056,24 +728,17 @@ export function EventDashboardScreen({
           .map(expense => {
             const payer = summary.members.find(member => member.id === expense.paidByMemberId);
             return (
-              <Pressable
+              <RecentExpenseListItem
                 key={expense.id}
-                accessibilityRole="button"
-                onPress={() => navigation.navigate('AddExpense', {eventId, expenseId: expense.id})}
-                style={({pressed}) => [pressed ? styles.pressed : null]}>
-                <AppCard>
-                  <View style={styles.eventHeaderRow}>
-                    <View style={styles.eventCopy}>
-                      <Text style={styles.eventName}>{expense.title}</Text>
-                      <Text style={styles.eventMeta}>
-                        {payer?.displayName || 'Unknown payer'} • {formatDateLabel(expense.createdAt)}
-                        {expense.updatedAt !== expense.createdAt ? ' • Edited' : ''}
-                      </Text>
-                    </View>
-                    <DataPill label={formatCurrency(expense.amount, event.currency)} />
-                  </View>
-                </AppCard>
-              </Pressable>
+                title={expense.title}
+                meta={`${payer?.displayName || 'Unknown payer'} • ${formatDateLabel(
+                  expense.createdAt,
+                )}${expense.updatedAt !== expense.createdAt ? ' • Edited' : ''}`}
+                amountLabel={formatCurrency(expense.amount, event.currency)}
+                onPress={() =>
+                  navigation.navigate('AddExpense', {eventId, expenseId: expense.id})
+                }
+              />
             );
           })}
         <Pressable
@@ -1104,32 +769,7 @@ export function EventDashboardScreen({
           <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
           <Text style={styles.eventMeta}>Choose the icon shown on the dashboard.</Text>
         </View>
-        <View style={styles.iconGrid}>
-          {EVENT_ICON_OPTIONS.map(option => (
-            <Pressable
-              key={option.name}
-              accessibilityRole="button"
-              onPress={() => setEditIcon(option.name)}
-              style={({pressed}) => [
-                styles.iconOptionCard,
-                editIcon === option.name ? styles.iconOptionCardActive : null,
-                pressed ? styles.pressed : null,
-              ]}>
-              <AppIcon
-                name={option.name as AppIconName}
-                tone={editIcon === option.name ? 'inverted' : 'accent'}
-                size={24}
-              />
-              <Text
-                style={[
-                  styles.iconOptionLabel,
-                  editIcon === option.name ? styles.iconOptionLabelActive : null,
-                ]}>
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
         <AppInput
           label="Event name"
           value={editName}
@@ -1149,10 +789,6 @@ export function EventDashboardScreen({
               label="Save changes"
               icon="edit"
               onPress={() => {
-                if (!event) {
-                  return;
-                }
-
                 const parsed = eventSchema.safeParse({
                   name: editName,
                   description: editDescription,
@@ -1223,56 +859,12 @@ export function EventDashboardScreen({
         title="My balance"
         subtitle="See who owes you and who you still need to pay."
         onClose={() => setShowBalanceDetails(false)}>
-        <View style={styles.balanceSheetSummary}>
-          <Text style={styles.balanceSheetSummaryLabel}>Net position</Text>
-          <Text
-            style={[
-              styles.balanceSheetSummaryAmount,
-              currentBalance?.net && currentBalance.net > 0
-                ? styles.balanceAmountPositive
-                : currentBalance?.net && currentBalance.net < 0
-                  ? styles.balanceAmountNegative
-                  : styles.balanceAmountNeutral,
-            ]}>
-            {formatCurrency(Math.abs(currentBalance?.net ?? 0), event.currency)}
-          </Text>
-        </View>
-
-        <View style={styles.balanceSheetSection}>
-          <SectionHeading title="People who owe me" detail={`${owesYou.length}`} />
-          {owesYou.length === 0 ? (
-            <Text style={styles.balanceSheetEmpty}>Nobody owes you right now.</Text>
-          ) : null}
-          {owesYou.map(item => (
-            <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
-              <View style={styles.balanceSheetRowCopy}>
-                <Text style={styles.balanceSheetRowTitle}>{item.fromDisplayName}</Text>
-                <Text style={styles.balanceSheetRowSubtitle}>Needs to pay you</Text>
-              </View>
-              <Text style={styles.balanceDetailPositive}>
-                {formatCurrency(item.amount, event.currency)}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.balanceSheetSection}>
-          <SectionHeading title="People I owe" detail={`${youOwe.length}`} />
-          {youOwe.length === 0 ? (
-            <Text style={styles.balanceSheetEmpty}>You do not owe anyone right now.</Text>
-          ) : null}
-          {youOwe.map(item => (
-            <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
-              <View style={styles.balanceSheetRowCopy}>
-                <Text style={styles.balanceSheetRowTitle}>{item.toDisplayName}</Text>
-                <Text style={styles.balanceSheetRowSubtitle}>You need to pay</Text>
-              </View>
-              <Text style={styles.balanceDetailNegative}>
-                {formatCurrency(item.amount, event.currency)}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <BalanceDetailsContent
+          currentBalanceNet={currentBalance?.net ?? 0}
+          currency={event.currency}
+          owesYou={owesYou}
+          youOwe={youOwe}
+        />
       </AppModal>
     </>
   );
@@ -1310,7 +902,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         displayName: invite.invitedEmail as string,
         email: invite.invitedEmail,
         joinedLabel: `Invited ${formatDateLabel(invite.createdAt)}`,
-        statusLabel: 'Pending',
+        statusLabel: 'Pending' as const,
       }));
 
     const joinedMemberRows = summary.members.map(member => ({
@@ -1322,7 +914,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         member.status === 'joined'
           ? `Joined ${formatDateLabel(member.joinedAt)}`
           : `Added ${formatDateLabel(member.joinedAt)}`,
-      statusLabel: member.status === 'joined' ? 'Joined' : 'Pending',
+      statusLabel: member.status === 'joined' ? ('Joined' as const) : ('Pending' as const),
     }));
 
     return [...joinedMemberRows, ...pendingInviteRows];
@@ -1481,625 +1073,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       </AppCard>
 
       <SectionHeading title="Member list" detail={`${memberRows.length} total`} />
-      <View style={styles.memberRosterList}>
-        {memberRows.map((member, index) => (
-          <View
-            key={member.id}
-            style={[
-              styles.memberRosterRow,
-              index === memberRows.length - 1 ? styles.memberRosterRowLast : null,
-            ]}>
-            <View style={styles.memberRosterPrimary}>
-              <Text style={styles.memberRosterName}>{member.displayName}</Text>
-              <Text style={styles.memberRosterEmail}>{member.email ?? 'No email available'}</Text>
-            </View>
-            <View style={styles.memberRosterMeta}>
-              <Text style={styles.memberRosterJoined}>{member.joinedLabel}</Text>
-              <Text
-                style={[
-                  styles.memberRosterStatus,
-                  member.statusLabel === 'Joined'
-                    ? styles.memberRosterStatusJoined
-                    : styles.memberRosterStatusPending,
-                ]}>
-                {member.statusLabel}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
+      <MemberRosterList members={memberRows} />
       <InlineError message={error ?? undefined} />
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  heroValue: {
-    ...typography.display,
-    color: palette.primary,
-  },
-  homeHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  heroLabel: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  headerActionButton: {
-    minHeight: 40,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    backgroundColor: palette.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  headerActionText: {
-    ...typography.eyebrow,
-    color: palette.surface,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  actionRowItem: {
-    flex: 1,
-    minWidth: 148,
-  },
-  eventHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  eventLeadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  eventIconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surfaceSoft,
-  },
-  eventCopy: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  eventName: {
-    ...typography.title,
-    fontSize: 19,
-    lineHeight: 24,
-  },
-  eventMeta: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  eventIconSelector: {
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingBottom: spacing.md,
-    marginBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
-  },
-  eventIconSelectorBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surfaceSoft,
-  },
-  eventIconSelectorTitle: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  memberPickerBlock: {
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: palette.border,
-  },
-  selectedMemberChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  selectedMemberChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: palette.surfaceSoft,
-  },
-  selectedMemberChipText: {
-    ...typography.eyebrow,
-    color: palette.ink,
-  },
-  selectedContactSummary: {
-    ...typography.eyebrow,
-    color: palette.ink,
-  },
-  memberModalHeader: {
-    paddingVertical: spacing.xs,
-  },
-  memberModalCount: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  memberList: {
-    maxHeight: 320,
-  },
-  memberListContent: {
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  iconGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  iconOptionCard: {
-    width: '31%',
-    minWidth: 88,
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
-  },
-  iconOptionCardActive: {
-    backgroundColor: palette.primary,
-  },
-  iconOptionLabel: {
-    ...typography.eyebrow,
-    color: palette.ink,
-  },
-  iconOptionLabelActive: {
-    color: palette.surface,
-  },
-  metricPanel: {
-    flex: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
-  },
-  metricLabel: {
-    ...typography.eyebrow,
-  },
-  metricText: {
-    ...typography.bodyStrong,
-    fontSize: 16,
-    color: palette.ink,
-  },
-  dashboardMetricRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  dashboardEventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  inlineEditButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
-  },
-  inlineEditButtonText: {
-    ...typography.eyebrow,
-    color: palette.primary,
-  },
-  dashboardEventIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  dashboardMetricCard: {
-    flex: 1,
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-  },
-  dashboardMetricCardSoft: {
-    backgroundColor: '#F1F7F4',
-  },
-  metricLabelStrong: {
-    ...typography.bodyStrong,
-    color: palette.inkMuted,
-  },
-  metricTextLarge: {
-    ...typography.title,
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '700',
-  },
-  metricFootnote: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  metricActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metricMiniButton: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-  },
-  avatarStackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  avatarChip: {
-    width: 25,
-    height: 25,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: palette.surface,
-  },
-  avatarChipFirst: {
-    marginLeft: 0,
-  },
-  avatarChipOffset: {
-    marginLeft: -15,
-  },
-  avatarOverflowChip: {
-    minWidth: 29,
-    height: 25,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -10,
-    backgroundColor: palette.surface,
-  },
-  avatarText: {
-    ...typography.eyebrow,
-    fontWeight: '700',
-  },
-  avatarOverflowText: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  balanceSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  balanceLead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  summaryIconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryIconPositive: {
-    backgroundColor: '#E7F5EB',
-  },
-  summaryIconNegative: {
-    backgroundColor: '#FCE8E5',
-  },
-  summaryIconNeutral: {
-    backgroundColor: '#EFF2F4',
-  },
-  summaryIconBalances: {
-    backgroundColor: '#E8F0FE',
-  },
-  summaryIconSettlement: {
-    backgroundColor: '#EEF4F1',
-  },
-  balanceTitle: {
-    ...typography.title,
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  balanceAmountWrap: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  balanceAmount: {
-    ...typography.title,
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '700',
-  },
-  balanceAmountPositive: {
-    color: palette.success,
-  },
-  balanceAmountNegative: {
-    color: palette.warning,
-  },
-  balanceAmountNeutral: {
-    color: palette.inkMuted,
-  },
-  balanceHint: {
-    ...typography.eyebrow,
-  },
-  compactActionList: {
-    gap: spacing.sm,
-  },
-  compactActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  compactActionTitle: {
-    ...typography.title,
-    fontSize: 19,
-    lineHeight: 24,
-  },
-  balanceSheetSummary: {
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
-  },
-  balanceSheetSummaryLabel: {
-    ...typography.eyebrow,
-  },
-  balanceSheetSummaryAmount: {
-    ...typography.display,
-    fontSize: 30,
-    lineHeight: 36,
-  },
-  balanceSheetSection: {
-    gap: spacing.sm,
-  },
-  balanceSheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceMuted,
-  },
-  balanceSheetRowCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  balanceSheetRowTitle: {
-    ...typography.bodyStrong,
-  },
-  balanceSheetRowSubtitle: {
-    ...typography.eyebrow,
-  },
-  balanceSheetEmpty: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  balanceDetailPositive: {
-    ...typography.bodyStrong,
-    color: palette.success,
-  },
-  balanceDetailNegative: {
-    ...typography.bodyStrong,
-    color: palette.warning,
-  },
-  memberCodeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  inviteCodePressable: {
-    alignSelf: 'flex-start',
-    gap: 2,
-    marginTop: spacing.xs,
-  },
-  inviteCodeValueLarge: {
-    ...typography.display,
-    fontSize: 34,
-    lineHeight: 40,
-    letterSpacing: 2,
-    color: palette.primary,
-  },
-  inviteCodeHint: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  memberRosterList: {
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
-    overflow: 'hidden',
-  },
-  memberRosterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
-  },
-  memberRosterRowLast: {
-    borderBottomWidth: 0,
-  },
-  memberRosterPrimary: {
-    flex: 1,
-    gap: 2,
-  },
-  memberRosterName: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  memberRosterEmail: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  memberRosterMeta: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  memberRosterJoined: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  memberRosterStatus: {
-    ...typography.bodyStrong,
-  },
-  memberRosterStatusJoined: {
-    color: palette.success,
-  },
-  memberRosterStatusPending: {
-    color: palette.warning,
-  },
-  inviteCodeCard: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
-    gap: spacing.xs,
-  },
-  inviteCodeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  inviteCodeLabel: {
-    ...typography.eyebrow,
-  },
-  inviteCodeValue: {
-    ...typography.title,
-    letterSpacing: 1.1,
-  },
-  notificationList: {
-    gap: spacing.sm,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  notificationLead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  notificationUnreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radii.pill,
-    backgroundColor: palette.warning,
-    marginTop: spacing.sm,
-  },
-  notificationTypeLabel: {
-    ...typography.eyebrow,
-    color: palette.primary,
-  },
-  notificationFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  notificationChevron: {
-    ...typography.title,
-    color: palette.inkMuted,
-    lineHeight: 20,
-  },
-  refreshButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.primary,
-    flexShrink: 0,
-  },
-  refreshButtonLight: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
-    flexShrink: 0,
-  },
-  deleteEventButton: {
-    minHeight: 46,
-    marginTop: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: '#F1C7C1',
-    backgroundColor: '#FCE8E5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  deleteEventButtonText: {
-    ...typography.bodyStrong,
-    color: palette.warning,
-  },
-  deleteEventConfirmText: {
-    ...typography.body,
-    color: palette.ink,
-  },
-  deleteConfirmButton: {
-    minHeight: 46,
-    borderRadius: radii.md,
-    backgroundColor: palette.warning,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  deleteConfirmButtonText: {
-    ...typography.bodyStrong,
-    color: palette.surface,
-  },
-  pressed: {
-    opacity: 0.82,
-  },
-});
