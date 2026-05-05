@@ -78,6 +78,14 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function isMatchingInvitePlaceholder(member: EventMember, invitedEmail?: string) {
+  return (
+    !member.userId &&
+    !!invitedEmail &&
+    normalizeEmail(member.displayName) === normalizeEmail(invitedEmail)
+  );
+}
+
 function dedupeContacts(contacts: Contact[]) {
   return contacts.filter(
     (contact, index, items) => items.findIndex(item => item.userId === contact.userId) === index,
@@ -86,6 +94,20 @@ function dedupeContacts(contacts: Contact[]) {
 
 export class MockBackend implements AppBackend {
   private state: PersistedState = defaultState;
+
+  private findMemberByInvite(eventId: string, userId?: string, invitedEmail?: string) {
+    return this.state.eventMembers.find(member => {
+      if (member.eventId !== eventId) {
+        return false;
+      }
+
+      if (userId && member.userId === userId) {
+        return true;
+      }
+
+      return isMatchingInvitePlaceholder(member, invitedEmail);
+    });
+  }
 
   private hydrateContact(contact: Contact): Contact {
     if (!contact.userId) {
@@ -247,11 +269,10 @@ export class MockBackend implements AppBackend {
       return null;
     }
 
-    const existing = this.state.eventMembers.find(
-      member => member.eventId === invite.eventId && member.userId === user.id,
-    );
+    const existing = this.findMemberByInvite(invite.eventId, user.id, invite.invitedEmail);
 
     if (existing) {
+      existing.userId = user.id;
       existing.status = 'joined';
       existing.displayName = user.displayName;
     } else {
@@ -437,11 +458,13 @@ export class MockBackend implements AppBackend {
     }
 
     const user = this.getUser(userId);
-    const existing = this.state.eventMembers.find(
-      member => member.eventId === invite.eventId && member.userId === user.id,
-    );
+    const existing = this.findMemberByInvite(invite.eventId, user.id, invite.invitedEmail);
 
-    if (!existing) {
+    if (existing) {
+      existing.userId = user.id;
+      existing.displayName = user.displayName;
+      existing.status = 'joined';
+    } else {
       this.state.eventMembers.push({
         id: createId('member'),
         eventId: invite.eventId,
@@ -501,9 +524,11 @@ export class MockBackend implements AppBackend {
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {
-    const invitedEmail = recipient?.userId
-      ? this.getUser(recipient.userId).email
-      : recipient?.email;
+    const invitedUser = recipient?.userId ? this.getUser(recipient.userId) : undefined;
+    const invitedEmail = invitedUser?.email ?? recipient?.email;
+    const invitedDisplayName = normalizeDisplayName(
+      invitedUser?.displayName ?? invitedEmail ?? 'Invited member',
+    );
     const invite: Invite = {
       id: createId('invite'),
       eventId,
@@ -515,6 +540,31 @@ export class MockBackend implements AppBackend {
       createdAt: new Date().toISOString(),
     };
     this.state.invites.push(invite);
+
+    const existingMember = this.findMemberByInvite(
+      eventId,
+      invitedUser?.id,
+      invitedEmail,
+    );
+
+    if (existingMember) {
+      existingMember.userId = existingMember.userId ?? invitedUser?.id;
+      existingMember.displayName = invitedDisplayName;
+      if (existingMember.status !== 'joined') {
+        existingMember.status = 'invited';
+      }
+    } else {
+      this.state.eventMembers.push({
+        id: createId('member'),
+        eventId,
+        userId: invitedUser?.id,
+        displayName: invitedDisplayName,
+        role: 'member',
+        status: 'invited',
+        joinedAt: new Date().toISOString(),
+      });
+    }
+
     return invite;
   }
 

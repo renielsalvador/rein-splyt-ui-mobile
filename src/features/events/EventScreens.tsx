@@ -1041,16 +1041,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
     if (!summary) {
       return [];
     }
-    const pendingInviteRows = summary.invites
-      .filter(invite => invite.status === 'pending' && !!invite.invitedEmail)
-      .map(invite => ({
-        id: `invite:${invite.id}`,
-        displayName: invite.invitedEmail as string,
-        email: invite.invitedEmail,
-        joinedLabel: `Invited ${formatDateLabel(invite.createdAt)}`,
-        statusLabel: 'Pending' as const,
-      }));
-    const joinedMemberRows = summary.members.map(member => ({
+    return summary.members.map(member => ({
       id: member.id,
       displayName: member.displayName,
       email:
@@ -1061,7 +1052,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           : `Added ${formatDateLabel(member.joinedAt)}`,
       statusLabel: member.status === 'joined' ? ('Joined' as const) : ('Pending' as const),
     }));
-    return [...joinedMemberRows, ...pendingInviteRows];
   }, [currentUser, summary]);
 
   useEffect(() => {
