@@ -6,7 +6,11 @@ import {AppMenu, HeaderMenuButton} from '../../components/ui';
 import {useApp} from '../../app/AppProvider';
 import {spacing, typography} from '../../theme/tokens';
 
-export function ActivityScreen({navigation, hasTabBar}: ScreenProps<'Activity'> & {hasTabBar?: boolean}) {
+export function ActivityScreen({
+  navigation,
+  hasTabBar,
+  tabBarBottomInset,
+}: ScreenProps<'Activity'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
   const {currentUser, pendingInvites, signOut} = useApp();
 
   return (
@@ -15,6 +19,7 @@ export function ActivityScreen({navigation, hasTabBar}: ScreenProps<'Activity'> 
       title="Activity"
       subtitle="Recent updates across all your events"
       hasTabBar={hasTabBar}
+      tabBarBottomInset={tabBarBottomInset}
       headerLeft={
         <View style={styles.headerLeft}>
           <BrandLogo />

@@ -10,7 +10,11 @@ import {formatCurrency, formatDateRangeLabel} from '../../lib/utils/format';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
 import {surfaces} from '../../theme/tokens';
 
-export function EventsScreen({navigation, hasTabBar}: ScreenProps<'Events'> & {hasTabBar?: boolean}) {
+export function EventsScreen({
+  navigation,
+  hasTabBar,
+  tabBarBottomInset,
+}: ScreenProps<'Events'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
   const {currentUser, events, summaries, hydrateEvent, pendingInvites, signOut} = useApp();
 
   useEffect(() => {
@@ -27,6 +31,7 @@ export function EventsScreen({navigation, hasTabBar}: ScreenProps<'Events'> & {h
       title="Events"
       subtitle={`${events.length} active event${events.length === 1 ? '' : 's'}`}
       hasTabBar={hasTabBar}
+      tabBarBottomInset={tabBarBottomInset}
       headerLeft={
         <View style={styles.headerLeft}>
           <BrandLogo />

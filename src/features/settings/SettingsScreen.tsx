@@ -77,7 +77,8 @@ function SettingsRow({
 export function SettingsScreen({
   navigation,
   hasTabBar,
-}: ScreenProps<'Settings'> & {hasTabBar?: boolean}) {
+  tabBarBottomInset,
+}: ScreenProps<'Settings'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
   const {currentUser, pendingInvites, signOut} = useApp();
   const unreadLabel =
     pendingInvites.length > 0 ? `${pendingInvites.length} unread` : 'None';
@@ -86,6 +87,7 @@ export function SettingsScreen({
     <AppScreen
       variant={hasTabBar ? 'main' : 'detail'}
       hasTabBar={hasTabBar}
+      tabBarBottomInset={tabBarBottomInset}
       leading={
         !hasTabBar ? <ScreenBackButton onPress={() => navigation.goBack()} /> : undefined
       }

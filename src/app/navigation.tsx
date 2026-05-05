@@ -113,11 +113,32 @@ function AppNavigator() {
   function renderScreen(route: AnyRoute) {
     switch (route.name) {
       case 'Home':
-        return <HomeScreen navigation={navigation} route={route as Route<'Home'>} hasTabBar={isTopLevel} />;
+        return (
+          <HomeScreen
+            navigation={navigation}
+            route={route as Route<'Home'>}
+            hasTabBar={isTopLevel}
+            tabBarBottomInset={bottomInset}
+          />
+        );
       case 'Events':
-        return <EventsScreen navigation={navigation} route={route as Route<'Events'>} hasTabBar={isTopLevel} />;
+        return (
+          <EventsScreen
+            navigation={navigation}
+            route={route as Route<'Events'>}
+            hasTabBar={isTopLevel}
+            tabBarBottomInset={bottomInset}
+          />
+        );
       case 'Activity':
-        return <ActivityScreen navigation={navigation} route={route as Route<'Activity'>} hasTabBar={isTopLevel} />;
+        return (
+          <ActivityScreen
+            navigation={navigation}
+            route={route as Route<'Activity'>}
+            hasTabBar={isTopLevel}
+            tabBarBottomInset={bottomInset}
+          />
+        );
       case 'NotificationDetail':
         return <NotificationDetailScreen navigation={navigation} route={route as Route<'NotificationDetail'>} />;
       case 'CreateEvent':
@@ -135,7 +156,14 @@ function AppNavigator() {
       case 'Settlement':
         return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
       case 'Settings':
-        return <SettingsScreen navigation={navigation} route={route as Route<'Settings'>} hasTabBar={isTopLevel} />;
+        return (
+          <SettingsScreen
+            navigation={navigation}
+            route={route as Route<'Settings'>}
+            hasTabBar={isTopLevel}
+            tabBarBottomInset={bottomInset}
+          />
+        );
       case 'AccountUpdate':
         return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
       default:
@@ -147,7 +175,17 @@ function AppNavigator() {
 
   return (
     <View style={{flex: 1, backgroundColor: palette.primary}}>
-      <View style={{position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: palette.surface}} />
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: isTopLevel ? 64 + bottomInset : bottomInset + 24,
+          backgroundColor: isTopLevel ? palette.surface : palette.bgApp,
+        }}
+      />
       <SafeAreaView style={{flex: 1}}>
         <View style={{flex: 1}}>
           {renderScreen(currentRoute)}

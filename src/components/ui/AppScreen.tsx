@@ -15,6 +15,7 @@ export function AppScreen({
   footerOverlay,
   grayBody = false,
   hasTabBar = false,
+  tabBarBottomInset = 0,
 }: React.PropsWithChildren<{
   title?: string;
   subtitle?: string;
@@ -26,7 +27,10 @@ export function AppScreen({
   footerOverlay?: React.ReactNode;
   grayBody?: boolean;
   hasTabBar?: boolean;
+  tabBarBottomInset?: number;
 }>) {
+  const tabBarPadding = hasTabBar ? 64 + tabBarBottomInset : undefined;
+
   if (variant === 'auth') {
     return (
       <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
@@ -66,7 +70,7 @@ export function AppScreen({
           style={styles.bodyScroll}
           contentContainerStyle={[
             styles.bodyScrollContent,
-            hasTabBar ? styles.bodyScrollContentWithTabBar : null,
+            tabBarPadding ? {paddingBottom: tabBarPadding} : null,
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>

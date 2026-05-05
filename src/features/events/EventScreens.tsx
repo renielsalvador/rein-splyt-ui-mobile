@@ -59,7 +59,11 @@ function getTodayDateString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTabBar?: boolean}) {
+export function HomeScreen({
+  navigation,
+  hasTabBar,
+  tabBarBottomInset,
+}: ScreenProps<'Home'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
   const {
     currentUser,
     events,
@@ -122,6 +126,7 @@ export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTa
       <AppScreen
         variant="main"
         hasTabBar={hasTabBar}
+        tabBarBottomInset={tabBarBottomInset}
         headerLeft={
           <View style={styles.homeHeaderLeft}>
             <BrandLogo />
