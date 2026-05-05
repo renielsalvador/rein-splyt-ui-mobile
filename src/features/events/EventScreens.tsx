@@ -21,12 +21,11 @@ import {
 } from '../../components/ui';
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
+import {palette} from '../../theme/tokens';
 import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
 import {
   BalanceDetailsContent,
   DashboardBalanceSummaryCard,
-  DashboardMembersMetricCard,
-  DashboardShortcutCard,
   EventIconPicker,
   HomeEventCard,
   MemberRosterList,
@@ -43,7 +42,7 @@ import {
   type SelectedMemberDraft,
 } from './EventScreenShared';
 
-export function HomeScreen({navigation}: ScreenProps<'Home'>) {
+export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTabBar?: boolean}) {
   const {
     currentUser,
     events,
@@ -72,18 +71,26 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
     if (!notificationModalVisible) {
       return;
     }
-
     refreshPendingInvites().catch(() => undefined);
   }, [notificationModalVisible, refreshPendingInvites]);
 
+  const totalSpend = useMemo(
+    () =>
+      events.reduce((sum, event) => {
+        const summary = summaries[event.id];
+        return sum + (summary?.expenses.reduce((s, e) => s + e.amount, 0) ?? 0);
+      }, 0),
+    [events, summaries],
+  );
+
+  const primaryCurrency = events[0]?.currency ?? 'PHP';
+
   async function handleJoin() {
     const parsed = joinSchema.safeParse({inviteCode});
-
     if (!parsed.success) {
       setJoinFormError(parsed.error.issues[0]?.message);
       return;
     }
-
     setJoinFormError(undefined);
     const event = await joinEvent(parsed.data);
     setInviteCode('');
@@ -91,13 +98,23 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
     navigation.navigate('EventDashboard', {eventId: event.id});
   }
 
+  const firstName = currentUser?.displayName?.split(' ')[0] ?? 'traveler';
+
   return (
     <>
       <AppScreen
-        title={`Hi, ${currentUser?.displayName ?? 'traveler'}`}
-        subtitle="Keep trips, shared spending, and settlement in one place."
-        actions={
-          <View style={styles.homeHeaderActions}>
+        variant="main"
+        hasTabBar={hasTabBar}
+        headerLeft={
+          <View style={styles.homeHeaderLeft}>
+            <View style={styles.homeHeaderLogoIcon}>
+              <Text style={styles.homeHeaderLogoText}>S</Text>
+            </View>
+            <Text style={styles.homeHeaderUserName}>{`Hi, ${firstName}`}</Text>
+          </View>
+        }
+        headerRight={
+          <View style={styles.homeHeaderRight}>
             <NotificationButton
               unreadCount={pendingInvites.length}
               onPress={() => setNotificationModalVisible(true)}
@@ -118,7 +135,6 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
               renderTrigger={({toggle}) => (
                 <HeaderMenuButton
                   onPress={toggle}
-                  avatarUrl={currentUser?.avatarUrl}
                   avatarFallbackLabel={currentUser?.displayName}
                 />
               )}
@@ -126,19 +142,29 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
           </View>
         }>
         <AppCard tone="accent">
-          <Text style={styles.heroValue}>{events.length}</Text>
-          <Text style={styles.heroLabel}>Active events in your workspace</Text>
+          <View style={styles.heroTopRow}>
+            <Text style={styles.heroLabel}>Total tracked spend</Text>
+            {events.length > 0 && (
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>
+                  {events.length} event{events.length === 1 ? '' : 's'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.heroAmount}>{formatCurrency(totalSpend, primaryCurrency)}</Text>
+          <Text style={styles.heroMeta}>Across all your active events</Text>
           <View style={styles.actionRow}>
             <View style={styles.actionRowItem}>
               <AppButton
-                label="Create event"
+                label="New event"
                 icon="create"
                 onPress={() => navigation.navigate('CreateEvent')}
               />
             </View>
             <View style={styles.actionRowItem}>
               <AppButton
-                label="Join by code"
+                label="Join code"
                 icon="join"
                 variant="secondary"
                 onPress={() => {
@@ -150,29 +176,54 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
           </View>
         </AppCard>
 
-        <SectionHeading title="Your events" detail={`${events.length} total`} />
+        <View style={styles.statCardRow}>
+          <View style={styles.statCard}>
+            <View style={styles.statCardTopRow}>
+              <Text style={styles.statCardLabel}>Active events</Text>
+              <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
+                <AppIcon name="event" tone="inverted" size={16} />
+              </View>
+            </View>
+            <Text style={styles.statCardValue}>{events.length}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statCardTopRow}>
+              <Text style={styles.statCardLabel}>Invites</Text>
+              <View style={[styles.statCardIconBadge, styles.statCardIconBlue]}>
+                <AppIcon name="invite" tone="inverted" size={16} />
+              </View>
+            </View>
+            <Text style={styles.statCardValue}>{pendingInvites.length}</Text>
+          </View>
+        </View>
+
+        <SectionHeading
+          title="Your events"
+          detail="See all"
+          onDetailPress={() => navigation.navigate('Events')}
+        />
         {events.length === 0 ? (
           <EmptyState
             title="No events yet"
             body="Create a trip or join one with an invite code to start tracking shared spending."
           />
         ) : null}
-        {events.map(event => {
+        {events.slice(0, 3).map(event => {
           const summary = summaries[event.id];
-          const totalSpend =
+          const totalEventSpend =
             summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
-
           return (
             <HomeEventCard
               key={event.id}
               event={event}
               members={summary?.members ?? []}
-              totalSpend={totalSpend}
+              totalSpend={totalEventSpend}
               onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
             />
           );
         })}
       </AppScreen>
+
       <AppModal
         visible={notificationModalVisible}
         title="Notifications"
@@ -201,6 +252,7 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
         )}
         <InlineError message={error ?? undefined} />
       </AppModal>
+
       <AppModal
         visible={joinModalVisible}
         title="Join event"
@@ -247,9 +299,9 @@ export function NotificationDetailScreen({
 
   return (
     <AppScreen
+      variant="detail"
       title="Notification"
       subtitle="Review the update and take action if needed."
-      headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       {!pendingInvite ? (
         <EmptyState
@@ -260,10 +312,7 @@ export function NotificationDetailScreen({
         <PendingInviteDetailCard
           pendingInvite={pendingInvite}
           onAccept={() => {
-            respondToInvite({
-              inviteId: pendingInvite.invite.id,
-              action: 'accept',
-            })
+            respondToInvite({inviteId: pendingInvite.invite.id, action: 'accept'})
               .then(event => {
                 if (event) {
                   navigation.replace('EventDashboard', {eventId: event.id});
@@ -274,10 +323,7 @@ export function NotificationDetailScreen({
               .catch(() => undefined);
           }}
           onDecline={() => {
-            respondToInvite({
-              inviteId: pendingInvite.invite.id,
-              action: 'decline',
-            })
+            respondToInvite({inviteId: pendingInvite.invite.id, action: 'decline'})
               .then(() => navigation.goBack())
               .catch(() => undefined);
           }}
@@ -321,7 +367,6 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
 
   function toggleContact(contact: Contact) {
     const draftId = `contact:${contact.id}`;
-
     setSelectedMembers(current =>
       current.some(member => member.id === draftId)
         ? current.filter(member => member.id !== draftId)
@@ -342,7 +387,6 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
     if (!canInviteByEmail || hasSelectedEmailInvite) {
       return;
     }
-
     setSelectedMembers(current => [
       ...current,
       {
@@ -360,12 +404,10 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
 
   async function handleCreate() {
     const parsed = eventSchema.safeParse({name, description, currency});
-
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message);
       return;
     }
-
     setFormError(undefined);
     const event = await createEvent({
       ...parsed.data,
@@ -381,23 +423,23 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
 
   return (
     <AppScreen
+      variant="detail"
       title="Create event"
       subtitle="Start with a currency, a name, and a shared ledger."
-      headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
         <Pressable
           accessibilityRole="button"
           onPress={() => setIconModalVisible(true)}
-          style={({pressed}) => [
-            styles.eventIconSelector,
-            pressed ? styles.pressed : null,
-          ]}>
+          style={({pressed}) => [styles.eventIconSelector, pressed && styles.pressed]}>
           <View style={styles.eventIconSelectorBadge}>
             <AppIcon name={icon} tone="accent" size={28} />
           </View>
-          <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
-          <Text style={styles.eventMeta}>Optional. A default icon is already set.</Text>
+          <View style={{flex: 1, gap: 2}}>
+            <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+            <Text style={styles.eventMeta}>Tap to change</Text>
+          </View>
+          <AppIcon name="chevron" tone="muted" size={16} />
         </Pressable>
         <AppInput
           label="Event name"
@@ -417,12 +459,12 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             title="Add members"
             detail={
               selectedMembers.length > 0
-                ? `${selectedMembers.length} pending additions`
+                ? `${selectedMembers.length} queued`
                 : 'Optional'
             }
           />
           <Text style={styles.eventMeta}>
-            Search contacts or type an email address to queue an invite for this event.
+            Search contacts or type an email address to queue an invite.
           </Text>
           <AppButton
             label={
@@ -443,7 +485,6 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           <View style={styles.actionRowItem}>
             <AppButton
               label={`Currency: ${currency}`}
-              icon={icon}
               variant="secondary"
               onPress={() => setCurrency(currency === 'USD' ? 'PHP' : 'USD')}
             />
@@ -458,6 +499,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         </View>
         <InlineError message={formError ?? error ?? undefined} />
       </AppCard>
+
       <AppModal
         visible={iconModalVisible}
         title="Choose an event icon"
@@ -471,6 +513,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           }}
         />
       </AppModal>
+
       <AppModal
         visible={memberModalVisible}
         title="Add members"
@@ -562,7 +605,6 @@ export function EventDashboardScreen({
     if (!event) {
       return;
     }
-
     setEditName(event.name);
     setEditDescription(event.description ?? '');
     setEditIcon(event.icon);
@@ -609,9 +651,9 @@ export function EventDashboardScreen({
   if (!summary || !event) {
     return (
       <AppScreen
+        variant="detail"
         title="Event dashboard"
         subtitle="Loading event details."
-        headerVariant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState
           title="Loading event"
@@ -631,26 +673,22 @@ export function EventDashboardScreen({
   return (
     <>
       <AppScreen
+        variant="detail"
         title={event.name}
         subtitle={event.description || 'Shared expense workspace'}
-        headerVariant="detail"
-        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
-        actions={
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('AddExpense', {eventId})}
-            style={({pressed}) => [
-              styles.headerActionButton,
-              pressed ? styles.pressed : null,
-            ]}>
-            <AppIcon name="expense" tone="inverted" size={14} />
-            <Text style={styles.headerActionText}>Add expense</Text>
-          </Pressable>
-        }>
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <AppCard tone="accent">
-          <View style={styles.dashboardEventHeader}>
-            <View style={styles.dashboardEventIcon}>
-              <AppIcon name={event.icon} tone="accent" size={22} />
+          <View style={styles.dashboardHeader}>
+            <View style={styles.dashboardEventIconBadge}>
+              <AppIcon name={event.icon} tone="accent" size={20} />
+            </View>
+            <View style={styles.dashboardStatusRow}>
+              <Text style={styles.dashboardEventName} numberOfLines={1}>
+                {event.name}
+              </Text>
+              <View style={styles.dashboardLiveBadge}>
+                <Text style={styles.dashboardLiveBadgeText}>Live</Text>
+              </View>
             </View>
             <Pressable
               accessibilityRole="button"
@@ -658,33 +696,45 @@ export function EventDashboardScreen({
                 setEditFormError(undefined);
                 setEditModalVisible(true);
               }}
-              style={({pressed}) => [
-                styles.inlineEditButton,
-                pressed ? styles.pressed : null,
-              ]}>
-              <AppIcon name="edit" tone="accent" size={13} />
-              <Text style={styles.inlineEditButtonText}>Edit</Text>
+              style={({pressed}) => [styles.dashboardEditButton, pressed && styles.pressed]}>
+              <AppIcon name="edit" tone="accent" size={12} />
+              <Text style={styles.dashboardEditText}>Edit</Text>
             </Pressable>
           </View>
-          <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
-          <Text style={styles.heroLabel}>Tracked event spending</Text>
-          <View style={styles.dashboardMetricRow}>
-            <DashboardMembersMetricCard
-              members={summary.members}
-              onPress={() => navigation.navigate('Members', {eventId})}
-            />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('CentralFund', {eventId})}
-              style={({pressed}) => [
-                styles.dashboardMetricCard,
-                styles.dashboardMetricCardSoft,
-                pressed ? styles.pressed : null,
-              ]}>
-              <Text style={styles.metricLabelStrong}>Fund contributed</Text>
-              <Text style={styles.metricText}>{formatCurrency(fundTotal, event.currency)}</Text>
-              <Text style={styles.metricFootnote}>Tap to manage the shared fund</Text>
-            </Pressable>
+
+          <Text style={styles.dashboardMemberCount}>
+            {summary.members.length} member{summary.members.length === 1 ? '' : 's'}
+          </Text>
+
+          <View style={styles.dashboardMetrics}>
+            <View style={styles.dashboardMetricItem}>
+              <Text style={styles.dashboardMetricLabel}>Spend</Text>
+              <Text style={styles.dashboardMetricValue}>
+                {formatCurrency(totalSpend, event.currency)}
+              </Text>
+            </View>
+            <View style={styles.dashboardMetricItem}>
+              <Text style={styles.dashboardMetricLabel}>Fund</Text>
+              <Text style={styles.dashboardMetricValue}>
+                {formatCurrency(fundTotal, event.currency)}
+              </Text>
+            </View>
+            {currentBalance ? (
+              <View style={styles.dashboardMetricItem}>
+                <Text style={styles.dashboardMetricLabel}>My balance</Text>
+                <Text
+                  style={[
+                    styles.dashboardMetricValue,
+                    currentBalance.net > 0
+                      ? styles.dashboardMetricPositive
+                      : currentBalance.net < 0
+                        ? {color: palette.danger}
+                        : null,
+                  ]}>
+                  {formatCurrency(Math.abs(currentBalance.net), event.currency)}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </AppCard>
 
@@ -697,21 +747,43 @@ export function EventDashboardScreen({
           />
         ) : null}
 
-        <View style={styles.compactActionList}>
-          <DashboardShortcutCard
-            iconName="balances"
-            title="Balances"
-            subtitle="See who is up or down"
-            variant="balances"
+        <View style={styles.shortcutRow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('AddExpense', {eventId})}
+            style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
+            <View style={styles.shortcutIconBubble}>
+              <AppIcon name="expense" tone="accent" size={22} />
+            </View>
+            <Text style={styles.shortcutLabel}>Expense</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
             onPress={() => navigation.navigate('Balances', {eventId})}
-          />
-          <DashboardShortcutCard
-            iconName="settlement"
-            title="Settlement"
-            subtitle="Suggested payback plan"
-            variant="settlement"
+            style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
+            <View style={styles.shortcutIconBubble}>
+              <AppIcon name="balances" tone="accent" size={22} />
+            </View>
+            <Text style={styles.shortcutLabel}>Balances</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
             onPress={() => navigation.navigate('Settlement', {eventId})}
-          />
+            style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
+            <View style={styles.shortcutIconBubble}>
+              <AppIcon name="settlement" tone="accent" size={22} />
+            </View>
+            <Text style={styles.shortcutLabel}>Settle</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Members', {eventId})}
+            style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
+            <View style={styles.shortcutIconBubble}>
+              <AppIcon name="members" tone="accent" size={22} />
+            </View>
+            <Text style={styles.shortcutLabel}>Members</Text>
+          </Pressable>
         </View>
 
         <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
@@ -731,9 +803,9 @@ export function EventDashboardScreen({
               <RecentExpenseListItem
                 key={expense.id}
                 title={expense.title}
-                meta={`${payer?.displayName || 'Unknown payer'} • ${formatDateLabel(
+                meta={`${payer?.displayName || 'Unknown payer'} · ${formatDateLabel(
                   expense.createdAt,
-                )}${expense.updatedAt !== expense.createdAt ? ' • Edited' : ''}`}
+                )}${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
                 amountLabel={formatCurrency(expense.amount, event.currency)}
                 onPress={() =>
                   navigation.navigate('AddExpense', {eventId, expenseId: expense.id})
@@ -741,18 +813,17 @@ export function EventDashboardScreen({
               />
             );
           })}
+
         <Pressable
           accessibilityRole="button"
           onPress={() => setDeleteConfirmVisible(true)}
-          style={({pressed}) => [
-            styles.deleteEventButton,
-            pressed ? styles.pressed : null,
-          ]}>
+          style={({pressed}) => [styles.deleteEventButton, pressed && styles.pressed]}>
           <AppIcon name="delete" tone="default" size={14} />
           <Text style={styles.deleteEventButtonText}>Delete event</Text>
         </Pressable>
         <InlineError message={error ?? undefined} />
       </AppScreen>
+
       <AppModal
         visible={editModalVisible}
         title="Edit event"
@@ -767,7 +838,6 @@ export function EventDashboardScreen({
             <AppIcon name={editIcon} tone="accent" size={28} />
           </View>
           <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
-          <Text style={styles.eventMeta}>Choose the icon shown on the dashboard.</Text>
         </View>
         <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
         <AppInput
@@ -783,38 +853,33 @@ export function EventDashboardScreen({
           placeholder="Flights, villa, food, and shared activities"
           multiline
         />
-        <View style={styles.actionRow}>
-          <View style={styles.actionRowItem}>
-            <AppButton
-              label="Save changes"
-              icon="edit"
-              onPress={() => {
-                const parsed = eventSchema.safeParse({
-                  name: editName,
-                  description: editDescription,
-                  currency: event.currency,
-                });
-
-                if (!parsed.success) {
-                  setEditFormError(parsed.error.issues[0]?.message);
-                  return;
-                }
-
-                setEditFormError(undefined);
-                updateEvent({
-                  eventId,
-                  name: parsed.data.name,
-                  description: parsed.data.description,
-                  icon: editIcon,
-                })
-                  .then(() => setEditModalVisible(false))
-                  .catch(() => undefined);
-              }}
-            />
-          </View>
-        </View>
+        <AppButton
+          label="Save changes"
+          icon="edit"
+          onPress={() => {
+            const parsed = eventSchema.safeParse({
+              name: editName,
+              description: editDescription,
+              currency: event.currency,
+            });
+            if (!parsed.success) {
+              setEditFormError(parsed.error.issues[0]?.message);
+              return;
+            }
+            setEditFormError(undefined);
+            updateEvent({
+              eventId,
+              name: parsed.data.name,
+              description: parsed.data.description,
+              icon: editIcon,
+            })
+              .then(() => setEditModalVisible(false))
+              .catch(() => undefined);
+          }}
+        />
         <InlineError message={editFormError ?? error ?? undefined} />
       </AppModal>
+
       <AppModal
         visible={deleteConfirmVisible}
         title="Delete event"
@@ -843,10 +908,7 @@ export function EventDashboardScreen({
                   })
                   .catch(() => undefined);
               }}
-              style={({pressed}) => [
-                styles.deleteConfirmButton,
-                pressed ? styles.pressed : null,
-              ]}>
+              style={({pressed}) => [styles.deleteConfirmButton, pressed && styles.pressed]}>
               <AppIcon name="delete" tone="inverted" size={15} />
               <Text style={styles.deleteConfirmButtonText}>Delete event</Text>
             </Pressable>
@@ -854,6 +916,7 @@ export function EventDashboardScreen({
         </View>
         <InlineError message={error ?? undefined} />
       </AppModal>
+
       <AppModal
         visible={showBalanceDetails}
         title="My balance"
@@ -894,7 +957,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
     if (!summary) {
       return [];
     }
-
     const pendingInviteRows = summary.invites
       .filter(invite => invite.status === 'pending' && !!invite.invitedEmail)
       .map(invite => ({
@@ -904,7 +966,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         joinedLabel: `Invited ${formatDateLabel(invite.createdAt)}`,
         statusLabel: 'Pending' as const,
       }));
-
     const joinedMemberRows = summary.members.map(member => ({
       id: member.id,
       displayName: member.displayName,
@@ -916,7 +977,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           : `Added ${formatDateLabel(member.joinedAt)}`,
       statusLabel: member.status === 'joined' ? ('Joined' as const) : ('Pending' as const),
     }));
-
     return [...joinedMemberRows, ...pendingInviteRows];
   }, [currentUser, summary]);
 
@@ -924,7 +984,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
     if (!toastMessage) {
       return;
     }
-
     const timeoutId = setTimeout(() => setToastMessage(null), 2200);
     return () => clearTimeout(timeoutId);
   }, [toastMessage]);
@@ -932,9 +991,9 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   if (!summary) {
     return (
       <AppScreen
+        variant="detail"
         title="Members"
         subtitle="Loading member roster."
-        headerVariant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState
           title="Loading members"
@@ -946,12 +1005,12 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
 
   return (
     <AppScreen
+      variant="detail"
       title="Members"
-      subtitle="Keep registered and placeholder members in one shared roster."
-      headerVariant="detail"
+      subtitle="Registered and placeholder members in one shared roster."
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
       footerOverlay={toastMessage ? <AppToast message={toastMessage} /> : null}>
-      <AppCard tone="warm">
+      <AppCard tone="accent">
         <View style={styles.memberCodeHeader}>
           <SectionHeading title="Event code" />
           {latestInvite ? (
@@ -963,45 +1022,35 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
                   .then(() => setToastMessage('New event code generated'))
                   .catch(() => undefined);
               }}
-              style={({pressed}) => [
-                styles.refreshButtonLight,
-                pressed ? styles.pressed : null,
-              ]}>
+              style={({pressed}) => [styles.refreshButtonLight, pressed && styles.pressed]}>
               <AppIcon name="refresh" tone="accent" size={15} />
             </Pressable>
           ) : null}
         </View>
         {latestInvite ? (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                Clipboard.setString(latestInvite.inviteCode);
-                setToastMessage('Event code copied');
-              }}
-              style={({pressed}) => [
-                styles.inviteCodePressable,
-                pressed ? styles.pressed : null,
-              ]}>
-              <Text style={styles.inviteCodeValueLarge}>{latestInvite.inviteCode}</Text>
-              <Text style={styles.inviteCodeHint}>Press to copy</Text>
-            </Pressable>
-            <Text style={styles.eventMeta}>Expires {formatDateLabel(latestInvite.expiresAt)}</Text>
-          </>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              Clipboard.setString(latestInvite.inviteCode);
+              setToastMessage('Event code copied');
+            }}
+            style={({pressed}) => [styles.inviteCodeDisplay, pressed && styles.pressed]}>
+            <Text style={styles.inviteCodeLabel}>Event code</Text>
+            <Text style={styles.inviteCodeValue}>{latestInvite.inviteCode}</Text>
+            <Text style={styles.inviteCodeExpiry}>
+              Tap to copy · Expires {formatDateLabel(latestInvite.expiresAt)}
+            </Text>
+          </Pressable>
         ) : (
-          <View style={styles.actionRow}>
-            <View style={styles.actionRowItem}>
-              <AppButton
-                label="Generate event code"
-                icon="invite"
-                onPress={() => {
-                  createInvite(eventId)
-                    .then(() => setToastMessage('Event code generated'))
-                    .catch(() => undefined);
-                }}
-              />
-            </View>
-          </View>
+          <AppButton
+            label="Generate event code"
+            icon="invite"
+            onPress={() => {
+              createInvite(eventId)
+                .then(() => setToastMessage('Event code generated'))
+                .catch(() => undefined);
+            }}
+          />
         )}
         <InlineError message={error ?? undefined} />
       </AppCard>
@@ -1025,7 +1074,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               setMemberFormError('Enter a display name.');
               return;
             }
-
             addManualMember(eventId, displayName)
               .then(() => {
                 setDisplayName('');
@@ -1054,12 +1102,10 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           icon="invite"
           onPress={() => {
             const normalizedEmail = normalizeEmail(inviteEmail);
-
             if (!isEmailAddress(normalizedEmail)) {
               setInviteFormError('Enter a valid email.');
               return;
             }
-
             createInvite(eventId, {email: normalizedEmail})
               .then(() => {
                 setInviteEmail('');

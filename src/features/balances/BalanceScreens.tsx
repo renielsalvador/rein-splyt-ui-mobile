@@ -26,9 +26,9 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   if (!summary) {
     return (
       <AppScreen
+        variant="detail"
         title="Balances"
         subtitle="Loading computed balances."
-        headerVariant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading balances" body="Computing who paid more and who still owes." />
       </AppScreen>
@@ -37,9 +37,9 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
 
   return (
     <AppScreen
+      variant="detail"
       title="Balances"
-      subtitle="Each member’s running net position for this event."
-      headerVariant="detail"
+      subtitle="Each member's running net position for this event."
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       {eventBalances.map(balance => (
         <AppCard key={balance.memberId}>
@@ -47,7 +47,7 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
             <View style={styles.copy}>
               <Text style={styles.memberName}>{balance.displayName}</Text>
               <Text style={styles.meta}>
-                Paid {formatCurrency(balance.paid, summary.event.currency)} • Owes{' '}
+                Paid {formatCurrency(balance.paid, summary.event.currency)} · Owes{' '}
                 {formatCurrency(balance.owed, summary.event.currency)}
               </Text>
             </View>
@@ -75,9 +75,9 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
   if (!summary) {
     return (
       <AppScreen
+        variant="detail"
         title="Settlement summary"
         subtitle="Loading suggested settlement instructions."
-        headerVariant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading settlement" body="Computing the minimum payment instructions for the group." />
       </AppScreen>
@@ -86,9 +86,9 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
 
   return (
     <AppScreen
+      variant="detail"
       title="Settlement summary"
       subtitle="Simplified payment instructions generated from net balances."
-      headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <SectionHeading title="Suggested transfers" detail={`${instructions.length} payments`} />
       {instructions.length === 0 ? (
@@ -125,18 +125,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   memberName: {
-    ...typography.title,
-    fontSize: 19,
-    lineHeight: 24,
+    ...typography.cardTitle,
   },
   meta: {
-    ...typography.eyebrow,
+    ...typography.caption,
     color: palette.inkMuted,
   },
   amount: {
-    ...typography.title,
-    fontSize: 20,
-    lineHeight: 26,
+    ...typography.sectionTitle,
     color: palette.primary,
   },
 });

@@ -1,13 +1,17 @@
 import React from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {
+  AppAvatar,
+  AppAvatarStack,
   AppButton,
   AppCard,
   AppIcon,
   type AppIconName,
   SectionHeading,
 } from '../../components/ui';
+import {DataPill} from '../../components/ui';
 import {formatCurrency} from '../../lib/utils/format';
+import {palette, radii, spacing, surfaces, typography} from '../../theme/tokens';
 import type {
   CurrencyCode,
   Event,
@@ -26,91 +30,59 @@ import {
   getInvitePreview,
 } from './EventScreenShared';
 
-function getAvatarTone(index: number) {
-  const tones = [
-    {backgroundColor: '#DDEDE6', textColor: '#1B4332'},
-    {backgroundColor: '#E8F0FE', textColor: '#2855AE'},
-    {backgroundColor: '#E8F6EE', textColor: '#2E7D32'},
-  ] as const;
-
-  return tones[index % tones.length];
-}
-
-function getAvatarChipOffsetStyle(index: number) {
-  return index === 0 ? styles.avatarChipFirst : styles.avatarChipOffset;
-}
-
-function formatAmountValue(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-export function EventMemberAvatarStack({members}: {members: EventMember[]}) {
-  return (
-    <View style={styles.avatarStackRow}>
-      {members.slice(0, 3).map((member, index) => {
-        const tone = getAvatarTone(index);
-        return (
-          <View
-            key={member.id}
-            style={[
-              styles.avatarChip,
-              getAvatarChipOffsetStyle(index),
-              {backgroundColor: tone.backgroundColor},
-            ]}>
-            <Text style={[styles.avatarText, {color: tone.textColor}]}>
-              {member.displayName.slice(0, 1).toUpperCase()}
-            </Text>
-          </View>
-        );
-      })}
-      {members.length > 3 ? (
-        <View style={styles.avatarOverflowChip}>
-          <Text style={styles.avatarOverflowText}>+{members.length - 3}</Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 export function HomeEventCard({
   event,
   members,
   totalSpend,
+  currentBalance,
   onPress,
 }: {
   event: Event;
   members: EventMember[];
   totalSpend: number;
+  currentBalance?: number;
   onPress: () => void;
 }) {
+  const memberNames = members.map(m => m.displayName);
+
   return (
-    <Pressable onPress={onPress} style={({pressed}) => [pressed ? styles.pressed : null]}>
-      <AppCard>
-        <View style={styles.eventHeaderRow}>
-          <View style={styles.eventLeadRow}>
-            <View style={styles.eventIconBadge}>
-              <AppIcon name={event.icon} tone="accent" size={20} />
-            </View>
-            <View style={styles.eventCopy}>
-              <Text style={styles.eventName}>{event.name}</Text>
-              <Text style={styles.eventMeta}>{event.description || 'Shared expense workspace'}</Text>
-            </View>
+    <Pressable onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
+      <View style={styles.eventCard}>
+        <View style={styles.eventIconBadge}>
+          <AppIcon name={event.icon} tone="accent" size={20} />
+        </View>
+        <View style={styles.eventBody}>
+          <Text style={styles.eventName}>{event.name}</Text>
+          <View style={styles.eventMetaRow}>
+            {memberNames.length > 0 && <AppAvatarStack names={memberNames} size="xs" />}
+            <Text style={styles.eventMetaText}>{members.length} members</Text>
           </View>
         </View>
-        <View style={styles.metricRow}>
-          <View style={styles.metricPanel}>
-            <Text style={styles.metricLabel}>Members</Text>
-            <EventMemberAvatarStack members={members} />
-          </View>
-          <View style={styles.metricPanel}>
-            <Text style={styles.metricLabel}>Tracked spend</Text>
-            <Text style={styles.metricText}>{formatAmountValue(totalSpend)}</Text>
-          </View>
+        <View style={styles.eventTrailing}>
+          {currentBalance !== undefined ? (
+            <>
+              <Text style={styles.eventBalanceLabel}>
+                {currentBalance > 0 ? "You're owed" : currentBalance < 0 ? 'You owe' : 'Settled'}
+              </Text>
+              {currentBalance !== 0 && (
+                <Text
+                  style={[
+                    styles.eventBalanceOwed,
+                    currentBalance < 0 && styles.eventBalanceOwing,
+                  ]}>
+                  {currentBalance > 0 ? '+' : ''}
+                  {formatCurrency(Math.abs(currentBalance), event.currency)}
+                </Text>
+              )}
+              {currentBalance === 0 && <Text style={styles.eventBalanceSettled}>—</Text>}
+            </>
+          ) : (
+            <Text style={styles.eventMetaText}>
+              {formatCurrency(totalSpend, event.currency)}
+            </Text>
+          )}
         </View>
-      </AppCard>
+      </View>
     </Pressable>
   );
 }
@@ -123,27 +95,22 @@ export function PendingInviteListItem({
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed ? styles.pressed : null]}>
-      <AppCard>
-        <View style={styles.notificationHeader}>
-          <View style={styles.notificationLead}>
-            <View style={styles.eventIconBadge}>
-              <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
-            </View>
-            <View style={styles.eventCopy}>
-              <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
-              <Text numberOfLines={2} ellipsizeMode="tail" style={styles.eventMeta}>
-                {getInvitePreview(pendingInvite)}
-              </Text>
-            </View>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
+      <View style={[surfaces.card, componentStyles.notifCard]}>
+        <View style={componentStyles.notifRow}>
+          <View style={componentStyles.notifIconBadge}>
+            <AppIcon name={pendingInvite.event.icon} tone="accent" size={18} />
+          </View>
+          <View style={componentStyles.notifBody}>
+            <Text style={componentStyles.notifTitle}>{pendingInvite.event.name}</Text>
+            <Text numberOfLines={2} style={componentStyles.notifMeta}>
+              {getInvitePreview(pendingInvite)}
+            </Text>
           </View>
           <View style={styles.notificationUnreadDot} />
         </View>
-        <View style={styles.notificationFooterRow}>
-          <Text style={styles.notificationTypeLabel}>Invite request</Text>
-          <Text style={styles.notificationChevron}>›</Text>
-        </View>
-      </AppCard>
+        <Text style={componentStyles.notifType}>Invite request</Text>
+      </View>
     </Pressable>
   );
 }
@@ -159,22 +126,21 @@ export function PendingInviteDetailCard({
 }) {
   return (
     <AppCard>
-      <View style={styles.notificationHeader}>
-        <View style={styles.notificationLead}>
-          <View style={styles.eventIconBadge}>
-            <AppIcon name={pendingInvite.event.icon} tone="accent" size={20} />
-          </View>
-          <View style={styles.eventCopy}>
-            <Text style={styles.eventName}>{pendingInvite.event.name}</Text>
-            <Text style={styles.eventMeta}>{pendingInvite.invitedByUser.displayName} invited you</Text>
-          </View>
+      <View style={componentStyles.notifRow}>
+        <View style={componentStyles.notifIconBadge}>
+          <AppIcon name={pendingInvite.event.icon} tone="accent" size={18} />
         </View>
-        <View style={styles.notificationUnreadDot} />
+        <View style={componentStyles.notifBody}>
+          <Text style={componentStyles.notifTitle}>{pendingInvite.event.name}</Text>
+          <Text style={componentStyles.notifMeta}>
+            {pendingInvite.invitedByUser.displayName} invited you
+          </Text>
+        </View>
       </View>
-      <Text style={styles.notificationTypeLabel}>Invite request</Text>
-      <Text style={styles.selectedContactSummary}>{getInvitePreview(pendingInvite)}</Text>
-      <Text style={styles.eventMeta}>Code {pendingInvite.invite.inviteCode}</Text>
-      <Text style={styles.eventMeta}>
+      <Text style={componentStyles.notifType}>Invite request</Text>
+      <Text style={componentStyles.notifBody}>{getInvitePreview(pendingInvite)}</Text>
+      <Text style={componentStyles.notifMeta}>Code: {pendingInvite.invite.inviteCode}</Text>
+      <Text style={componentStyles.notifMeta}>
         {describeInviteDate(pendingInvite.invite.createdAt, pendingInvite.invite.expiresAt)}
       </Text>
       <View style={styles.actionRow}>
@@ -244,9 +210,9 @@ export function SelectedMembersPreview({
           key={member.id}
           accessibilityRole="button"
           onPress={() => onRemoveMember(member.id)}
-          style={({pressed}) => [styles.selectedMemberChip, pressed ? styles.pressed : null]}>
+          style={({pressed}) => [styles.selectedMemberChip, pressed && styles.pressed]}>
           <Text style={styles.selectedMemberChipText}>{member.label}</Text>
-          <AppIcon name="close" tone="accent" size={12} />
+          <AppIcon name="close" tone="accent" size={11} />
         </Pressable>
       ))}
     </View>
@@ -261,15 +227,13 @@ export function DashboardMembersMetricCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [styles.dashboardMetricCard, pressed ? styles.pressed : null]}>
-      <View style={styles.metricActionRow}>
-        <Text style={styles.metricLabelStrong}>Members</Text>
-        <View style={styles.metricMiniButton}>
-          <AppIcon name="create" tone="accent" size={12} />
-        </View>
-      </View>
-      <Text style={styles.metricTextLarge}>{members.length}</Text>
-      <EventMemberAvatarStack members={members} />
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({pressed}) => [componentStyles.dashboardMetricCard, pressed && styles.pressed]}>
+      <Text style={componentStyles.dashboardMetricLabel}>Members</Text>
+      <Text style={componentStyles.dashboardMetricValue}>{members.length}</Text>
+      <AppAvatarStack names={members.map(m => m.displayName)} size="xs" />
     </Pressable>
   );
 }
@@ -285,40 +249,39 @@ export function DashboardBalanceSummaryCard({
   balanceLabel: string;
   onPress: () => void;
 }) {
+  const isPositive = currentBalance.net > 0;
+  const isNegative = currentBalance.net < 0;
+
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed ? styles.pressed : null]}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <AppCard>
-        <View style={styles.balanceSummaryRow}>
-          <View style={styles.balanceLead}>
+        <View style={componentStyles.balanceRow}>
+          <View style={componentStyles.balanceLead}>
             <View
               style={[
-                styles.summaryIconBubble,
-                currentBalance.net > 0
-                  ? styles.summaryIconPositive
-                  : currentBalance.net < 0
-                    ? styles.summaryIconNegative
-                    : styles.summaryIconNeutral,
+                componentStyles.balanceIconBubble,
+                isPositive
+                  ? componentStyles.balanceIconPositive
+                  : isNegative
+                    ? componentStyles.balanceIconNegative
+                    : componentStyles.balanceIconNeutral,
               ]}>
               <AppIcon name="balances" tone="accent" size={16} />
             </View>
-            <View style={styles.eventCopy}>
-              <Text style={styles.balanceTitle}>My balance</Text>
-              <Text style={styles.eventMeta}>{balanceLabel}</Text>
+            <View style={{flex: 1, gap: 2}}>
+              <Text style={componentStyles.balanceTitle}>My balance</Text>
+              <Text style={componentStyles.balanceMeta}>{balanceLabel}</Text>
             </View>
           </View>
-          <View style={styles.balanceAmountWrap}>
+          <View style={{alignItems: 'flex-end', gap: 2}}>
             <Text
               style={[
-                styles.balanceAmount,
-                currentBalance.net > 0
-                  ? styles.balanceAmountPositive
-                  : currentBalance.net < 0
-                    ? styles.balanceAmountNegative
-                    : styles.balanceAmountNeutral,
+                componentStyles.balanceAmount,
+                isPositive ? styles.balanceAmountPositive : isNegative ? styles.balanceAmountNegative : styles.balanceAmountNeutral,
               ]}>
               {formatCurrency(Math.abs(currentBalance.net), currency)}
             </Text>
-            <Text style={styles.balanceHint}>Tap for details</Text>
+            <Text style={componentStyles.balanceHint}>Tap for details</Text>
           </View>
         </View>
       </AppCard>
@@ -330,30 +293,26 @@ export function DashboardShortcutCard({
   iconName,
   title,
   subtitle,
-  variant,
   onPress,
 }: {
   iconName: AppIconName;
   title: string;
   subtitle: string;
-  variant: 'balances' | 'settlement';
+  variant?: 'balances' | 'settlement';
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed ? styles.pressed : null]}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <AppCard>
-        <View style={styles.compactActionRow}>
-          <View
-            style={[
-              styles.summaryIconBubble,
-              variant === 'balances' ? styles.summaryIconBalances : styles.summaryIconSettlement,
-            ]}>
-            <AppIcon name={iconName} tone="accent" size={16} />
+        <View style={componentStyles.shortcutRow}>
+          <View style={componentStyles.shortcutIconBubble}>
+            <AppIcon name={iconName} tone="accent" size={18} />
           </View>
-          <View style={styles.eventCopy}>
-            <Text style={styles.compactActionTitle}>{title}</Text>
-            <Text style={styles.eventMeta}>{subtitle}</Text>
+          <View style={{flex: 1, gap: 2}}>
+            <Text style={componentStyles.shortcutTitle}>{title}</Text>
+            <Text style={componentStyles.shortcutMeta}>{subtitle}</Text>
           </View>
+          <AppIcon name="chevron" tone="muted" size={18} />
         </View>
       </AppCard>
     </Pressable>
@@ -372,16 +331,17 @@ export function RecentExpenseListItem({
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed ? styles.pressed : null]}>
-      <AppCard>
-        <View style={styles.eventHeaderRow}>
-          <View style={styles.eventCopy}>
-            <Text style={styles.eventName}>{title}</Text>
-            <Text style={styles.eventMeta}>{meta}</Text>
-          </View>
-          <Text style={styles.metricText}>{amountLabel}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
+      <View style={styles.expenseRow}>
+        <View style={styles.expenseIconBadge}>
+          <AppIcon name="expense" tone="accent" size={16} />
         </View>
-      </AppCard>
+        <View style={styles.expenseBody}>
+          <Text style={styles.expenseTitle}>{title}</Text>
+          <Text style={styles.expenseMeta}>{meta}</Text>
+        </View>
+        <Text style={styles.expenseAmount}>{amountLabel}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -425,7 +385,9 @@ export function BalanceDetailsContent({
               <Text style={styles.balanceSheetRowTitle}>{item.fromDisplayName}</Text>
               <Text style={styles.balanceSheetRowSubtitle}>Needs to pay you</Text>
             </View>
-            <Text style={styles.balanceDetailPositive}>{formatCurrency(item.amount, currency)}</Text>
+            <Text style={styles.balanceDetailPositive}>
+              {formatCurrency(item.amount, currency)}
+            </Text>
           </View>
         ))}
       </View>
@@ -441,7 +403,9 @@ export function BalanceDetailsContent({
               <Text style={styles.balanceSheetRowTitle}>{item.toDisplayName}</Text>
               <Text style={styles.balanceSheetRowSubtitle}>You need to pay</Text>
             </View>
-            <Text style={styles.balanceDetailNegative}>{formatCurrency(item.amount, currency)}</Text>
+            <Text style={styles.balanceDetailNegative}>
+              {formatCurrency(item.amount, currency)}
+            </Text>
           </View>
         ))}
       </View>
@@ -452,31 +416,140 @@ export function BalanceDetailsContent({
 export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
   return (
     <View style={styles.memberRosterList}>
-      {members.map((member, index) => (
-        <View
-          key={member.id}
-          style={[
-            styles.memberRosterRow,
-            index === members.length - 1 ? styles.memberRosterRowLast : null,
-          ]}>
-          <View style={styles.memberRosterPrimary}>
-            <Text style={styles.memberRosterName}>{member.displayName}</Text>
-            <Text style={styles.memberRosterEmail}>{member.email ?? 'No email available'}</Text>
+      {members.map(member => (
+        <View key={member.id} style={styles.memberRow}>
+          <AppAvatar name={member.displayName} size="sm" />
+          <View style={styles.memberRowBody}>
+            <View style={styles.memberRowNameRow}>
+              <Text style={styles.memberRowName}>{member.displayName}</Text>
+              {member.statusLabel === 'Joined' && (
+                <DataPill label="Joined" tone="success" />
+              )}
+            </View>
+            <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
           </View>
-          <View style={styles.memberRosterMeta}>
-            <Text style={styles.memberRosterJoined}>{member.joinedLabel}</Text>
-            <Text
-              style={[
-                styles.memberRosterStatus,
-                member.statusLabel === 'Joined'
-                  ? styles.memberRosterStatusJoined
-                  : styles.memberRosterStatusPending,
-              ]}>
-              {member.statusLabel}
-            </Text>
+          <View style={styles.memberRowTrailing}>
+            {member.statusLabel === 'Pending' ? (
+              <DataPill label="Invited" tone="info" />
+            ) : null}
           </View>
         </View>
       ))}
     </View>
   );
 }
+
+const componentStyles = StyleSheet.create({
+  notifCard: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  notifRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  notifIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  notifBody: {
+    flex: 1,
+    gap: 2,
+  },
+  notifTitle: {
+    ...typography.bodyStrong,
+  },
+  notifMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  notifType: {
+    ...typography.caption,
+    color: palette.primary,
+    fontWeight: '600',
+  },
+  dashboardMetricCard: {
+    ...surfaces.card,
+    flex: 1,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  dashboardMetricLabel: {
+    ...typography.label,
+    color: palette.inkMuted,
+  },
+  dashboardMetricValue: {
+    ...typography.sectionTitle,
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  balanceLead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  balanceIconBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  balanceIconPositive: {
+    backgroundColor: '#E7F5EB',
+  },
+  balanceIconNegative: {
+    backgroundColor: '#FCE8E5',
+  },
+  balanceIconNeutral: {
+    backgroundColor: palette.bgApp,
+  },
+  balanceTitle: {
+    ...typography.bodyStrong,
+  },
+  balanceMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  balanceAmount: {
+    ...typography.sectionTitle,
+    fontWeight: '700',
+  },
+  balanceHint: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  shortcutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  shortcutIconBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.greenTintSoft,
+  },
+  shortcutTitle: {
+    ...typography.bodyStrong,
+  },
+  shortcutMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+});

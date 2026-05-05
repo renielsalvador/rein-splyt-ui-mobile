@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {Text} from 'react-native';
+import {Platform, SafeAreaView, Text, View} from 'react-native';
 import {AppProvider, useApp} from './AppProvider';
 import {AuthScreen} from '../features/auth/AuthScreen';
 import {
@@ -9,14 +9,20 @@ import {
   MembersScreen,
   NotificationDetailScreen,
 } from '../features/events/EventScreens';
+import {EventsScreen} from '../features/events/EventsScreen';
+import {ActivityScreen} from '../features/events/ActivityScreen';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
 import {SettingsScreen} from '../features/settings/SettingsScreen';
-import {AppCard, AppScreen} from '../components/ui';
+import {AppCard, AppScreen, AppTabBar} from '../components/ui';
+import type {TabName} from '../components/ui';
+import {palette} from '../theme/tokens';
 
 export type AppStackParamList = {
   Home: undefined;
+  Events: undefined;
+  Activity: undefined;
   NotificationDetail: {inviteId: string};
   CreateEvent: undefined;
   EventDashboard: {eventId: string};
@@ -34,11 +40,10 @@ type Route<T extends ScreenName> = AppStackParamList[T] extends undefined
   ? {name: T}
   : {name: T; params: AppStackParamList[T]};
 
-type AnyRoute = {
-  [K in ScreenName]: Route<K>;
-}[ScreenName];
+type AnyRoute = {[K in ScreenName]: Route<K>}[ScreenName];
+type MutableRoute = AnyRoute;
 
-type Navigator = {
+export type Navigator = {
   navigate: <T extends ScreenName>(
     name: T,
     ...args: AppStackParamList[T] extends undefined ? [] : [AppStackParamList[T]]
@@ -49,8 +54,6 @@ type Navigator = {
   ) => void;
   goBack: () => void;
 };
-
-type MutableRoute = AnyRoute;
 
 export type ScreenProps<T extends ScreenName> = {
   navigation: Navigator;
@@ -64,11 +67,20 @@ function createRoute<T extends ScreenName>(
   if (args.length === 0) {
     return {name} as Route<T>;
   }
-
   return {name, params: args[0]} as Route<T>;
 }
 
+const TAB_ROOT: Record<TabName, ScreenName> = {
+  Home: 'Home',
+  Events: 'Events',
+  Activity: 'Activity',
+  Settings: 'Settings',
+};
+
+const TAB_SCREENS = new Set<ScreenName>(['Home', 'Events', 'Activity', 'Settings']);
+
 function AppNavigator() {
+  const [currentTab, setCurrentTab] = useState<TabName>('Home');
   const [stack, setStack] = useState<AnyRoute[]>([{name: 'Home'}]);
 
   const navigation = useMemo<Navigator>(
@@ -78,10 +90,8 @@ function AppNavigator() {
       },
       replace(name, ...args) {
         setStack(current => {
-          const nextRoute = createRoute(name, ...args) as MutableRoute;
-          return current.length > 0
-            ? [...current.slice(0, current.length - 1), nextRoute]
-            : [nextRoute];
+          const next = createRoute(name, ...args) as MutableRoute;
+          return current.length > 0 ? [...current.slice(0, -1), next] : [next];
         });
       },
       goBack() {
@@ -91,32 +101,69 @@ function AppNavigator() {
     [],
   );
 
-  const currentRoute = stack[stack.length - 1];
-
-  switch (currentRoute.name) {
-    case 'Home':
-      return <HomeScreen navigation={navigation} route={currentRoute} />;
-    case 'NotificationDetail':
-      return <NotificationDetailScreen navigation={navigation} route={currentRoute} />;
-    case 'CreateEvent':
-      return <CreateEventScreen navigation={navigation} route={currentRoute} />;
-    case 'EventDashboard':
-      return <EventDashboardScreen navigation={navigation} route={currentRoute} />;
-    case 'Members':
-      return <MembersScreen navigation={navigation} route={currentRoute} />;
-    case 'AddExpense':
-      return <AddExpenseScreen navigation={navigation} route={currentRoute} />;
-    case 'CentralFund':
-      return <CentralFundScreen navigation={navigation} route={currentRoute} />;
-    case 'Balances':
-      return <BalancesScreen navigation={navigation} route={currentRoute} />;
-    case 'Settlement':
-      return <SettlementScreen navigation={navigation} route={currentRoute} />;
-    case 'Settings':
-      return <SettingsScreen navigation={navigation} route={currentRoute} />;
-    default:
-      return null;
+  function handleTabPress(tab: TabName) {
+    setCurrentTab(tab);
+    setStack([{name: TAB_ROOT[tab]} as AnyRoute]);
   }
+
+  const currentRoute = stack[stack.length - 1];
+  const isTopLevel = stack.length === 1 && TAB_SCREENS.has(currentRoute.name);
+
+  function renderScreen(route: AnyRoute) {
+    switch (route.name) {
+      case 'Home':
+        return <HomeScreen navigation={navigation} route={route as Route<'Home'>} hasTabBar={isTopLevel} />;
+      case 'Events':
+        return <EventsScreen navigation={navigation} route={route as Route<'Events'>} hasTabBar={isTopLevel} />;
+      case 'Activity':
+        return <ActivityScreen navigation={navigation} route={route as Route<'Activity'>} hasTabBar={isTopLevel} />;
+      case 'NotificationDetail':
+        return <NotificationDetailScreen navigation={navigation} route={route as Route<'NotificationDetail'>} />;
+      case 'CreateEvent':
+        return <CreateEventScreen navigation={navigation} route={route as Route<'CreateEvent'>} />;
+      case 'EventDashboard':
+        return <EventDashboardScreen navigation={navigation} route={route as Route<'EventDashboard'>} />;
+      case 'Members':
+        return <MembersScreen navigation={navigation} route={route as Route<'Members'>} />;
+      case 'AddExpense':
+        return <AddExpenseScreen navigation={navigation} route={route as Route<'AddExpense'>} />;
+      case 'CentralFund':
+        return <CentralFundScreen navigation={navigation} route={route as Route<'CentralFund'>} />;
+      case 'Balances':
+        return <BalancesScreen navigation={navigation} route={route as Route<'Balances'>} />;
+      case 'Settlement':
+        return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
+      case 'Settings':
+        return <SettingsScreen navigation={navigation} route={route as Route<'Settings'>} hasTabBar={isTopLevel} />;
+      default:
+        return null;
+    }
+  }
+
+  const bottomInset = Platform.OS === 'ios' ? 34 : 0;
+
+  return (
+    <View style={{flex: 1, backgroundColor: palette.primary}}>
+      <View style={{position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: palette.surface}} />
+      <SafeAreaView style={{flex: 1}}>
+        <View style={{flex: 1}}>
+          {renderScreen(currentRoute)}
+        </View>
+      </SafeAreaView>
+      {isTopLevel && (
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingBottom: bottomInset,
+          backgroundColor: palette.surface,
+        }}>
+          <AppTabBar currentTab={currentTab} onTabPress={handleTabPress} />
+        </View>
+      )}
+    </View>
+  );
 }
 
 function AppStateRouter() {
@@ -124,11 +171,15 @@ function AppStateRouter() {
 
   if (!backendReady) {
     return (
-      <AppScreen title="Splyt" subtitle="Bootstrapping shared expense workspace.">
-        <AppCard>
-          <Text>Loading app state...</Text>
-        </AppCard>
-      </AppScreen>
+      <View style={{flex: 1, backgroundColor: palette.primary}}>
+        <SafeAreaView style={{flex: 1}}>
+          <AppScreen title="Splyt" subtitle="Bootstrapping shared expense workspace.">
+            <AppCard>
+              <Text>Loading app state...</Text>
+            </AppCard>
+          </AppScreen>
+        </SafeAreaView>
+      </View>
     );
   }
 

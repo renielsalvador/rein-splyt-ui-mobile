@@ -1,6 +1,7 @@
 import React from 'react';
-import {SafeAreaView, ScrollView, Text, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {styles} from './styles';
+import {spacing} from '../../theme/tokens';
 
 export function AppScreen({
   title,
@@ -8,50 +9,79 @@ export function AppScreen({
   children,
   leading,
   actions,
-  headerVariant = 'main',
+  headerLeft,
+  headerRight,
+  variant = 'main',
   footerOverlay,
+  grayBody = false,
+  hasTabBar = false,
 }: React.PropsWithChildren<{
-  title: string;
+  title?: string;
   subtitle?: string;
   leading?: React.ReactNode;
   actions?: React.ReactNode;
-  headerVariant?: 'main' | 'detail';
+  headerLeft?: React.ReactNode;
+  headerRight?: React.ReactNode;
+  variant?: 'main' | 'detail' | 'auth';
   footerOverlay?: React.ReactNode;
+  grayBody?: boolean;
+  hasTabBar?: boolean;
 }>) {
+  if (variant === 'auth') {
+    return (
+      <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: spacing.md,
+            paddingTop: spacing.xl,
+            paddingBottom: spacing.xl,
+            gap: spacing.md,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {children}
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="always"
-        keyboardShouldPersistTaps="handled">
-        {headerVariant === 'detail' ? (
-          <View style={styles.detailHeader}>
-            <View style={styles.detailHeaderRow}>
-              <View style={styles.detailHeaderLeading}>{leading}</View>
-              <View style={styles.detailHeaderBody}>
-                <Text style={styles.detailTitle}>{title}</Text>
-                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-              </View>
-              <View style={styles.detailHeaderTrailing}>{actions}</View>
-            </View>
+    <View style={{flex: 1}}>
+      <View style={styles.gradientHeader}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            {leading ?? headerLeft ?? null}
           </View>
-        ) : (
-          <View style={styles.header}>
-            {leading || actions ? (
-              <View style={styles.headerActions}>
-                <View style={styles.headerLeading}>{leading}</View>
-                <View style={styles.headerTrailing}>{actions}</View>
-              </View>
-            ) : null}
-            <View style={styles.headerCopy}>
-              <Text style={styles.title}>{title}</Text>
-              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {(actions || headerRight) ? (
+            <View style={styles.headerRight}>
+              {actions ?? headerRight}
             </View>
-          </View>
-        )}
-        {children}
-      </ScrollView>
-      {footerOverlay ? <View style={styles.footerOverlay}>{footerOverlay}</View> : null}
-    </SafeAreaView>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={[styles.bodyContainer, grayBody ? styles.bodyContainerGray : null]}>
+        <ScrollView
+          style={styles.bodyScroll}
+          contentContainerStyle={[
+            styles.bodyScrollContent,
+            hasTabBar ? styles.bodyScrollContentWithTabBar : null,
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {title ? (
+            <View style={styles.pageHeader}>
+              <Text style={styles.pageTitle}>{title}</Text>
+              {subtitle ? <Text style={styles.pageSubtitle}>{subtitle}</Text> : null}
+            </View>
+          ) : null}
+          {children}
+        </ScrollView>
+        {footerOverlay ? (
+          <View style={styles.footerOverlay}>{footerOverlay}</View>
+        ) : null}
+      </View>
+    </View>
   );
 }

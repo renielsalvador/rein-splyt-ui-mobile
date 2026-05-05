@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image, Pressable, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {palette} from '../../theme/tokens';
 import {styles} from './styles';
 
@@ -13,7 +13,7 @@ const iconMap = {
   fund: '◍',
   balances: '⊜',
   settlement: '⇄',
-  settings: '⌘',
+  settings: '⚙',
   signout: '↗',
   person: '◦',
   invite: '⌁',
@@ -31,6 +31,17 @@ const iconMap = {
   refresh: '↻',
   edit: '✎',
   delete: '⌫',
+  mail: '✉',
+  lock: '⊛',
+  chevron: '›',
+  chevronDown: '⌄',
+  qr: '⊞',
+  share: '↑',
+  copy: '⎘',
+  activity: '⌇',
+  calendar: '◫',
+  swap: '⇄',
+  star: '★',
 } as const;
 
 export type AppIconName = keyof typeof iconMap;
@@ -42,16 +53,18 @@ export function AppIcon({
 }: {
   name: AppIconName;
   size?: number;
-  tone?: 'default' | 'muted' | 'inverted' | 'accent';
+  tone?: 'default' | 'muted' | 'inverted' | 'accent' | 'danger' | 'white';
 }) {
   const color =
-    tone === 'inverted'
+    tone === 'inverted' || tone === 'white'
       ? palette.surface
       : tone === 'muted'
         ? palette.inkMuted
         : tone === 'accent'
-          ? palette.accent
-          : palette.ink;
+          ? palette.primary
+          : tone === 'danger'
+            ? palette.danger
+            : palette.ink;
 
   return <Text style={[styles.icon, {fontSize: size, color}]}>{iconMap[name]}</Text>;
 }
@@ -60,29 +73,24 @@ export function IconButton({
   icon,
   onPress,
   accessibilityLabel,
+  onWhite = false,
 }: {
   icon: AppIconName;
   onPress: () => void;
   accessibilityLabel: string;
+  onWhite?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({pressed}) => [styles.iconButton, pressed ? styles.buttonPressed : null]}>
-      <AppIcon name={icon} tone="accent" />
+      style={({pressed}) => [
+        onWhite ? styles.iconButtonOnWhite : styles.iconButton,
+        pressed ? styles.buttonPressed : null,
+      ]}>
+      <AppIcon name={icon} tone={onWhite ? 'accent' : 'white'} size={16} />
     </Pressable>
-  );
-}
-
-function BellIcon() {
-  return (
-    <View style={styles.bellIcon}>
-      <View style={styles.bellIconDome} />
-      <View style={styles.bellIconBase} />
-      <View style={styles.bellIconClapper} />
-    </View>
   );
 }
 
@@ -102,44 +110,57 @@ export function NotificationButton({
           : 'Open notifications'
       }
       onPress={onPress}
-      style={({pressed}) => [styles.iconButton, pressed ? styles.buttonPressed : null]}>
-      <BellIcon />
-      {unreadCount > 0 ? <View style={styles.notificationDot} /> : null}
+      style={({pressed}) => [styles.headerBellButton, pressed ? styles.buttonPressed : null]}>
+      <Text style={{fontSize: 16, color: palette.surface}}>🔔</Text>
+      {unreadCount > 0 ? (
+        <View style={styles.headerNotificationDot}>
+          <Text style={styles.headerNotificationDotText}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
 
 export function HeaderMenuButton({
   onPress,
-  label = 'Menu',
-  avatarUrl,
   avatarFallbackLabel,
 }: {
   onPress: () => void;
-  label?: string;
   avatarUrl?: string;
   avatarFallbackLabel?: string;
+  label?: string;
 }) {
+  const initials = avatarFallbackLabel
+    ? avatarFallbackLabel
+        .trim()
+        .split(/\s+/)
+        .map(w => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'U';
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Open menu"
       onPress={onPress}
-      style={({pressed}) => [styles.menuTriggerButton, pressed ? styles.buttonPressed : null]}>
-      {avatarUrl ? (
-        <Image source={{uri: avatarUrl}} style={styles.menuAvatarImage} />
-      ) : (
-        <View style={styles.menuAvatarFallback}>
-          <Text style={styles.menuAvatarFallbackText}>
-            {avatarFallbackLabel?.trim().slice(0, 1).toUpperCase() || 'U'}
-          </Text>
-        </View>
-      )}
-      <Text style={styles.menuTriggerLabel}>{label}</Text>
+      style={({pressed}) => [styles.headerAvatarCircle, pressed ? styles.buttonPressed : null]}>
+      <Text style={styles.headerAvatarText}>{initials}</Text>
     </Pressable>
   );
 }
 
 export function ScreenBackButton({onPress}: {onPress: () => void}) {
-  return <IconButton icon="back" onPress={onPress} accessibilityLabel="Go back" />;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+      onPress={onPress}
+      style={({pressed}) => [styles.backButton, pressed ? styles.buttonPressed : null]}>
+      <AppIcon name="back" tone="accent" size={20} />
+    </Pressable>
+  );
 }

@@ -7,13 +7,16 @@ export function AppCard({
   children,
   tone = 'default',
 }: React.PropsWithChildren<{tone?: 'default' | 'warm' | 'accent'}>) {
+  if (tone === 'accent') {
+    return <View style={styles.cardAccent}>{children}</View>;
+  }
+
   return (
     <View
       style={[
         surfaces.card,
         styles.card,
         tone === 'warm' ? styles.cardWarm : null,
-        tone === 'accent' ? styles.cardAccent : null,
       ]}>
       {children}
     </View>

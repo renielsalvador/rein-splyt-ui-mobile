@@ -1,18 +1,28 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {styles} from './styles';
 
 export function SectionHeading({
   title,
   detail,
+  onDetailPress,
 }: {
   title: string;
   detail?: string;
+  onDetailPress?: () => void;
 }) {
   return (
     <View style={styles.sectionHeading}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {detail ? <Text style={styles.sectionDetail}>{detail}</Text> : null}
+      <Text style={styles.sectionHeadingTitle}>{title}</Text>
+      {detail ? (
+        onDetailPress ? (
+          <Pressable onPress={onDetailPress}>
+            <Text style={styles.sectionHeadingDetail}>{detail}</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.sectionHeadingDetail}>{detail}</Text>
+        )
+      ) : null}
     </View>
   );
 }

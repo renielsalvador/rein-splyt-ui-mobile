@@ -26,8 +26,8 @@ export function SelectableRow({
         pressed ? styles.buttonPressed : null,
       ]}>
       <View style={styles.selectableRowLead}>
-        <View style={styles.selectableRowIcon}>
-          <AppIcon name={icon} tone="accent" />
+        <View style={[styles.selectableRowIcon, selected ? styles.selectableRowIconSelected : null]}>
+          <AppIcon name={icon} tone={selected ? 'inverted' : 'accent'} size={16} />
         </View>
         <View style={styles.selectableRowCopy}>
           <Text style={styles.selectableRowTitle}>{label}</Text>
@@ -35,7 +35,7 @@ export function SelectableRow({
         </View>
       </View>
       <View style={[styles.selectionMark, selected ? styles.selectionMarkActive : null]}>
-        {selected ? <AppIcon name="check" tone="inverted" size={12} /> : null}
+        {selected ? <AppIcon name="check" tone="inverted" size={11} /> : null}
       </View>
     </Pressable>
   );

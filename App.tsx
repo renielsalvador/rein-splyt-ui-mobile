@@ -6,7 +6,7 @@ import {palette} from './src/theme/tokens';
 export default function App() {
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={palette.canvas} />
+      <StatusBar barStyle="dark-content" backgroundColor={palette.bgApp} />
       <AppRoot />
     </>
   );

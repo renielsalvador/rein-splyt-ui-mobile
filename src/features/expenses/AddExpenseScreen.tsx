@@ -75,7 +75,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       <AppScreen
         title={expenseId ? 'Edit expense' : 'Add expense'}
         subtitle="Loading event details."
-        headerVariant="detail"
+        variant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <EmptyState title="Loading event" body="Preparing members and balances for a new expense." />
       </AppScreen>
@@ -141,7 +141,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           ? 'Update the amount, payer, and included members.'
           : 'Track who paid and who joined the split.'
       }
-      headerVariant="detail"
+      variant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
         <AppInput label="Title" value={title} onChangeText={setTitle} placeholder="Villa down payment" />

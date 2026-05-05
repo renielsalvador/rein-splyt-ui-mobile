@@ -1,105 +1,386 @@
 import {StyleSheet} from 'react-native';
-import {palette, radii, spacing, typography} from '../../theme/tokens';
+import {palette, radii, spacing, surfaces, typography} from '../../theme/tokens';
 
 export const styles = StyleSheet.create({
-  heroValue: {
-    ...typography.display,
-    color: palette.primary,
+  // ─── shared / pressed ──────────────────────────────────────────────────────
+  pressed: {
+    opacity: 0.82,
   },
-  homeHeaderActions: {
+
+  // ─── header (inside gradient zone) ─────────────────────────────────────────
+  homeHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
+  homeHeaderLogoIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeHeaderLogoText: {
+    ...typography.bodyStrong,
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  homeHeaderUserName: {
+    ...typography.bodyStrong,
+    color: '#FFFFFF',
+    fontSize: 18,
+  },
+  homeHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  // ─── hero card ─────────────────────────────────────────────────────────────
   heroLabel: {
+    ...typography.label,
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  heroAmount: {
+    ...typography.amount,
+    fontSize: 36,
+    lineHeight: 42,
+    color: palette.ink,
+  },
+  heroMeta: {
     ...typography.body,
     color: palette.inkMuted,
   },
-  headerActionButton: {
-    minHeight: 40,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    backgroundColor: palette.primary,
+  heroBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    backgroundColor: palette.greenAccent,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  headerActionText: {
-    ...typography.eyebrow,
+  heroBadgeText: {
+    ...typography.caption,
+    fontWeight: '700',
     color: palette.surface,
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  actionRowItem: {
-    flex: 1,
-    minWidth: 148,
-  },
-  eventHeaderRow: {
+  heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: spacing.md,
   },
-  eventLeadRow: {
+
+  // ─── action row ─────────────────────────────────────────────────────────────
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  actionRowItem: {
     flex: 1,
   },
-  eventIconBadge: {
-    width: 42,
-    height: 42,
+
+  // ─── stat cards (side by side) ──────────────────────────────────────────────
+  statCardRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  statCard: {
+    ...surfaces.card,
+    flex: 1,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  statCardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statCardLabel: {
+    ...typography.label,
+    color: palette.inkMuted,
+  },
+  statCardIconBadge: {
+    width: 32,
+    height: 32,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSoft,
   },
-  eventCopy: {
+  statCardIconGreen: {
+    backgroundColor: palette.greenAccent,
+  },
+  statCardIconBlue: {
+    backgroundColor: palette.info,
+  },
+  statCardValue: {
+    ...typography.sectionTitle,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+
+  // ─── home event card ────────────────────────────────────────────────────────
+  eventCard: {
+    ...surfaces.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  eventIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  eventBody: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 4,
   },
   eventName: {
-    ...typography.title,
-    fontSize: 19,
-    lineHeight: 24,
+    ...typography.cardTitle,
   },
-  eventMeta: {
-    ...typography.eyebrow,
+  eventMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  eventMetaText: {
+    ...typography.caption,
     color: palette.inkMuted,
   },
-  metricRow: {
+  eventTrailing: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  eventBalanceLabel: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  eventBalanceOwed: {
+    ...typography.bodyStrong,
+    color: palette.success,
+  },
+  eventBalanceOwing: {
+    ...typography.bodyStrong,
+    color: palette.danger,
+  },
+  eventBalanceSettled: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+
+  // ─── dashboard ─────────────────────────────────────────────────────────────
+  dashboardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  dashboardEventIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dashboardStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  dashboardEventName: {
+    ...typography.cardTitle,
+    color: palette.ink,
+  },
+  dashboardLiveBadge: {
+    backgroundColor: palette.greenAccent,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  dashboardLiveBadgeText: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: palette.surface,
+  },
+  dashboardMemberCount: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  dashboardEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+  },
+  dashboardEditText: {
+    ...typography.caption,
+    color: palette.primary,
+    fontWeight: '600',
+  },
+  dashboardMetrics: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginTop: spacing.sm,
+  },
+  dashboardMetricItem: {
+    gap: 2,
+  },
+  dashboardMetricLabel: {
+    ...typography.label,
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    fontSize: 11,
+  },
+  dashboardMetricValue: {
+    ...typography.bodyStrong,
+    fontSize: 17,
+  },
+  dashboardMetricPositive: {
+    color: palette.success,
+  },
+
+  // ─── shortcut row (4 buttons) ───────────────────────────────────────────────
+  shortcutRow: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  eventIconSelector: {
+  shortcutItem: {
+    flex: 1,
     alignItems: 'center',
     gap: spacing.xs,
-    paddingBottom: spacing.md,
-    marginBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+    paddingVertical: spacing.sm,
   },
-  eventIconSelectorBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
+  shortcutIconBubble: {
+    width: 48,
+    height: 48,
+    borderRadius: radii.pill,
+    backgroundColor: palette.greenTintSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSoft,
+  },
+  shortcutLabel: {
+    ...typography.caption,
+    color: palette.ink,
+  },
+
+  // ─── expense list item ──────────────────────────────────────────────────────
+  expenseRow: {
+    ...surfaces.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  expenseIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.sm,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  expenseBody: {
+    flex: 1,
+    gap: 2,
+  },
+  expenseTitle: {
+    ...typography.bodyStrong,
+  },
+  expenseMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  expenseAmount: {
+    ...typography.bodyStrong,
+  },
+
+  // ─── event icon selector ────────────────────────────────────────────────────
+  eventIconSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: palette.bgApp,
+    borderRadius: radii.md,
+    padding: spacing.md,
+  },
+  eventIconSelectorBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.md,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eventIconSelectorTitle: {
     ...typography.bodyStrong,
+    flex: 1,
+  },
+  eventMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+
+  // ─── delete button ───────────────────────────────────────────────────────────
+  deleteEventButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  deleteEventButtonText: {
+    ...typography.body,
+    color: palette.danger,
+  },
+  deleteEventConfirmText: {
+    ...typography.body,
     color: palette.ink,
   },
+  deleteConfirmButton: {
+    height: 52,
+    borderRadius: radii.pill,
+    backgroundColor: palette.danger,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  deleteConfirmButtonText: {
+    ...typography.button,
+    color: palette.surface,
+  },
+
+  // ─── member picker / create event ──────────────────────────────────────────
   memberPickerBlock: {
     gap: spacing.sm,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: palette.border,
+  },
+  memberModalHeader: {
+    paddingVertical: spacing.xs,
+  },
+  memberModalCount: {
+    ...typography.bodyStrong,
+  },
+  memberList: {
+    maxHeight: 320,
+  },
+  memberListContent: {
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   selectedMemberChipRow: {
     flexDirection: 'row',
@@ -113,263 +394,166 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: palette.surfaceSoft,
+    backgroundColor: palette.greenTintSoft,
   },
   selectedMemberChipText: {
-    ...typography.eyebrow,
+    ...typography.caption,
     color: palette.ink,
   },
-  selectedContactSummary: {
-    ...typography.eyebrow,
-    color: palette.ink,
-  },
-  memberModalHeader: {
-    paddingVertical: spacing.xs,
-  },
-  memberModalCount: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  memberList: {
-    maxHeight: 320,
-  },
-  memberListContent: {
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
+
+  // ─── icon grid (create event) ───────────────────────────────────────────────
   iconGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
   iconOptionCard: {
-    width: '31%',
-    minWidth: 88,
+    width: '30%',
     alignItems: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
+    borderRadius: radii.lg,
+    backgroundColor: palette.greenTintSoft,
   },
   iconOptionCardActive: {
     backgroundColor: palette.primary,
   },
   iconOptionLabel: {
-    ...typography.eyebrow,
+    ...typography.caption,
     color: palette.ink,
   },
   iconOptionLabelActive: {
     color: palette.surface,
   },
-  metricPanel: {
-    flex: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
-  },
-  metricLabel: {
-    ...typography.eyebrow,
-  },
-  metricText: {
-    ...typography.bodyStrong,
-    fontSize: 16,
-    color: palette.ink,
-  },
-  dashboardMetricRow: {
+
+  // ─── currency row ───────────────────────────────────────────────────────────
+  currencyRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  dashboardEventHeader: {
-    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
+    backgroundColor: palette.bgApp,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: 48,
   },
-  inlineEditButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+  currencyLabel: {
+    ...typography.label,
+    color: palette.inkMuted,
+  },
+  currencyValue: {
+    ...typography.bodyStrong,
+  },
+  currencyBadge: {
+    backgroundColor: palette.surface,
+    borderRadius: radii.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderWidth: 1,
+    borderColor: palette.divider,
   },
-  inlineEditButtonText: {
-    ...typography.eyebrow,
+  currencyBadgeText: {
+    ...typography.caption,
+    fontWeight: '600',
     color: palette.primary,
   },
-  dashboardEventIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.pill,
+
+  // ─── invite code ──────────────────────────────────────────────────────────
+  inviteCodeDisplay: {
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  dashboardMetricCard: {
-    flex: 1,
     gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  inviteCodeLabel: {
+    ...typography.label,
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  inviteCodeValue: {
+    ...typography.display,
+    fontSize: 38,
+    letterSpacing: 4,
+    color: palette.ink,
+  },
+  inviteCodeExpiry: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  inviteCodeActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+
+  // ─── member roster ──────────────────────────────────────────────────────────
+  memberRosterList: {
+    gap: spacing.sm,
+  },
+  memberRow: {
+    ...surfaces.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
   },
-  dashboardMetricCardSoft: {
-    backgroundColor: '#F1F7F4',
-  },
-  metricLabelStrong: {
-    ...typography.bodyStrong,
-    color: palette.inkMuted,
-  },
-  metricTextLarge: {
-    ...typography.title,
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '700',
-  },
-  metricFootnote: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  metricActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metricMiniButton: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-  },
-  avatarStackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  avatarChip: {
-    width: 25,
-    height: 25,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: palette.surface,
-  },
-  avatarChipFirst: {
-    marginLeft: 0,
-  },
-  avatarChipOffset: {
-    marginLeft: -15,
-  },
-  avatarOverflowChip: {
-    minWidth: 29,
-    height: 25,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -10,
-    backgroundColor: palette.surface,
-  },
-  avatarText: {
-    ...typography.eyebrow,
-    fontWeight: '700',
-  },
-  avatarOverflowText: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  balanceSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  balanceLead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+  memberRowBody: {
     flex: 1,
+    gap: 2,
   },
-  summaryIconBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.pill,
+  memberRowNameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  summaryIconPositive: {
-    backgroundColor: '#E7F5EB',
+  memberRowName: {
+    ...typography.bodyStrong,
   },
-  summaryIconNegative: {
-    backgroundColor: '#FCE8E5',
+  memberRowRole: {
+    ...typography.caption,
+    color: palette.inkMuted,
   },
-  summaryIconNeutral: {
-    backgroundColor: '#EFF2F4',
-  },
-  summaryIconBalances: {
-    backgroundColor: '#E8F0FE',
-  },
-  summaryIconSettlement: {
-    backgroundColor: '#EEF4F1',
-  },
-  balanceTitle: {
-    ...typography.title,
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  balanceAmountWrap: {
+  memberRowTrailing: {
     alignItems: 'flex-end',
     gap: 2,
   },
-  balanceAmount: {
-    ...typography.title,
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '700',
+  memberRowBalance: {
+    ...typography.bodyStrong,
   },
-  balanceAmountPositive: {
+  memberRowBalancePositive: {
     color: palette.success,
   },
-  balanceAmountNegative: {
-    color: palette.warning,
+  memberRowBalanceNegative: {
+    color: palette.danger,
   },
-  balanceAmountNeutral: {
-    color: palette.inkMuted,
+  memberCodeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  balanceHint: {
-    ...typography.eyebrow,
+  refreshButtonLight: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.divider,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  compactActionList: {
+
+  // ─── notification ──────────────────────────────────────────────────────────
+  notificationList: {
     gap: spacing.sm,
   },
-  compactActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+  notificationUnreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radii.pill,
+    backgroundColor: palette.info,
+    marginTop: 4,
   },
-  compactActionTitle: {
-    ...typography.title,
-    fontSize: 19,
-    lineHeight: 24,
-  },
-  balanceSheetSummary: {
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surfaceSoft,
-  },
-  balanceSheetSummaryLabel: {
-    ...typography.eyebrow,
-  },
-  balanceSheetSummaryAmount: {
-    ...typography.display,
-    fontSize: 30,
-    lineHeight: 36,
-  },
+
+  // ─── balance sheet ──────────────────────────────────────────────────────────
   balanceSheetSection: {
     gap: spacing.sm,
   },
@@ -380,7 +564,7 @@ export const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.md,
     borderRadius: radii.md,
-    backgroundColor: palette.surfaceMuted,
+    backgroundColor: palette.bgApp,
   },
   balanceSheetRowCopy: {
     flex: 1,
@@ -390,7 +574,7 @@ export const styles = StyleSheet.create({
     ...typography.bodyStrong,
   },
   balanceSheetRowSubtitle: {
-    ...typography.eyebrow,
+    ...typography.caption,
   },
   balanceSheetEmpty: {
     ...typography.body,
@@ -402,192 +586,29 @@ export const styles = StyleSheet.create({
   },
   balanceDetailNegative: {
     ...typography.bodyStrong,
-    color: palette.warning,
+    color: palette.danger,
   },
-  memberCodeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  inviteCodePressable: {
-    alignSelf: 'flex-start',
-    gap: 2,
-    marginTop: spacing.xs,
-  },
-  inviteCodeValueLarge: {
-    ...typography.display,
-    fontSize: 34,
-    lineHeight: 40,
-    letterSpacing: 2,
-    color: palette.primary,
-  },
-  inviteCodeHint: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  memberRosterList: {
+  balanceSheetSummary: {
+    gap: spacing.xs,
+    padding: spacing.md,
     borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
-    overflow: 'hidden',
+    backgroundColor: palette.greenTintSoft,
   },
-  memberRosterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.border,
+  balanceSheetSummaryLabel: {
+    ...typography.caption,
+    color: palette.primary,
+    textTransform: 'uppercase',
   },
-  memberRosterRowLast: {
-    borderBottomWidth: 0,
+  balanceSheetSummaryAmount: {
+    ...typography.amount,
   },
-  memberRosterPrimary: {
-    flex: 1,
-    gap: 2,
-  },
-  memberRosterName: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  memberRosterEmail: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  memberRosterMeta: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  memberRosterJoined: {
-    ...typography.eyebrow,
-    color: palette.inkMuted,
-  },
-  memberRosterStatus: {
-    ...typography.bodyStrong,
-  },
-  memberRosterStatusJoined: {
+  balanceAmountPositive: {
     color: palette.success,
   },
-  memberRosterStatusPending: {
-    color: palette.warning,
+  balanceAmountNegative: {
+    color: palette.danger,
   },
-  inviteCodeCard: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
-    gap: spacing.xs,
-  },
-  inviteCodeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  inviteCodeLabel: {
-    ...typography.eyebrow,
-  },
-  inviteCodeValue: {
-    ...typography.title,
-    letterSpacing: 1.1,
-  },
-  notificationList: {
-    gap: spacing.sm,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  notificationLead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  notificationUnreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radii.pill,
-    backgroundColor: palette.warning,
-    marginTop: spacing.sm,
-  },
-  notificationTypeLabel: {
-    ...typography.eyebrow,
-    color: palette.primary,
-  },
-  notificationFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  notificationChevron: {
-    ...typography.title,
+  balanceAmountNeutral: {
     color: palette.inkMuted,
-    lineHeight: 20,
-  },
-  refreshButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.primary,
-    flexShrink: 0,
-  },
-  refreshButtonLight: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
-    flexShrink: 0,
-  },
-  deleteEventButton: {
-    minHeight: 46,
-    marginTop: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: '#F1C7C1',
-    backgroundColor: '#FCE8E5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  deleteEventButtonText: {
-    ...typography.bodyStrong,
-    color: palette.warning,
-  },
-  deleteEventConfirmText: {
-    ...typography.body,
-    color: palette.ink,
-  },
-  deleteConfirmButton: {
-    minHeight: 46,
-    borderRadius: radii.md,
-    backgroundColor: palette.warning,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  deleteConfirmButtonText: {
-    ...typography.bodyStrong,
-    color: palette.surface,
-  },
-  pressed: {
-    opacity: 0.82,
   },
 });
