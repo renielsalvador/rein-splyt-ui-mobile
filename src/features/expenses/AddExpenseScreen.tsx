@@ -1,10 +1,13 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
+  AppAvatar,
   AppButton,
   AppCard,
+  AppIcon,
   AppInput,
+  AppModal,
   AppScreen,
   DataPill,
   EmptyState,
@@ -32,10 +35,16 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string>();
   const [didPrefill, setDidPrefill] = useState(false);
+  const [payerModalVisible, setPayerModalVisible] = useState(false);
 
   const existingExpense = useMemo(
     () => summary?.expenses.find(expense => expense.id === expenseId),
     [expenseId, summary],
+  );
+
+  const payer = useMemo(
+    () => summary?.members.find(member => member.id === payerId),
+    [payerId, summary],
   );
 
   useEffect(() => {
@@ -166,15 +175,20 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
 
       <AppCard>
         <SectionHeading title="Payer" />
-        {summary.members.map(member => (
-          <SelectableRow
-            key={member.id}
-            label={member.displayName}
-            detail="Paid for this expense"
-            selected={payerId === member.id}
-            onPress={() => setPayerId(member.id)}
-          />
-        ))}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Choose payer"
+          onPress={() => setPayerModalVisible(true)}
+          style={({pressed}) => [styles.payerDropdown, pressed ? styles.payerDropdownPressed : null]}>
+          <View style={styles.payerDropdownLead}>
+            <AppAvatar name={payer?.displayName ?? 'Unknown member'} size="md" />
+            <View style={styles.payerDropdownCopy}>
+              <Text style={styles.payerDropdownLabel}>{payer?.displayName ?? 'Select payer'}</Text>
+              <Text style={styles.payerDropdownDetail}>Paid for this expense</Text>
+            </View>
+          </View>
+          <AppIcon name="chevronDown" tone="muted" size={18} />
+        </Pressable>
       </AppCard>
 
       <AppCard>
@@ -187,6 +201,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
               key={member.id}
               label={member.displayName}
               detail={selected ? 'Included in split' : 'Tap to include'}
+              avatarLabel={member.displayName}
               selected={selected}
               onPress={() =>
                 setSelectedMemberIds(current =>
@@ -221,6 +236,27 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           />
         ) : null}
       </AppCard>
+
+      <AppModal
+        visible={payerModalVisible}
+        title="Choose payer"
+        subtitle="Select the member who paid this expense."
+        scrollable
+        onClose={() => setPayerModalVisible(false)}>
+        {summary.members.map(member => (
+          <SelectableRow
+            key={member.id}
+            label={member.displayName}
+            detail="Paid for this expense"
+            avatarLabel={member.displayName}
+            selected={payerId === member.id}
+            onPress={() => {
+              setPayerId(member.id);
+              setPayerModalVisible(false);
+            }}
+          />
+        ))}
+      </AppModal>
     </AppScreen>
   );
 }
@@ -237,6 +273,38 @@ const styles = StyleSheet.create({
   },
   previewBody: {
     ...typography.body,
+    color: palette.inkMuted,
+  },
+  payerDropdown: {
+    minHeight: 72,
+    borderRadius: 20,
+    backgroundColor: palette.bgApp,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  payerDropdownPressed: {
+    opacity: 0.82,
+  },
+  payerDropdownLead: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  payerDropdownCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  payerDropdownLabel: {
+    ...typography.cardTitle,
+    fontSize: 18,
+  },
+  payerDropdownDetail: {
+    ...typography.caption,
     color: palette.inkMuted,
   },
 });

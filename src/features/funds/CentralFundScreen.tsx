@@ -108,6 +108,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
             key={member.id}
             label={member.displayName}
             detail="Contributor"
+            avatarLabel={member.displayName}
             selected={memberId === member.id}
             onPress={() => setMemberId(member.id)}
           />

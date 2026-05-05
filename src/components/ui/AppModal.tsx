@@ -98,6 +98,7 @@ export function AppModal({
               <ScrollView
                 style={styles.modalBodyScroll}
                 contentContainerStyle={styles.modalBodyScrollContent}
+                nestedScrollEnabled
                 showsVerticalScrollIndicator={false}>
                 {children}
               </ScrollView>

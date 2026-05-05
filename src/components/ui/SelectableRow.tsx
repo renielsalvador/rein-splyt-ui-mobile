@@ -1,5 +1,6 @@
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
+import {AppAvatar} from './AppAvatar';
 import {AppIcon, type AppIconName} from './AppIcon';
 import {styles} from './styles';
 
@@ -7,12 +8,14 @@ export function SelectableRow({
   label,
   detail,
   icon = 'person',
+  avatarLabel,
   selected = false,
   onPress,
 }: {
   label: string;
   detail?: string;
   icon?: AppIconName;
+  avatarLabel?: string;
   selected?: boolean;
   onPress: () => void;
 }) {
@@ -26,9 +29,14 @@ export function SelectableRow({
         pressed ? styles.buttonPressed : null,
       ]}>
       <View style={styles.selectableRowLead}>
-        <View style={[styles.selectableRowIcon, selected ? styles.selectableRowIconSelected : null]}>
-          <AppIcon name={icon} tone={selected ? 'inverted' : 'accent'} size={16} />
-        </View>
+        {avatarLabel ? (
+          <AppAvatar name={avatarLabel} size="sm" />
+        ) : (
+          <View
+            style={[styles.selectableRowIcon, selected ? styles.selectableRowIconSelected : null]}>
+            <AppIcon name={icon} tone={selected ? 'inverted' : 'accent'} size={16} />
+          </View>
+        )}
         <View style={styles.selectableRowCopy}>
           <Text style={styles.selectableRowTitle}>{label}</Text>
           {detail ? <Text style={styles.selectableRowDetail}>{detail}</Text> : null}

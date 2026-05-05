@@ -230,6 +230,7 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
   },
   modalSheet: {
+    flexShrink: 1,
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.sm,
     gap: spacing.sm,
@@ -245,6 +246,7 @@ export const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxHeight: '88%',
+    flexShrink: 1,
     borderTopLeftRadius: radii.xxl,
     borderTopRightRadius: radii.xxl,
     borderBottomLeftRadius: radii.xl,
@@ -272,9 +274,12 @@ export const styles = StyleSheet.create({
     flexShrink: 1,
   },
   modalBodyScroll: {
+    flexGrow: 0,
     flexShrink: 1,
+    minHeight: 0,
   },
   modalBodyScrollContent: {
+    flexGrow: 1,
     gap: spacing.md,
     paddingBottom: spacing.sm,
   },

@@ -228,6 +228,7 @@ export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTa
         visible={notificationModalVisible}
         title="Notifications"
         subtitle="Unread updates and invites that need your attention."
+        scrollable
         onClose={() => setNotificationModalVisible(false)}>
         {pendingInvites.length === 0 ? (
           <EmptyState
@@ -519,6 +520,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         visible={memberModalVisible}
         title="Add members"
         subtitle={`${selectedMembers.length} queued for this event`}
+        scrollable
         onClose={() => {
           setMemberModalVisible(false);
           setMemberSearch('');
@@ -561,6 +563,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
                 key={contact.id}
                 label={contact.displayName}
                 detail="Registered contact"
+                avatarLabel={contact.displayName}
                 selected={selectedMembers.some(member => member.id === `contact:${contact.id}`)}
                 onPress={() => toggleContact(contact)}
               />
@@ -922,6 +925,7 @@ export function EventDashboardScreen({
         visible={showBalanceDetails}
         title="My balance"
         subtitle="See who owes you and who you still need to pay."
+        scrollable
         onClose={() => setShowBalanceDetails(false)}>
         <BalanceDetailsContent
           currentBalanceNet={currentBalance?.net ?? 0}
