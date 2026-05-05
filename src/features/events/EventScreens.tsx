@@ -640,14 +640,13 @@ export function EventDashboardScreen({
   const {hydrateEvent, summaries, balances, currentUser, updateEvent, deleteEvent, error} =
     useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalStep, setEditModalStep] = useState<'details' | 'dates' | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
   const [editStartDate, setEditStartDate] = useState(getTodayDateString());
   const [editEndDate, setEditEndDate] = useState(getTodayDateString());
   const [editFormError, setEditFormError] = useState<string>();
-  const [dateModalVisible, setDateModalVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const summary = summaries[eventId];
   const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
@@ -765,7 +764,7 @@ export function EventDashboardScreen({
               accessibilityRole="button"
               onPress={() => {
                 setEditFormError(undefined);
-                setEditModalVisible(true);
+                setEditModalStep('details');
               }}
               style={({pressed}) => [styles.dashboardEditButton, pressed && styles.pressed]}>
               <AppIcon name="edit" tone="accent" size={12} />
@@ -869,87 +868,92 @@ export function EventDashboardScreen({
       </AppScreen>
 
       <AppModal
-        visible={editModalVisible}
-        title="Edit event"
-        subtitle="Update the name, description, or icon."
+        visible={editModalStep !== null}
+        title={editModalStep === 'dates' ? 'Update event dates' : 'Edit event'}
+        subtitle={
+          editModalStep === 'dates'
+            ? 'Adjust the date range for this event.'
+            : 'Update the name, description, or icon.'
+        }
         scrollable
         onClose={() => {
-          setEditModalVisible(false);
+          if (editModalStep === 'dates') {
+            setEditModalStep('details');
+            return;
+          }
+          setEditModalStep(null);
           setEditFormError(undefined);
         }}>
-        <View style={styles.eventIconSelector}>
-          <View style={styles.eventIconSelectorBadge}>
-            <AppIcon name={editIcon} tone="accent" size={28} />
-          </View>
-          <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
-        </View>
-        <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
-        <AppInput
-          label="Event name"
-          value={editName}
-          onChangeText={setEditName}
-          placeholder="Boracay long weekend"
-        />
-        <AppInput
-          label="Description"
-          value={editDescription}
-          onChangeText={setEditDescription}
-          placeholder="Flights, villa, food, and shared activities"
-          multiline
-        />
-        <EventDateRangeField
-          label="Event dates"
-          startDate={editStartDate}
-          endDate={editEndDate}
-          helperText="Tap to update the event date range."
-          onPress={() => setDateModalVisible(true)}
-        />
-        <AppButton
-          label="Save changes"
-          icon="edit"
-          onPress={() => {
-            const parsed = eventSchema.safeParse({
-              name: editName,
-              description: editDescription,
-              currency: event.currency,
-              startDate: editStartDate,
-              endDate: editEndDate,
-            });
-            if (!parsed.success) {
-              setEditFormError(parsed.error.issues[0]?.message);
-              return;
-            }
-            setEditFormError(undefined);
-            updateEvent({
-              eventId,
-              name: parsed.data.name,
-              description: parsed.data.description,
-              icon: editIcon,
-              startDate: parsed.data.startDate,
-              endDate: parsed.data.endDate,
-            })
-              .then(() => setEditModalVisible(false))
-              .catch(() => undefined);
-          }}
-        />
-        <InlineError message={editFormError ?? error ?? undefined} />
-      </AppModal>
-
-      <AppModal
-        visible={dateModalVisible}
-        title="Update event dates"
-        subtitle="Adjust the date range for this event."
-        scrollable
-        onClose={() => setDateModalVisible(false)}>
-        <EventDateRangePicker
-          startDate={editStartDate}
-          endDate={editEndDate}
-          onChange={next => {
-            setEditStartDate(next.startDate);
-            setEditEndDate(next.endDate);
-          }}
-          onClose={() => setDateModalVisible(false)}
-        />
+        {editModalStep === 'dates' ? (
+          <EventDateRangePicker
+            startDate={editStartDate}
+            endDate={editEndDate}
+            onChange={next => {
+              setEditStartDate(next.startDate);
+              setEditEndDate(next.endDate);
+            }}
+            onClose={() => setEditModalStep('details')}
+          />
+        ) : (
+          <>
+            <View style={styles.eventIconSelector}>
+              <View style={styles.eventIconSelectorBadge}>
+                <AppIcon name={editIcon} tone="accent" size={28} />
+              </View>
+              <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+            </View>
+            <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
+            <AppInput
+              label="Event name"
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="Boracay long weekend"
+            />
+            <AppInput
+              label="Description"
+              value={editDescription}
+              onChangeText={setEditDescription}
+              placeholder="Flights, villa, food, and shared activities"
+              multiline
+            />
+            <EventDateRangeField
+              label="Event dates"
+              startDate={editStartDate}
+              endDate={editEndDate}
+              helperText="Tap to update the event date range."
+              onPress={() => setEditModalStep('dates')}
+            />
+            <AppButton
+              label="Save changes"
+              icon="edit"
+              onPress={() => {
+                const parsed = eventSchema.safeParse({
+                  name: editName,
+                  description: editDescription,
+                  currency: event.currency,
+                  startDate: editStartDate,
+                  endDate: editEndDate,
+                });
+                if (!parsed.success) {
+                  setEditFormError(parsed.error.issues[0]?.message);
+                  return;
+                }
+                setEditFormError(undefined);
+                updateEvent({
+                  eventId,
+                  name: parsed.data.name,
+                  description: parsed.data.description,
+                  icon: editIcon,
+                  startDate: parsed.data.startDate,
+                  endDate: parsed.data.endDate,
+                })
+                  .then(() => setEditModalStep(null))
+                  .catch(() => undefined);
+              }}
+            />
+            <InlineError message={editFormError ?? error ?? undefined} />
+          </>
+        )}
       </AppModal>
 
       <AppModal
@@ -975,7 +979,7 @@ export function EventDashboardScreen({
                 deleteEvent(eventId)
                   .then(() => {
                     setDeleteConfirmVisible(false);
-                    setEditModalVisible(false);
+                    setEditModalStep(null);
                     navigation.replace('Home');
                   })
                   .catch(() => undefined);
