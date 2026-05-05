@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import {AppButton, AppInput, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
 import {useApp} from '../../app/AppProvider';
@@ -46,6 +46,11 @@ export function AuthScreen() {
     <SafeAreaView style={styles.root}>
       <View style={styles.inner}>
         <View style={styles.wordmarkBlock}>
+          <Image
+            source={require('../../../assets/branding/splyt-app-icon-no-bg.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
           <Text style={styles.wordmark}>Splyt</Text>
           <Text style={styles.tagline}>
             {mode === 'login'
@@ -142,15 +147,23 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   wordmarkBlock: {
+    alignItems: 'center',
     gap: spacing.sm,
+  },
+  brandLogo: {
+    width: 60,
+    height: 60,
+    marginBottom: spacing.sm,
   },
   wordmark: {
     ...typography.display,
     color: palette.primary,
+    textAlign: 'center',
   },
   tagline: {
     ...typography.body,
     color: palette.inkMuted,
+    textAlign: 'center',
   },
   formBlock: {
     gap: spacing.md,
