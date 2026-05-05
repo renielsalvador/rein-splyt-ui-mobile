@@ -421,7 +421,7 @@ export const styles = StyleSheet.create({
   // ─── body container ─────────────────────────────────────────────────────────
   bodyContainer: {
     flex: 1,
-    backgroundColor: palette.surface,
+    backgroundColor: palette.bgApp,
     borderTopLeftRadius: radii.xxl,
     borderTopRightRadius: radii.xxl,
     marginTop: -20,
