@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Calendar} from 'react-native-calendars';
 import {
   AppAvatar,
   AppAvatarStack,
@@ -10,7 +11,11 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {DataPill} from '../../components/ui';
-import {formatCurrency} from '../../lib/utils/format';
+import {
+  formatCurrency,
+  formatDateLabel,
+  formatDateRangeLabel,
+} from '../../lib/utils/format';
 import {palette, radii, spacing, surfaces, typography} from '../../theme/tokens';
 import type {
   CurrencyCode,
@@ -29,6 +34,41 @@ import {
   describeInviteDate,
   getInvitePreview,
 } from './EventScreenShared';
+
+function shiftDate(value: string, days: number) {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+
+function buildMarkedDateRange(startDate: string, endDate: string) {
+  const markedDates: Record<
+    string,
+    {
+      color: string;
+      textColor: string;
+      startingDay?: boolean;
+      endingDay?: boolean;
+    }
+  > = {};
+
+  let cursor = startDate;
+  while (cursor <= endDate) {
+    const isStart = cursor === startDate;
+    const isEnd = cursor === endDate;
+
+    markedDates[cursor] = {
+      color: isStart || isEnd ? palette.primary : palette.greenTint,
+      textColor: isStart || isEnd ? palette.surface : palette.ink,
+      startingDay: isStart,
+      endingDay: isEnd,
+    };
+
+    cursor = shiftDate(cursor, 1);
+  }
+
+  return markedDates;
+}
 
 export function HomeEventCard({
   event,
@@ -57,6 +97,9 @@ export function HomeEventCard({
             {memberNames.length > 0 && <AppAvatarStack names={memberNames} size="xs" />}
             <Text style={styles.eventMetaText}>{members.length} members</Text>
           </View>
+          <Text style={styles.eventMetaText}>
+            {formatDateRangeLabel(event.startDate, event.endDate)}
+          </Text>
         </View>
         <View style={styles.eventTrailing}>
           {currentBalance !== undefined ? (
@@ -152,6 +195,177 @@ export function PendingInviteDetailCard({
         </View>
       </View>
     </AppCard>
+  );
+}
+
+export function EventDateRangeField({
+  label,
+  startDate,
+  endDate,
+  helperText,
+  onPress,
+}: {
+  label: string;
+  startDate: string;
+  endDate: string;
+  helperText?: string;
+  onPress: () => void;
+}) {
+  return (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label}. ${formatDateRangeLabel(startDate, endDate)}`}
+        onPress={onPress}
+        style={({pressed}) => [
+          styles.eventIconSelector,
+          styles.dateRangeField,
+          pressed ? styles.pressed : null,
+        ]}>
+        <View style={styles.dateRangeFieldBadge}>
+          <AppIcon name="calendar" tone="accent" size={22} />
+        </View>
+        <View style={styles.dateRangeFieldCopy}>
+          <Text style={styles.dateRangeFieldValue}>
+            {formatDateRangeLabel(startDate, endDate)}
+          </Text>
+          {helperText ? <Text style={styles.eventMeta}>{helperText}</Text> : null}
+        </View>
+        <AppIcon name="chevron" tone="muted" size={16} />
+      </Pressable>
+    </View>
+  );
+}
+
+export function EventDateRangePicker({
+  startDate,
+  endDate,
+  onChange,
+  onClose,
+}: {
+  startDate: string;
+  endDate: string;
+  onChange: (next: {startDate: string; endDate: string}) => void;
+  onClose: () => void;
+}) {
+  const [draftStartDate, setDraftStartDate] = useState(startDate);
+  const [draftEndDate, setDraftEndDate] = useState(endDate);
+  const [activeField, setActiveField] = useState<'start' | 'end'>('start');
+  const markedDates = useMemo(
+    () => buildMarkedDateRange(draftStartDate, draftEndDate),
+    [draftEndDate, draftStartDate],
+  );
+
+  function handleDayPress(dateString: string) {
+    if (activeField === 'start') {
+      setDraftStartDate(dateString);
+      if (dateString > draftEndDate) {
+        setDraftEndDate(dateString);
+      }
+      setActiveField('end');
+      return;
+    }
+
+    setDraftEndDate(dateString);
+    if (dateString < draftStartDate) {
+      setDraftStartDate(dateString);
+    }
+  }
+
+  return (
+    <View style={componentStyles.datePickerBlock}>
+      <View style={componentStyles.datePickerSummaryCard}>
+        <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
+        <Text style={componentStyles.datePickerSummaryValue}>
+          {formatDateRangeLabel(draftStartDate, draftEndDate)}
+        </Text>
+        <View style={componentStyles.dateRangeFieldRow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setActiveField('start')}
+            style={({pressed}) => [
+              componentStyles.dateAnchorChip,
+              activeField === 'start' ? componentStyles.dateAnchorChipActive : null,
+              pressed ? styles.pressed : null,
+            ]}>
+            <Text
+              style={[
+                componentStyles.dateAnchorLabel,
+                activeField === 'start' ? componentStyles.dateAnchorLabelActive : null,
+              ]}>
+              From
+            </Text>
+            <Text
+              style={[
+                componentStyles.dateAnchorValue,
+                activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
+              ]}>
+              {formatDateLabel(draftStartDate)}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setActiveField('end')}
+            style={({pressed}) => [
+              componentStyles.dateAnchorChip,
+              activeField === 'end' ? componentStyles.dateAnchorChipActive : null,
+              pressed ? styles.pressed : null,
+            ]}>
+            <Text
+              style={[
+                componentStyles.dateAnchorLabel,
+                activeField === 'end' ? componentStyles.dateAnchorLabelActive : null,
+              ]}>
+              To
+            </Text>
+            <Text
+              style={[
+                componentStyles.dateAnchorValue,
+                activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
+              ]}>
+              {formatDateLabel(draftEndDate)}
+            </Text>
+          </Pressable>
+        </View>
+        <Text style={componentStyles.datePickerSummaryHint}>
+          Select {activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.
+        </Text>
+      </View>
+      <Calendar
+        markingType="period"
+        markedDates={markedDates}
+        onDayPress={({dateString}) => handleDayPress(dateString)}
+        theme={{
+          backgroundColor: palette.surface,
+          calendarBackground: palette.surface,
+          textSectionTitleColor: palette.inkMuted,
+          selectedDayBackgroundColor: palette.primary,
+          selectedDayTextColor: palette.surface,
+          todayTextColor: palette.primary,
+          dayTextColor: palette.ink,
+          monthTextColor: palette.ink,
+          arrowColor: palette.primary,
+          textDisabledColor: palette.divider,
+          textDayFontWeight: '500',
+          textMonthFontWeight: '700',
+          textDayHeaderFontWeight: '600',
+        }}
+        style={componentStyles.calendar}
+      />
+      <View style={styles.actionRow}>
+        <View style={styles.actionRowItem}>
+          <AppButton
+            label="Apply dates"
+            icon="check"
+            onPress={() => {
+              onChange({startDate: draftStartDate, endDate: draftEndDate});
+              onClose();
+            }}
+          />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -507,6 +721,64 @@ export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
 }
 
 const componentStyles = StyleSheet.create({
+  datePickerBlock: {
+    gap: spacing.md,
+  },
+  datePickerSummaryCard: {
+    backgroundColor: palette.greenTintSoft,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  datePickerSummaryLabel: {
+    ...typography.label,
+    color: palette.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  datePickerSummaryValue: {
+    ...typography.cardTitle,
+  },
+  datePickerSummaryHint: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  dateRangeFieldRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dateAnchorChip: {
+    flex: 1,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: palette.divider,
+    backgroundColor: palette.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: 2,
+  },
+  dateAnchorChipActive: {
+    borderColor: palette.primary,
+    backgroundColor: palette.primary,
+  },
+  dateAnchorLabel: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  dateAnchorLabelActive: {
+    color: 'rgba(255,255,255,0.82)',
+  },
+  dateAnchorValue: {
+    ...typography.bodyStrong,
+    color: palette.ink,
+  },
+  dateAnchorValueActive: {
+    color: palette.surface,
+  },
+  calendar: {
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+  },
   notifCard: {
     padding: spacing.md,
     gap: spacing.sm,

@@ -1,18 +1,17 @@
-import React, {useEffect, useMemo} from 'react';
+import React, {useEffect} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {AppAvatar, AppAvatarStack, AppScreen, BrandLogo, EmptyState, NotificationButton, SectionHeading} from '../../components/ui';
+import {AppAvatarStack, AppScreen, BrandLogo, EmptyState, NotificationButton} from '../../components/ui';
 import {AppIcon} from '../../components/ui';
 import {AppMenu} from '../../components/ui';
 import {HeaderMenuButton} from '../../components/ui';
-import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
+import {formatCurrency, formatDateRangeLabel} from '../../lib/utils/format';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
 import {surfaces} from '../../theme/tokens';
 
-export function EventsScreen({navigation, route, hasTabBar}: ScreenProps<'Events'> & {hasTabBar?: boolean}) {
+export function EventsScreen({navigation, hasTabBar}: ScreenProps<'Events'> & {hasTabBar?: boolean}) {
   const {currentUser, events, summaries, hydrateEvent, pendingInvites, signOut} = useApp();
-  const [notificationModalVisible, setNotificationModalVisible] = React.useState(false);
 
   useEffect(() => {
     events.forEach(event => {
@@ -38,7 +37,7 @@ export function EventsScreen({navigation, route, hasTabBar}: ScreenProps<'Events
         <View style={styles.headerRight}>
           <NotificationButton
             unreadCount={pendingInvites.length}
-            onPress={() => setNotificationModalVisible(true)}
+            onPress={() => undefined}
           />
           <AppMenu
             items={[
@@ -81,7 +80,7 @@ export function EventsScreen({navigation, route, hasTabBar}: ScreenProps<'Events
                     <AppAvatarStack names={memberNames} size="xs" />
                   )}
                   <Text style={styles.eventMetaText}>
-                    {summary ? formatDateLabel(event.createdAt ?? '') : '—'}
+                    {formatDateRangeLabel(event.startDate, event.endDate)}
                   </Text>
                 </View>
               </View>

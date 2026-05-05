@@ -205,6 +205,9 @@ export const styles = StyleSheet.create({
     ...typography.caption,
     color: palette.inkMuted,
   },
+  dashboardStatusCopy: {
+    flex: 1,
+  },
   dashboardEditButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -319,18 +322,50 @@ export const styles = StyleSheet.create({
     ...typography.bodyStrong,
     flex: 1,
   },
+  eventIconSelectorCopy: {
+    flex: 1,
+    gap: 2,
+  },
   eventMeta: {
     ...typography.caption,
     color: palette.inkMuted,
   },
+  fieldGroup: {
+    gap: spacing.sm,
+  },
+  fieldLabel: {
+    ...typography.label,
+  },
+  dateRangeField: {
+    paddingVertical: spacing.sm,
+  },
+  dateRangeFieldBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateRangeFieldCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  dateRangeFieldValue: {
+    ...typography.bodyStrong,
+    color: palette.ink,
+  },
 
   // ─── delete button ───────────────────────────────────────────────────────────
   deleteEventButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   deleteEventButtonText: {
-    ...typography.body,
+    ...typography.bodyStrong,
     color: palette.danger,
   },
   deleteEventConfirmText: {

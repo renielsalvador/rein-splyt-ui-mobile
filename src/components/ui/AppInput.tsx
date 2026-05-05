@@ -42,7 +42,10 @@ export function AppInput({
           <AppIcon name={prefixIcon} tone="muted" size={16} />
         ) : null}
         <TextInput
-          style={[styles.input, multiline ? styles.inputMultiline : null]}
+          style={[
+            styles.input,
+            multiline ? styles.inputMultiline : styles.inputSingleLine,
+          ]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

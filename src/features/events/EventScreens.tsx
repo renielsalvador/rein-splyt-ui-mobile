@@ -21,12 +21,18 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {eventSchema, joinSchema} from '../../lib/validation/forms';
-import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
+import {
+  formatCurrency,
+  formatDateLabel,
+  formatDateRangeLabel,
+} from '../../lib/utils/format';
 import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
 import {
   BalanceDetailsContent,
   DashboardBalanceSummaryCard,
   DashboardFundOverviewCard,
+  EventDateRangeField,
+  EventDateRangePicker,
   EventIconPicker,
   HomeEventCard,
   MemberRosterList,
@@ -42,6 +48,16 @@ import {
   normalizeEmail,
   type SelectedMemberDraft,
 } from './EventScreenShared';
+
+function shiftDate(value: string, days: number) {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+
+function getTodayDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTabBar?: boolean}) {
   const {
@@ -336,12 +352,16 @@ export function NotificationDetailScreen({
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const {contacts, createEvent, error} = useApp();
+  const defaultStartDate = useMemo(() => getTodayDateString(), []);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('PHP');
   const [icon, setIcon] = useState<EventIconName>('event');
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(() => shiftDate(defaultStartDate, 2));
   const [formError, setFormError] = useState<string>();
   const [iconModalVisible, setIconModalVisible] = useState(false);
+  const [dateModalVisible, setDateModalVisible] = useState(false);
   const [memberModalVisible, setMemberModalVisible] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<SelectedMemberDraft[]>([]);
@@ -403,7 +423,13 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   }
 
   async function handleCreate() {
-    const parsed = eventSchema.safeParse({name, description, currency});
+    const parsed = eventSchema.safeParse({
+      name,
+      description,
+      currency,
+      startDate,
+      endDate,
+    });
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message);
       return;
@@ -435,7 +461,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           <View style={styles.eventIconSelectorBadge}>
             <AppIcon name={icon} tone="accent" size={28} />
           </View>
-          <View style={{flex: 1, gap: 2}}>
+          <View style={styles.eventIconSelectorCopy}>
             <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
             <Text style={styles.eventMeta}>Tap to change</Text>
           </View>
@@ -453,6 +479,13 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           onChangeText={setDescription}
           placeholder="Flights, villa, food, and shared activities"
           multiline
+        />
+        <EventDateRangeField
+          label="Event dates"
+          startDate={startDate}
+          endDate={endDate}
+          helperText="Tap to select the start and end dates."
+          onPress={() => setDateModalVisible(true)}
         />
         <View style={styles.memberPickerBlock}>
           <SectionHeading
@@ -512,6 +545,23 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             setIcon(nextIcon);
             setIconModalVisible(false);
           }}
+        />
+      </AppModal>
+
+      <AppModal
+        visible={dateModalVisible}
+        title="Select event dates"
+        subtitle="Choose the range this event will cover."
+        scrollable
+        onClose={() => setDateModalVisible(false)}>
+        <EventDateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChange={next => {
+            setStartDate(next.startDate);
+            setEndDate(next.endDate);
+          }}
+          onClose={() => setDateModalVisible(false)}
         />
       </AppModal>
 
@@ -594,7 +644,10 @@ export function EventDashboardScreen({
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
+  const [editStartDate, setEditStartDate] = useState(getTodayDateString());
+  const [editEndDate, setEditEndDate] = useState(getTodayDateString());
   const [editFormError, setEditFormError] = useState<string>();
+  const [dateModalVisible, setDateModalVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const summary = summaries[eventId];
   const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
@@ -611,6 +664,8 @@ export function EventDashboardScreen({
     setEditName(event.name);
     setEditDescription(event.description ?? '');
     setEditIcon(event.icon);
+    setEditStartDate(event.startDate);
+    setEditEndDate(event.endDate);
   }, [event]);
 
   const fundTotal = useMemo(
@@ -686,7 +741,7 @@ export function EventDashboardScreen({
       <AppScreen
         variant="detail"
         title={event.name}
-        subtitle={event.description || 'Shared expense workspace'}
+        subtitle={event.description || formatDateRangeLabel(event.startDate, event.endDate)}
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <AppCard tone="accent">
           <View style={styles.dashboardHeader}>
@@ -694,9 +749,14 @@ export function EventDashboardScreen({
               <AppIcon name={event.icon} tone="accent" size={20} />
             </View>
             <View style={styles.dashboardStatusRow}>
-              <Text style={styles.dashboardEventName} numberOfLines={1}>
-                {event.name}
-              </Text>
+              <View style={styles.dashboardStatusCopy}>
+                <Text style={styles.dashboardEventName} numberOfLines={1}>
+                  {event.name}
+                </Text>
+                <Text style={styles.dashboardMemberCount}>
+                  {formatDateRangeLabel(event.startDate, event.endDate)}
+                </Text>
+              </View>
               <View style={styles.dashboardLiveBadge}>
                 <Text style={styles.dashboardLiveBadgeText}>Live</Text>
               </View>
@@ -802,7 +862,7 @@ export function EventDashboardScreen({
           accessibilityRole="button"
           onPress={() => setDeleteConfirmVisible(true)}
           style={({pressed}) => [styles.deleteEventButton, pressed && styles.pressed]}>
-          <AppIcon name="delete" tone="default" size={14} />
+          <AppIcon name="delete" tone="danger" size={16} />
           <Text style={styles.deleteEventButtonText}>Delete event</Text>
         </Pressable>
         <InlineError message={error ?? undefined} />
@@ -837,6 +897,13 @@ export function EventDashboardScreen({
           placeholder="Flights, villa, food, and shared activities"
           multiline
         />
+        <EventDateRangeField
+          label="Event dates"
+          startDate={editStartDate}
+          endDate={editEndDate}
+          helperText="Tap to update the event date range."
+          onPress={() => setDateModalVisible(true)}
+        />
         <AppButton
           label="Save changes"
           icon="edit"
@@ -845,6 +912,8 @@ export function EventDashboardScreen({
               name: editName,
               description: editDescription,
               currency: event.currency,
+              startDate: editStartDate,
+              endDate: editEndDate,
             });
             if (!parsed.success) {
               setEditFormError(parsed.error.issues[0]?.message);
@@ -856,12 +925,31 @@ export function EventDashboardScreen({
               name: parsed.data.name,
               description: parsed.data.description,
               icon: editIcon,
+              startDate: parsed.data.startDate,
+              endDate: parsed.data.endDate,
             })
               .then(() => setEditModalVisible(false))
               .catch(() => undefined);
           }}
         />
         <InlineError message={editFormError ?? error ?? undefined} />
+      </AppModal>
+
+      <AppModal
+        visible={dateModalVisible}
+        title="Update event dates"
+        subtitle="Adjust the date range for this event."
+        scrollable
+        onClose={() => setDateModalVisible(false)}>
+        <EventDateRangePicker
+          startDate={editStartDate}
+          endDate={editEndDate}
+          onChange={next => {
+            setEditStartDate(next.startDate);
+            setEditEndDate(next.endDate);
+          }}
+          onClose={() => setDateModalVisible(false)}
+        />
       </AppModal>
 
       <AppModal

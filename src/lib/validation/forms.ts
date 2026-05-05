@@ -66,12 +66,26 @@ export const authSchema: Validator<
 };
 
 export const eventSchema: Validator<
-  {name: string; description?: string; currency: 'USD' | 'PHP'},
-  {name: string; description?: string; currency: 'USD' | 'PHP'}
+  {
+    name: string;
+    description?: string;
+    currency: 'USD' | 'PHP';
+    startDate: string;
+    endDate: string;
+  },
+  {
+    name: string;
+    description?: string;
+    currency: 'USD' | 'PHP';
+    startDate: string;
+    endDate: string;
+  }
 > = {
   safeParse(input) {
     const name = input.name.trim();
     const description = input.description?.trim();
+    const startDate = input.startDate.trim();
+    const endDate = input.endDate.trim();
 
     if (name.length < 2) {
       return fail('Event name is required.');
@@ -81,10 +95,20 @@ export const eventSchema: Validator<
       return fail('Select a supported currency.');
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      return fail('Select an event date range.');
+    }
+
+    if (startDate > endDate) {
+      return fail('Event end date must be after the start date.');
+    }
+
     return pass({
       name,
       description,
       currency: input.currency,
+      startDate,
+      endDate,
     });
   },
 };

@@ -339,6 +339,8 @@ export class MockBackend implements AppBackend {
       description: input.description?.trim(),
       currency: input.currency,
       icon: input.icon ?? 'event',
+      startDate: input.startDate,
+      endDate: input.endDate,
       createdBy: userId,
       createdAt: now,
       updatedAt: now,
@@ -383,6 +385,8 @@ export class MockBackend implements AppBackend {
     event.name = nextName;
     event.description = input.description?.trim();
     event.icon = input.icon ?? event.icon;
+    event.startDate = input.startDate;
+    event.endDate = input.endDate;
     event.updatedAt = now;
 
     const fund = this.state.centralFunds.find(item => item.eventId === input.eventId);

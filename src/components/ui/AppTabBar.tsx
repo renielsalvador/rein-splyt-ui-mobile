@@ -1,38 +1,38 @@
 import React from 'react';
-import {Pressable, Text, View} from 'react-native';
-import {palette} from '../../theme/tokens';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {AppIcon} from './AppIcon';
 import {styles} from './styles';
 
 export type TabName = 'Home' | 'Events' | 'Activity' | 'Settings';
 
 function HomeIcon({active}: {active: boolean}) {
   return (
-    <View style={{width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{fontSize: 20, color: active ? palette.ink : palette.inkMuted}}>⌂</Text>
+    <View style={localStyles.iconWrap}>
+      <AppIcon name="home" size={20} tone={active ? 'default' : 'muted'} />
     </View>
   );
 }
 
 function EventsIcon({active}: {active: boolean}) {
   return (
-    <View style={{width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{fontSize: 18, color: active ? palette.ink : palette.inkMuted}}>◫</Text>
+    <View style={localStyles.iconWrap}>
+      <AppIcon name="calendar" size={20} tone={active ? 'default' : 'muted'} />
     </View>
   );
 }
 
 function ActivityIcon({active}: {active: boolean}) {
   return (
-    <View style={{width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{fontSize: 18, color: active ? palette.ink : palette.inkMuted}}>⌇</Text>
+    <View style={localStyles.iconWrap}>
+      <AppIcon name="activity" size={20} tone={active ? 'default' : 'muted'} />
     </View>
   );
 }
 
 function SettingsIcon({active}: {active: boolean}) {
   return (
-    <View style={{width: 24, height: 24, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{fontSize: 18, color: active ? palette.ink : palette.inkMuted}}>⚙</Text>
+    <View style={localStyles.iconWrap}>
+      <AppIcon name="settings" size={20} tone={active ? 'default' : 'muted'} />
     </View>
   );
 }
@@ -70,3 +70,12 @@ export function AppTabBar({
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  iconWrap: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

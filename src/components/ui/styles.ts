@@ -140,6 +140,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     padding: 0,
+    paddingVertical: 0,
+  },
+  inputSingleLine: {
+    height: '100%',
+    textAlignVertical: 'center',
   },
   inputMultiline: {
     textAlignVertical: 'top',

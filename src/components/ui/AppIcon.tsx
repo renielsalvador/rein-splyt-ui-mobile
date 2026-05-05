@@ -1,59 +1,60 @@
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {palette} from '../../theme/tokens';
 import {styles} from './styles';
 
 const iconMap = {
-  back: '‹',
-  menu: '☰',
-  create: '+',
-  join: '⌁',
-  members: '◌',
-  expense: '＋',
-  fund: '◍',
-  balances: '⊜',
-  settlement: '⇄',
-  settings: '⚙',
-  wallet: '¤',
-  bell: '◔',
-  sun: '☼',
-  shield: '⬡',
-  link: '⛓',
-  help: '?',
-  signout: '↗',
-  person: '◦',
-  invite: '⌁',
-  event: '○',
-  trip: '✦',
-  plane: '✈',
-  beach: '☼',
-  food: '☕',
-  party: '✶',
-  work: '▣',
-  home: '⌂',
-  gift: '♡',
-  music: '♪',
-  camera: '◉',
-  sports: '⚑',
-  shopping: '◈',
-  game: '♞',
-  study: '✎',
-  check: '✓',
-  close: '✕',
-  refresh: '↻',
-  edit: '✎',
-  delete: '⌫',
-  mail: '✉',
-  lock: '⊛',
-  chevron: '›',
-  chevronDown: '⌄',
-  qr: '⊞',
-  share: '↑',
-  copy: '⎘',
-  activity: '⌇',
-  calendar: '◫',
-  swap: '⇄',
-  star: '★',
+  back: 'chevron-left',
+  menu: 'menu',
+  create: 'plus',
+  join: 'account-plus-outline',
+  members: 'account-multiple-outline',
+  expense: 'receipt-text-plus-outline',
+  fund: 'safe-square-outline',
+  balances: 'scale-balance',
+  settlement: 'swap-horizontal',
+  settings: 'cog-outline',
+  wallet: 'wallet-outline',
+  bell: 'bell-outline',
+  sun: 'white-balance-sunny',
+  shield: 'shield-check-outline',
+  link: 'link-variant',
+  help: 'help-circle-outline',
+  signout: 'logout',
+  person: 'account-outline',
+  invite: 'email-fast-outline',
+  event: 'calendar-star',
+  trip: 'bag-suitcase-outline',
+  plane: 'airplane',
+  beach: 'palm-tree',
+  food: 'silverware-fork-knife',
+  party: 'party-popper',
+  work: 'briefcase-outline',
+  home: 'home-outline',
+  gift: 'gift-outline',
+  music: 'music-note-outline',
+  camera: 'camera-outline',
+  sports: 'basketball',
+  shopping: 'shopping-outline',
+  game: 'gamepad-variant-outline',
+  study: 'book-open-page-variant-outline',
+  check: 'check',
+  close: 'close',
+  refresh: 'refresh',
+  edit: 'pencil-outline',
+  delete: 'trash-can-outline',
+  mail: 'email-outline',
+  lock: 'lock-outline',
+  chevron: 'chevron-right',
+  chevronDown: 'chevron-down',
+  qr: 'qrcode',
+  share: 'share-variant-outline',
+  copy: 'content-copy',
+  activity: 'chart-timeline-variant',
+  calendar: 'calendar-range-outline',
+  swap: 'swap-horizontal',
+  star: 'star-outline',
 } as const;
 
 export type AppIconName = keyof typeof iconMap;
@@ -78,7 +79,7 @@ export function AppIcon({
             ? palette.danger
             : palette.ink;
 
-  return <Text style={[styles.icon, {fontSize: size, color}]}>{iconMap[name]}</Text>;
+  return <MaterialCommunityIcons name={iconMap[name]} size={size} color={color} />;
 }
 
 export function IconButton({
@@ -123,7 +124,7 @@ export function NotificationButton({
       }
       onPress={onPress}
       style={({pressed}) => [styles.headerBellButton, pressed ? styles.buttonPressed : null]}>
-      <Text style={{fontSize: 16, color: palette.surface}}>🔔</Text>
+      <AppIcon name="bell" tone="white" size={18} />
       {unreadCount > 0 ? (
         <View style={styles.headerNotificationDot}>
           <Text style={styles.headerNotificationDotText}>
