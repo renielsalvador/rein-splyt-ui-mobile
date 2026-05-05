@@ -35,7 +35,13 @@ export type EventRow = {
     | 'party'
     | 'work'
     | 'home'
-    | 'gift';
+    | 'gift'
+    | 'music'
+    | 'camera'
+    | 'sports'
+    | 'shopping'
+    | 'game'
+    | 'study';
   created_by: string;
   created_at: string;
   updated_at: string;

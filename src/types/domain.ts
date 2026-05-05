@@ -13,7 +13,13 @@ export type EventIconName =
   | 'party'
   | 'work'
   | 'home'
-  | 'gift';
+  | 'gift'
+  | 'music'
+  | 'camera'
+  | 'sports'
+  | 'shopping'
+  | 'game'
+  | 'study';
 
 export type UserProfile = {
   id: string;

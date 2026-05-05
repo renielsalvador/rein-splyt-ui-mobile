@@ -504,6 +504,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         visible={iconModalVisible}
         title="Choose an event icon"
         subtitle="Pick a visual marker for this event."
+        scrollable
         onClose={() => setIconModalVisible(false)}>
         <EventIconPicker
           selectedIcon={icon}

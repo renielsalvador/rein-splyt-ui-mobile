@@ -405,12 +405,17 @@ export const styles = StyleSheet.create({
   iconGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
   iconOptionCard: {
-    width: '30%',
+    flexBasis: '31%',
+    maxWidth: '31%',
+    minHeight: 104,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
     borderRadius: radii.lg,
     backgroundColor: palette.greenTintSoft,
@@ -421,6 +426,7 @@ export const styles = StyleSheet.create({
   iconOptionLabel: {
     ...typography.caption,
     color: palette.ink,
+    textAlign: 'center',
   },
   iconOptionLabelActive: {
     color: palette.surface,

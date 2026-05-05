@@ -16,6 +16,12 @@ export const EVENT_ICON_OPTIONS: Array<{name: EventIconName; label: string}> = [
   {name: 'work', label: 'Work'},
   {name: 'home', label: 'Home'},
   {name: 'gift', label: 'Gift'},
+  {name: 'music', label: 'Music'},
+  {name: 'camera', label: 'Photo'},
+  {name: 'sports', label: 'Sports'},
+  {name: 'shopping', label: 'Shopping'},
+  {name: 'game', label: 'Games'},
+  {name: 'study', label: 'Study'},
 ];
 
 export type SelectedMemberDraft =
