@@ -10,7 +10,7 @@ const iconMap = {
   create: 'plus',
   join: 'account-plus-outline',
   members: 'account-multiple-outline',
-  expense: 'receipt-text-plus-outline',
+  expense: 'receipt',
   fund: 'safe-square-outline',
   balances: 'scale-balance',
   settlement: 'swap-horizontal',
