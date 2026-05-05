@@ -122,6 +122,13 @@ function getAvatarChipOffsetStyle(index: number) {
   return index === 0 ? styles.avatarChipFirst : styles.avatarChipOffset;
 }
 
+function formatAmountValue(value: number) {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function describeInviteDate(createdAt: string, expiresAt: string) {
   return `Received ${formatDateLabel(createdAt)} • Expires ${formatDateLabel(expiresAt)}`;
 }
@@ -206,7 +213,13 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
                   onPress: () => signOut().catch(() => undefined),
                 },
               ]}
-              renderTrigger={({toggle}) => <HeaderMenuButton onPress={toggle} />}
+              renderTrigger={({toggle}) => (
+                <HeaderMenuButton
+                  onPress={toggle}
+                  avatarUrl={currentUser?.avatarUrl}
+                  avatarFallbackLabel={currentUser?.displayName}
+                />
+              )}
             />
           </View>
         }>
@@ -258,25 +271,46 @@ export function HomeScreen({navigation}: ScreenProps<'Home'>) {
                     <View style={styles.eventIconBadge}>
                       <AppIcon name={event.icon} tone="accent" size={20} />
                     </View>
-                    <View style={styles.eventCopy}>
+                  <View style={styles.eventCopy}>
                       <Text style={styles.eventName}>{event.name}</Text>
                       <Text style={styles.eventMeta}>
                         {event.description || 'Shared expense workspace'}
                       </Text>
                     </View>
                   </View>
-                  <DataPill label={event.currency} tone="accent" />
                 </View>
                 <View style={styles.metricRow}>
                   <View style={styles.metricPanel}>
                     <Text style={styles.metricLabel}>Members</Text>
-                    <Text style={styles.metricText}>{summary?.members.length ?? 1}</Text>
+                    <View style={styles.avatarStackRow}>
+                      {(summary?.members ?? []).slice(0, 3).map((member, index) => {
+                        const tone = getAvatarTone(index);
+                        return (
+                          <View
+                            key={member.id}
+                            style={[
+                              styles.avatarChip,
+                              getAvatarChipOffsetStyle(index),
+                              {backgroundColor: tone.backgroundColor},
+                            ]}>
+                            <Text style={[styles.avatarText, {color: tone.textColor}]}>
+                              {member.displayName.slice(0, 1).toUpperCase()}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                      {(summary?.members.length ?? 0) > 3 ? (
+                        <View style={styles.avatarOverflowChip}>
+                          <Text style={styles.avatarOverflowText}>
+                            +{(summary?.members.length ?? 0) - 3}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
                   <View style={styles.metricPanel}>
                     <Text style={styles.metricLabel}>Tracked spend</Text>
-                    <Text style={styles.metricText}>
-                      {formatCurrency(totalSpend, event.currency)}
-                    </Text>
+                    <Text style={styles.metricText}>{formatAmountValue(totalSpend)}</Text>
                   </View>
                 </View>
               </AppCard>

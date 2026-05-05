@@ -1,7 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
+  Image,
   Modal,
   Pressable,
   SafeAreaView,
@@ -438,9 +440,13 @@ export function NotificationButton({
 export function HeaderMenuButton({
   onPress,
   label = 'Menu',
+  avatarUrl,
+  avatarFallbackLabel,
 }: {
   onPress: () => void;
   label?: string;
+  avatarUrl?: string;
+  avatarFallbackLabel?: string;
 }) {
   return (
     <Pressable
@@ -448,7 +454,15 @@ export function HeaderMenuButton({
       accessibilityLabel="Open menu"
       onPress={onPress}
       style={({pressed}) => [styles.menuTriggerButton, pressed ? styles.buttonPressed : null]}>
-      <AppIcon name="menu" tone="accent" size={14} />
+      {avatarUrl ? (
+        <Image source={{uri: avatarUrl}} style={styles.menuAvatarImage} />
+      ) : (
+        <View style={styles.menuAvatarFallback}>
+          <Text style={styles.menuAvatarFallbackText}>
+            {avatarFallbackLabel?.trim().slice(0, 1).toUpperCase() || 'U'}
+          </Text>
+        </View>
+      )}
       <Text style={styles.menuTriggerLabel}>{label}</Text>
     </Pressable>
   );
@@ -471,38 +485,72 @@ export function AppMenu({
   renderTrigger?: (props: {open: boolean; toggle: () => void}) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({top: 52, left: 0});
+  const triggerRef = useRef<View>(null);
   const toggle = () => setOpen(current => !current);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      const screenWidth = Dimensions.get('window').width;
+      const cardWidth = 188;
+      const nextLeft = Math.min(
+        Math.max(spacing.md, x + width - cardWidth),
+        screenWidth - cardWidth - spacing.md,
+      );
+
+      setMenuPosition({
+        top: y + height + spacing.xs,
+        left: nextLeft,
+      });
+    });
+  }, [open]);
 
   return (
     <View style={styles.menuWrap}>
-      {renderTrigger ? (
-        renderTrigger({open, toggle})
-      ) : (
-        <IconButton icon="menu" accessibilityLabel="Open menu" onPress={toggle} />
-      )}
+      <View ref={triggerRef} collapsable={false}>
+        {renderTrigger ? (
+          renderTrigger({open, toggle})
+        ) : (
+          <IconButton icon="menu" accessibilityLabel="Open menu" onPress={toggle} />
+        )}
+      </View>
       {open ? (
-        <View style={[surfaces.card, styles.menuCard]}>
-          {items.map(item => (
-            <Pressable
-              key={item.label}
-              accessibilityRole="button"
-              disabled={item.disabled}
-              onPress={() => {
-                setOpen(false);
-                if (!item.disabled) {
-                  item.onPress();
-                }
-              }}
-              style={({pressed}) => [
-                styles.menuItem,
-                item.disabled ? styles.buttonDisabled : null,
-                pressed ? styles.buttonPressed : null,
+        <Modal transparent visible onRequestClose={() => setOpen(false)}>
+          <View style={styles.menuModalLayer}>
+            <Pressable style={styles.menuBackdrop} onPress={() => setOpen(false)} />
+            <View
+              style={[
+                surfaces.card,
+                styles.menuCard,
+                {top: menuPosition.top, left: menuPosition.left},
               ]}>
-              <AppIcon name={item.icon} tone="accent" />
-              <Text style={styles.menuItemLabel}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+              {items.map(item => (
+                <Pressable
+                  key={item.label}
+                  accessibilityRole="button"
+                  disabled={item.disabled}
+                  onPress={() => {
+                    setOpen(false);
+                    if (!item.disabled) {
+                      item.onPress();
+                    }
+                  }}
+                  style={({pressed}) => [
+                    styles.menuItem,
+                    item.disabled ? styles.buttonDisabled : null,
+                    pressed ? styles.buttonPressed : null,
+                  ]}>
+                  <AppIcon name={item.icon} tone="accent" />
+                  <Text style={styles.menuItemLabel}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </Modal>
       ) : null}
     </View>
   );
@@ -897,14 +945,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+  menuAvatarImage: {
+    width: 24,
+    height: 24,
+    borderRadius: radii.pill,
+  },
+  menuAvatarFallback: {
+    width: 24,
+    height: 24,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.accentSoft,
+  },
+  menuAvatarFallbackText: {
+    ...typography.eyebrow,
+    color: palette.primary,
+    fontWeight: '700',
+  },
   menuTriggerLabel: {
     ...typography.bodyStrong,
     color: palette.primary,
   },
+  menuModalLayer: {
+    flex: 1,
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
   menuCard: {
     position: 'absolute',
-    top: 52,
-    right: 0,
     minWidth: 188,
     padding: spacing.xs,
     gap: spacing.xs,
