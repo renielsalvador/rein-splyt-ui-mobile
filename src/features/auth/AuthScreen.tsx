@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
 import {Image, Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {useApp} from '../../app/AppProvider';
 import {AppButton, AppInput, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
-import {useApp} from '../../app/AppProvider';
-import {palette, spacing, typography} from '../../theme/tokens';
+import {palette, radii, spacing, typography} from '../../theme/tokens';
 
 export function AuthScreen() {
-  const {signIn, signUp, error} = useApp();
+  const {signIn, signUp, signInWithGoogle, error} = useApp();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -109,14 +109,23 @@ export function AuthScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <View style={styles.oauthRow}>
-            <Pressable style={styles.oauthButton}>
-              <Text style={styles.oauthButtonText}>Google</Text>
-            </Pressable>
-            <Pressable style={styles.oauthButton}>
-              <Text style={styles.oauthButtonText}>Apple</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              signInWithGoogle().catch(() => undefined);
+            }}
+            style={({pressed}) => [styles.oauthButton, pressed ? styles.oauthButtonPressed : null]}>
+            <View style={styles.oauthButtonContent}>
+              <Image
+                source={require('../../../assets/branding/icon-google.png')}
+                style={styles.oauthLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.oauthButtonText}>
+                {mode === 'login' ? 'Continue with Google' : 'Sign up with Google'}
+              </Text>
+            </View>
+          </Pressable>
         </View>
 
         <View style={styles.switchBlock}>
@@ -192,23 +201,32 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: palette.inkMuted,
   },
-  oauthRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
   oauthButton: {
-    flex: 1,
     height: 48,
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: palette.divider,
     backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  oauthButtonPressed: {
+    opacity: 0.82,
+  },
+  oauthButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   oauthButtonText: {
     ...typography.bodyStrong,
     color: palette.ink,
+  },
+  oauthLogo: {
+    width: 18,
+    height: 18,
   },
   switchBlock: {
     alignItems: 'center',

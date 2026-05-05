@@ -8,6 +8,17 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>Splyt</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.splytuimobile.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>splytuimobile</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

@@ -32,6 +32,8 @@ export interface AppBackend {
   getSession(): Promise<AppSession | null>;
   signIn(input: AuthFormValues): Promise<AppSession>;
   signUp(input: Required<AuthFormValues>): Promise<AppSession>;
+  signInWithGoogle(): Promise<void>;
+  completeAuthRedirect(url: string): Promise<AppSession | null>;
   signOut(): Promise<void>;
   listPendingInvites(email: string): Promise<PendingInvite[]>;
   respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;

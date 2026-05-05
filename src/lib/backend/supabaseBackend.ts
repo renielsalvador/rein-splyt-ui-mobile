@@ -10,8 +10,10 @@ import type {
   UpdateExpenseInput,
 } from '../../types/domain';
 import {
+  completeAuthRedirect,
   getSession,
   signIn,
+  signInWithGoogle,
   signOut,
   signUp,
 } from './supabase/authService';
@@ -59,6 +61,14 @@ export class SupabaseBackend implements AppBackend {
 
   async signUp(input: Required<AuthFormValues>): Promise<AppSession> {
     return signUp(this.client, input);
+  }
+
+  async signInWithGoogle() {
+    return signInWithGoogle(this.client);
+  }
+
+  async completeAuthRedirect(url: string) {
+    return completeAuthRedirect(this.client, url);
   }
 
   async signOut() {

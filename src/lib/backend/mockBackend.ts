@@ -155,6 +155,14 @@ export class MockBackend implements AppBackend {
     return {user};
   }
 
+  async signInWithGoogle(): Promise<void> {
+    throw new Error('Google sign-in requires a configured Supabase backend.');
+  }
+
+  async completeAuthRedirect(_url: string): Promise<AppSession | null> {
+    return null;
+  }
+
   async signOut() {
     this.state.sessionUserId = undefined;
   }

@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import {Linking} from 'react-native';
 import {getBackend} from '../lib/backend';
 import type {AppBackend} from '../lib/backend/types';
 import type {InviteRecipient} from '../lib/backend/types';
@@ -42,6 +43,7 @@ type AppContextValue = {
   clearError: () => void;
   signIn: (input: AuthFormValues) => Promise<void>;
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshEvents: () => Promise<void>;
   refreshContacts: () => Promise<void>;
@@ -75,25 +77,38 @@ export function AppProvider({children}: React.PropsWithChildren) {
   >({});
   const [error, setError] = useState<string | null>(null);
 
+  const applySession = useCallback(async (nextBackend: AppBackend, user: UserProfile) => {
+    const [nextEvents, nextContacts, nextPendingInvites] = await Promise.all([
+      nextBackend.listEvents(user.id),
+      nextBackend.listContacts(user.id),
+      nextBackend.listPendingInvites(user.email),
+    ]);
+
+    setCurrentUser(user);
+    setEvents(nextEvents);
+    setContacts(nextContacts);
+    setPendingInvites(nextPendingInvites);
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     async function bootstrap() {
       try {
         const nextBackend = await getBackend();
-        const session = await nextBackend.getSession();
+        const initialUrl = await Linking.getInitialURL();
+        const redirectedSession = initialUrl
+          ? await nextBackend.completeAuthRedirect(initialUrl)
+          : null;
+        const session = redirectedSession ?? (await nextBackend.getSession());
 
         if (!isMounted) {
           return;
         }
 
         setBackend(nextBackend);
-        setCurrentUser(session?.user ?? null);
-        if (session?.user.email) {
-          const nextPendingInvites = await nextBackend.listPendingInvites(session.user.email);
-          if (isMounted) {
-            setPendingInvites(nextPendingInvites);
-          }
+        if (session?.user) {
+          await applySession(nextBackend, session.user);
         }
       } catch (bootstrapError) {
         if (isMounted) {
@@ -115,7 +130,33 @@ export function AppProvider({children}: React.PropsWithChildren) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [applySession]);
+
+  useEffect(() => {
+    if (!backend) {
+      return;
+    }
+
+    const subscription = Linking.addEventListener('url', event => {
+      backend
+        .completeAuthRedirect(event.url)
+        .then(session => {
+          if (!session) {
+            return;
+          }
+
+          setError(null);
+          return applySession(backend, session.user);
+        })
+        .catch(nextError => {
+          setError(nextError instanceof Error ? nextError.message : 'Unable to sign in.');
+        });
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [applySession, backend]);
 
   const refreshEvents = useCallback(async () => {
     if (!backend || !currentUser) {
@@ -202,16 +243,10 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
       await mutate(async () => {
         const session = await backend.signIn(input);
-        setCurrentUser(session.user);
-        const nextEvents = await backend.listEvents(session.user.id);
-        setEvents(nextEvents);
-        const nextContacts = await backend.listContacts(session.user.id);
-        setContacts(nextContacts);
-        const nextPendingInvites = await backend.listPendingInvites(session.user.email);
-        setPendingInvites(nextPendingInvites);
+        await applySession(backend, session.user);
       });
     },
-    [backend, mutate],
+    [applySession, backend, mutate],
   );
 
   const signUp = useCallback(
@@ -222,15 +257,21 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
       await mutate(async () => {
         const session = await backend.signUp(input);
-        setCurrentUser(session.user);
-        setEvents([]);
-        setContacts([]);
-        const nextPendingInvites = await backend.listPendingInvites(session.user.email);
-        setPendingInvites(nextPendingInvites);
+        await applySession(backend, session.user);
       });
     },
-    [backend, mutate],
+    [applySession, backend, mutate],
   );
+
+  const signInWithGoogle = useCallback(async () => {
+    if (!backend) {
+      return;
+    }
+
+    await mutate(async () => {
+      await backend.signInWithGoogle();
+    });
+  }, [backend, mutate]);
 
   const signOut = useCallback(async () => {
     if (!backend) {
@@ -483,6 +524,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       clearError: () => setError(null),
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       refreshEvents,
       refreshContacts,
@@ -522,6 +564,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       respondToInvite,
       settlements,
       signIn,
+      signInWithGoogle,
       signOut,
       signUp,
       summaries,

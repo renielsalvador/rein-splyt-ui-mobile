@@ -40,6 +40,8 @@ In another terminal:
 ```sh
 source ~/.nvm/nvm.sh
 nvm use 22
+bundle install
+bundle exec pod install --project-directory=ios
 npm run ios
 ```
 
@@ -74,6 +76,10 @@ Create a root `.env` file from `.env.example` and set:
 ```dotenv
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+
+Google OAuth in the mobile app also expects a Supabase redirect URL of
+`splytuimobile://auth/callback` to be added to your Auth redirect allow list,
+and the Google provider must be enabled in the Supabase dashboard.
 ```
 
 To switch from mock to live Supabase, the next implementation step is to replace the mock-backed methods behind the `AppBackend` interface with real auth, table, and RPC operations.
