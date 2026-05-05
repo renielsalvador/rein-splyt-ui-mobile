@@ -5,7 +5,11 @@ function parseDateValue(value: string) {
     return new Date(NaN);
   }
 
-  return new Date(`${value}T12:00:00`);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T12:00:00`);
+  }
+
+  return new Date(value);
 }
 
 export function formatCurrency(value: number, currency: CurrencyCode) {
