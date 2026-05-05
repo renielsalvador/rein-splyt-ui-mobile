@@ -13,6 +13,7 @@ import type {
   PendingInvite,
   RespondToInviteInput,
   SettlementInstruction,
+  UpdateEventInput,
   UpdateExpenseInput,
   UserProfile,
 } from '../../types/domain';
@@ -38,6 +39,8 @@ export interface AppBackend {
   listContacts(userId: string): Promise<Contact[]>;
   upsertContacts(userId: string, contacts: Array<{userId: string}>): Promise<Contact[]>;
   createEvent(userId: string, input: CreateEventInput): Promise<Event>;
+  updateEvent(userId: string, input: UpdateEventInput): Promise<Event>;
+  deleteEvent(userId: string, eventId: string): Promise<void>;
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;

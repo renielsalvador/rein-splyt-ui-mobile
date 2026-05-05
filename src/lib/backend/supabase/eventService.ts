@@ -3,6 +3,7 @@ import type {
   CreateEventInput,
   EventSummary,
   JoinEventInput,
+  UpdateEventInput,
 } from '../../../types/domain';
 import {
   mapContribution,
@@ -70,6 +71,37 @@ export async function joinEvent(
   }
 
   return mapEvent((Array.isArray(data) ? data[0] : data) as EventRow);
+}
+
+export async function updateEvent(
+  client: SupabaseClient,
+  input: UpdateEventInput,
+) {
+  const {data, error} = await client.rpc('update_event_details', {
+    p_event_id: input.eventId,
+    p_name: input.name.trim(),
+    p_description: input.description?.trim() || null,
+    p_icon: input.icon ?? 'event',
+  });
+
+  assertNoError(error, 'Unable to update the event.');
+
+  if (!data) {
+    throw new Error('Event update returned no data.');
+  }
+
+  return mapEvent((Array.isArray(data) ? data[0] : data) as EventRow);
+}
+
+export async function deleteEvent(
+  client: SupabaseClient,
+  eventId: string,
+) {
+  const {error} = await client.rpc('delete_event_with_related_records', {
+    p_event_id: eventId,
+  });
+
+  assertNoError(error, 'Unable to delete the event.');
 }
 
 export async function getEventSummary(

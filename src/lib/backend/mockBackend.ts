@@ -22,6 +22,7 @@ import type {
   PendingInvite,
   RespondToInviteInput,
   SettlementInstruction,
+  UpdateEventInput,
   UpdateExpenseInput,
   UserProfile,
 } from '../../types/domain';
@@ -333,6 +334,57 @@ export class MockBackend implements AppBackend {
     this.state.centralFunds.push(fund);
 
     return event;
+  }
+
+  async updateEvent(_userId: string, input: UpdateEventInput) {
+    const event = this.state.events.find(item => item.id === input.eventId);
+
+    if (!event) {
+      throw new Error('Event not found.');
+    }
+
+    const now = new Date().toISOString();
+    const nextName = input.name.trim();
+
+    event.name = nextName;
+    event.description = input.description?.trim();
+    event.icon = input.icon ?? event.icon;
+    event.updatedAt = now;
+
+    const fund = this.state.centralFunds.find(item => item.eventId === input.eventId);
+
+    if (fund) {
+      fund.name = `${nextName} Fund`;
+    }
+
+    return event;
+  }
+
+  async deleteEvent(_userId: string, eventId: string) {
+    const event = this.state.events.find(item => item.id === eventId);
+
+    if (!event) {
+      throw new Error('Event not found.');
+    }
+
+    const expenseIds = new Set(
+      this.state.expenses.filter(item => item.eventId === eventId).map(item => item.id),
+    );
+    const fundIds = new Set(
+      this.state.centralFunds.filter(item => item.eventId === eventId).map(item => item.id),
+    );
+
+    this.state.events = this.state.events.filter(item => item.id !== eventId);
+    this.state.eventMembers = this.state.eventMembers.filter(item => item.eventId !== eventId);
+    this.state.invites = this.state.invites.filter(item => item.eventId !== eventId);
+    this.state.expenses = this.state.expenses.filter(item => item.eventId !== eventId);
+    this.state.expenseSplits = this.state.expenseSplits.filter(
+      item => !expenseIds.has(item.expenseId),
+    );
+    this.state.centralFunds = this.state.centralFunds.filter(item => item.eventId !== eventId);
+    this.state.contributions = this.state.contributions.filter(
+      item => !fundIds.has(item.fundId),
+    );
   }
 
   async joinEvent(userId: string, input: JoinEventInput) {

@@ -783,8 +783,15 @@ export function EventDashboardScreen({
   route,
 }: ScreenProps<'EventDashboard'>) {
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, balances, currentUser} = useApp();
+  const {hydrateEvent, summaries, balances, currentUser, updateEvent, deleteEvent, error} =
+    useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editIcon, setEditIcon] = useState<EventIconName>('event');
+  const [editFormError, setEditFormError] = useState<string>();
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const summary = summaries[eventId];
   const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
   const event = summary?.event;
@@ -792,6 +799,16 @@ export function EventDashboardScreen({
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
   }, [eventId, hydrateEvent]);
+
+  useEffect(() => {
+    if (!event) {
+      return;
+    }
+
+    setEditName(event.name);
+    setEditDescription(event.description ?? '');
+    setEditIcon(event.icon);
+  }, [event]);
 
   const totalSpend = useMemo(
     () => summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0,
@@ -877,7 +894,19 @@ export function EventDashboardScreen({
             <View style={styles.dashboardEventIcon}>
               <AppIcon name={event.icon} tone="accent" size={22} />
             </View>
-            <DataPill label={event.currency} />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setEditFormError(undefined);
+                setEditModalVisible(true);
+              }}
+              style={({pressed}) => [
+                styles.inlineEditButton,
+                pressed ? styles.pressed : null,
+              ]}>
+              <AppIcon name="edit" tone="accent" size={13} />
+              <Text style={styles.inlineEditButtonText}>Edit</Text>
+            </Pressable>
           </View>
           <Text style={styles.heroValue}>{formatCurrency(totalSpend, event.currency)}</Text>
           <Text style={styles.heroLabel}>Tracked event spending</Text>
@@ -1047,7 +1076,148 @@ export function EventDashboardScreen({
               </Pressable>
             );
           })}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setDeleteConfirmVisible(true)}
+          style={({pressed}) => [
+            styles.deleteEventButton,
+            pressed ? styles.pressed : null,
+          ]}>
+          <AppIcon name="delete" tone="default" size={14} />
+          <Text style={styles.deleteEventButtonText}>Delete event</Text>
+        </Pressable>
+        <InlineError message={error ?? undefined} />
       </AppScreen>
+      <AppModal
+        visible={editModalVisible}
+        title="Edit event"
+        subtitle="Update the name, description, or icon."
+        scrollable
+        onClose={() => {
+          setEditModalVisible(false);
+          setEditFormError(undefined);
+        }}>
+        <View style={styles.eventIconSelector}>
+          <View style={styles.eventIconSelectorBadge}>
+            <AppIcon name={editIcon} tone="accent" size={28} />
+          </View>
+          <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+          <Text style={styles.eventMeta}>Choose the icon shown on the dashboard.</Text>
+        </View>
+        <View style={styles.iconGrid}>
+          {EVENT_ICON_OPTIONS.map(option => (
+            <Pressable
+              key={option.name}
+              accessibilityRole="button"
+              onPress={() => setEditIcon(option.name)}
+              style={({pressed}) => [
+                styles.iconOptionCard,
+                editIcon === option.name ? styles.iconOptionCardActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <AppIcon
+                name={option.name as AppIconName}
+                tone={editIcon === option.name ? 'inverted' : 'accent'}
+                size={24}
+              />
+              <Text
+                style={[
+                  styles.iconOptionLabel,
+                  editIcon === option.name ? styles.iconOptionLabelActive : null,
+                ]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <AppInput
+          label="Event name"
+          value={editName}
+          onChangeText={setEditName}
+          placeholder="Boracay long weekend"
+        />
+        <AppInput
+          label="Description"
+          value={editDescription}
+          onChangeText={setEditDescription}
+          placeholder="Flights, villa, food, and shared activities"
+          multiline
+        />
+        <View style={styles.actionRow}>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Save changes"
+              icon="edit"
+              onPress={() => {
+                if (!event) {
+                  return;
+                }
+
+                const parsed = eventSchema.safeParse({
+                  name: editName,
+                  description: editDescription,
+                  currency: event.currency,
+                });
+
+                if (!parsed.success) {
+                  setEditFormError(parsed.error.issues[0]?.message);
+                  return;
+                }
+
+                setEditFormError(undefined);
+                updateEvent({
+                  eventId,
+                  name: parsed.data.name,
+                  description: parsed.data.description,
+                  icon: editIcon,
+                })
+                  .then(() => setEditModalVisible(false))
+                  .catch(() => undefined);
+              }}
+            />
+          </View>
+        </View>
+        <InlineError message={editFormError ?? error ?? undefined} />
+      </AppModal>
+      <AppModal
+        visible={deleteConfirmVisible}
+        title="Delete event"
+        subtitle="This removes the event, members, invites, expenses, and fund history."
+        onClose={() => setDeleteConfirmVisible(false)}>
+        <Text style={styles.deleteEventConfirmText}>
+          Delete {event.name}? This action cannot be undone.
+        </Text>
+        <View style={styles.actionRow}>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Cancel"
+              variant="secondary"
+              onPress={() => setDeleteConfirmVisible(false)}
+            />
+          </View>
+          <View style={styles.actionRowItem}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                deleteEvent(eventId)
+                  .then(() => {
+                    setDeleteConfirmVisible(false);
+                    setEditModalVisible(false);
+                    navigation.replace('Home');
+                  })
+                  .catch(() => undefined);
+              }}
+              style={({pressed}) => [
+                styles.deleteConfirmButton,
+                pressed ? styles.pressed : null,
+              ]}>
+              <AppIcon name="delete" tone="inverted" size={15} />
+              <Text style={styles.deleteConfirmButtonText}>Delete event</Text>
+            </Pressable>
+          </View>
+        </View>
+        <InlineError message={error ?? undefined} />
+      </AppModal>
       <AppModal
         visible={showBalanceDetails}
         title="My balance"
@@ -1110,9 +1280,12 @@ export function EventDashboardScreen({
 
 export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const {eventId} = route.params;
-  const {summaries, addManualMember, createInvite, error} = useApp();
+  const {summaries, addManualMember, createInvite, currentUser, error} = useApp();
   const summary = summaries[eventId];
   const [displayName, setDisplayName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [memberFormError, setMemberFormError] = useState<string>();
+  const [inviteFormError, setInviteFormError] = useState<string>();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const latestInvite = useMemo(
@@ -1125,6 +1298,35 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         )[0],
     [summary],
   );
+  const memberRows = useMemo(() => {
+    if (!summary) {
+      return [];
+    }
+
+    const pendingInviteRows = summary.invites
+      .filter(invite => invite.status === 'pending' && !!invite.invitedEmail)
+      .map(invite => ({
+        id: `invite:${invite.id}`,
+        displayName: invite.invitedEmail as string,
+        email: invite.invitedEmail,
+        joinedLabel: `Invited ${formatDateLabel(invite.createdAt)}`,
+        statusLabel: 'Pending',
+      }));
+
+    const joinedMemberRows = summary.members.map(member => ({
+      id: member.id,
+      displayName: member.displayName,
+      email:
+        currentUser && member.userId === currentUser.id ? currentUser.email : undefined,
+      joinedLabel:
+        member.status === 'joined'
+          ? `Joined ${formatDateLabel(member.joinedAt)}`
+          : `Added ${formatDateLabel(member.joinedAt)}`,
+      statusLabel: member.status === 'joined' ? 'Joined' : 'Pending',
+    }));
+
+    return [...joinedMemberRows, ...pendingInviteRows];
+  }, [currentUser, summary]);
 
   useEffect(() => {
     if (!toastMessage) {
@@ -1157,63 +1359,45 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       headerVariant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
       footerOverlay={toastMessage ? <AppToast message={toastMessage} /> : null}>
-      <AppCard>
-        <SectionHeading title="Add member manually" />
-        <AppInput
-          label="Display name"
-          value={displayName}
-          onChangeText={setDisplayName}
-          placeholder="Bea Santos"
-        />
-        <AppButton
-          label="Add placeholder member"
-          icon="members"
-          onPress={() => {
-            addManualMember(eventId, displayName)
-              .then(() => setDisplayName(''))
-              .catch(() => undefined);
-          }}
-        />
-      </AppCard>
-
       <AppCard tone="warm">
-        <SectionHeading title="Event code" />
-        <Text style={styles.eventMeta}>
-          Generate a code for this event, then copy and share it with members.
-        </Text>
-        <View style={styles.inviteCodeCard}>
-          <View style={styles.inviteCodeHeader}>
-            <View style={styles.eventCopy}>
-              <Text style={styles.inviteCodeLabel}>Current code</Text>
-              <Text style={styles.inviteCodeValue}>
-                {latestInvite?.inviteCode ?? 'No code generated yet'}
-              </Text>
-            </View>
-            {latestInvite ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Generate new event code"
-                onPress={() => {
-                  createInvite(eventId)
-                    .then(() => setToastMessage('New event code generated'))
-                    .catch(() => undefined);
-                }}
-                style={({pressed}) => [
-                  styles.refreshButton,
-                  pressed ? styles.pressed : null,
-                ]}>
-                <AppIcon name="refresh" tone="inverted" size={16} />
-              </Pressable>
-            ) : null}
-          </View>
+        <View style={styles.memberCodeHeader}>
+          <SectionHeading title="Event code" />
           {latestInvite ? (
-            <Text style={styles.eventMeta}>
-              Expires {formatDateLabel(latestInvite.expiresAt)}
-            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Generate new event code"
+              onPress={() => {
+                createInvite(eventId)
+                  .then(() => setToastMessage('New event code generated'))
+                  .catch(() => undefined);
+              }}
+              style={({pressed}) => [
+                styles.refreshButtonLight,
+                pressed ? styles.pressed : null,
+              ]}>
+              <AppIcon name="refresh" tone="accent" size={15} />
+            </Pressable>
           ) : null}
         </View>
-        <View style={styles.actionRow}>
-          {!latestInvite ? (
+        {latestInvite ? (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                Clipboard.setString(latestInvite.inviteCode);
+                setToastMessage('Event code copied');
+              }}
+              style={({pressed}) => [
+                styles.inviteCodePressable,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text style={styles.inviteCodeValueLarge}>{latestInvite.inviteCode}</Text>
+              <Text style={styles.inviteCodeHint}>Press to copy</Text>
+            </Pressable>
+            <Text style={styles.eventMeta}>Expires {formatDateLabel(latestInvite.expiresAt)}</Text>
+          </>
+        ) : (
+          <View style={styles.actionRow}>
             <View style={styles.actionRowItem}>
               <AppButton
                 label="Generate event code"
@@ -1225,56 +1409,106 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
                 }}
               />
             </View>
-          ) : null}
-          <View style={styles.actionRowItem}>
-            <AppButton
-              label="Copy event code"
-              icon="join"
-              variant="secondary"
-              disabled={!latestInvite}
-              onPress={() => {
-                if (!latestInvite) {
-                  return;
-                }
-
-                Clipboard.setString(latestInvite.inviteCode);
-                setToastMessage('Event code copied');
-              }}
-            />
           </View>
-        </View>
-        <AppButton
-          label="Copy share message"
-          icon="members"
-          variant="secondary"
-          disabled={!latestInvite}
-          onPress={() => {
-            if (!latestInvite) {
-              return;
-            }
-
-            Clipboard.setString(
-              `Join "${summary.event.name}" in ReinSplyt with code ${latestInvite.inviteCode}.`,
-            );
-            setToastMessage('Share message copied');
-          }}
-        />
+        )}
         <InlineError message={error ?? undefined} />
       </AppCard>
 
-      {summary.members.map(member => (
-        <AppCard key={member.id}>
-          <View style={styles.eventHeaderRow}>
-            <View>
-              <Text style={styles.eventName}>{member.displayName}</Text>
-              <Text style={styles.eventMeta}>
-                {member.role} • {member.status}
+      <AppCard>
+        <SectionHeading title="Add member manually" />
+        <AppInput
+          label="Display name"
+          value={displayName}
+          onChangeText={value => {
+            setDisplayName(value);
+            setMemberFormError(undefined);
+          }}
+          placeholder="Bea Santos"
+        />
+        <AppButton
+          label="Add placeholder member"
+          icon="members"
+          onPress={() => {
+            if (displayName.trim().length < 2) {
+              setMemberFormError('Enter a display name.');
+              return;
+            }
+
+            addManualMember(eventId, displayName)
+              .then(() => {
+                setDisplayName('');
+                setMemberFormError(undefined);
+              })
+              .catch(() => undefined);
+          }}
+        />
+        <InlineError message={memberFormError ?? undefined} />
+      </AppCard>
+
+      <AppCard>
+        <SectionHeading title="Invite by email" />
+        <AppInput
+          label="Email address"
+          value={inviteEmail}
+          onChangeText={value => {
+            setInviteEmail(value);
+            setInviteFormError(undefined);
+          }}
+          placeholder="email@example.com"
+          autoCapitalize="none"
+        />
+        <AppButton
+          label="Send invite"
+          icon="invite"
+          onPress={() => {
+            const normalizedEmail = normalizeEmail(inviteEmail);
+
+            if (!isEmailAddress(normalizedEmail)) {
+              setInviteFormError('Enter a valid email.');
+              return;
+            }
+
+            createInvite(eventId, {email: normalizedEmail})
+              .then(() => {
+                setInviteEmail('');
+                setInviteFormError(undefined);
+                setToastMessage('Invite sent');
+              })
+              .catch(() => undefined);
+          }}
+        />
+        <InlineError message={inviteFormError ?? undefined} />
+      </AppCard>
+
+      <SectionHeading title="Member list" detail={`${memberRows.length} total`} />
+      <View style={styles.memberRosterList}>
+        {memberRows.map((member, index) => (
+          <View
+            key={member.id}
+            style={[
+              styles.memberRosterRow,
+              index === memberRows.length - 1 ? styles.memberRosterRowLast : null,
+            ]}>
+            <View style={styles.memberRosterPrimary}>
+              <Text style={styles.memberRosterName}>{member.displayName}</Text>
+              <Text style={styles.memberRosterEmail}>{member.email ?? 'No email available'}</Text>
+            </View>
+            <View style={styles.memberRosterMeta}>
+              <Text style={styles.memberRosterJoined}>{member.joinedLabel}</Text>
+              <Text
+                style={[
+                  styles.memberRosterStatus,
+                  member.statusLabel === 'Joined'
+                    ? styles.memberRosterStatusJoined
+                    : styles.memberRosterStatusPending,
+                ]}>
+                {member.statusLabel}
               </Text>
             </View>
-            <DataPill label={member.userId ? 'Registered' : 'Placeholder'} />
           </View>
-        </AppCard>
-      ))}
+        ))}
+      </View>
+      <InlineError message={error ?? undefined} />
     </AppScreen>
   );
 }
@@ -1463,6 +1697,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  inlineEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+  },
+  inlineEditButtonText: {
+    ...typography.eyebrow,
+    color: palette.primary,
   },
   dashboardEventIcon: {
     width: 44,
@@ -1669,6 +1916,77 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: palette.warning,
   },
+  memberCodeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  inviteCodePressable: {
+    alignSelf: 'flex-start',
+    gap: 2,
+    marginTop: spacing.xs,
+  },
+  inviteCodeValueLarge: {
+    ...typography.display,
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: 2,
+    color: palette.primary,
+  },
+  inviteCodeHint: {
+    ...typography.eyebrow,
+    color: palette.inkMuted,
+  },
+  memberRosterList: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+    overflow: 'hidden',
+  },
+  memberRosterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  memberRosterRowLast: {
+    borderBottomWidth: 0,
+  },
+  memberRosterPrimary: {
+    flex: 1,
+    gap: 2,
+  },
+  memberRosterName: {
+    ...typography.bodyStrong,
+    color: palette.ink,
+  },
+  memberRosterEmail: {
+    ...typography.body,
+    color: palette.inkMuted,
+  },
+  memberRosterMeta: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  memberRosterJoined: {
+    ...typography.eyebrow,
+    color: palette.inkMuted,
+  },
+  memberRosterStatus: {
+    ...typography.bodyStrong,
+  },
+  memberRosterStatusJoined: {
+    color: palette.success,
+  },
+  memberRosterStatusPending: {
+    color: palette.warning,
+  },
   inviteCodeCard: {
     padding: spacing.md,
     borderRadius: radii.md,
@@ -1735,6 +2053,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: palette.primary,
     flexShrink: 0,
+  },
+  refreshButtonLight: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.border,
+    flexShrink: 0,
+  },
+  deleteEventButton: {
+    minHeight: 46,
+    marginTop: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: '#F1C7C1',
+    backgroundColor: '#FCE8E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  deleteEventButtonText: {
+    ...typography.bodyStrong,
+    color: palette.warning,
+  },
+  deleteEventConfirmText: {
+    ...typography.body,
+    color: palette.ink,
+  },
+  deleteConfirmButton: {
+    minHeight: 46,
+    borderRadius: radii.md,
+    backgroundColor: palette.warning,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  deleteConfirmButtonText: {
+    ...typography.bodyStrong,
+    color: palette.surface,
   },
   pressed: {
     opacity: 0.82,

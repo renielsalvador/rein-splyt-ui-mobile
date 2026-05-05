@@ -214,6 +214,7 @@ export const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
+    maxHeight: '88%',
     borderTopLeftRadius: radii.xxl,
     borderTopRightRadius: radii.xxl,
     borderBottomLeftRadius: radii.xl,
@@ -239,6 +240,14 @@ export const styles = StyleSheet.create({
   },
   modalBody: {
     gap: spacing.md,
+    flexShrink: 1,
+  },
+  modalBodyScroll: {
+    flexShrink: 1,
+  },
+  modalBodyScrollContent: {
+    gap: spacing.md,
+    paddingBottom: spacing.sm,
   },
   toast: {
     alignSelf: 'center',

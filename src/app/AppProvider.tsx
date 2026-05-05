@@ -24,6 +24,7 @@ import type {
   PendingInvite,
   RespondToInviteInput,
   SettlementInstruction,
+  UpdateEventInput,
   UpdateExpenseInput,
   UserProfile,
 } from '../types/domain';
@@ -46,6 +47,8 @@ type AppContextValue = {
   refreshContacts: () => Promise<void>;
   refreshPendingInvites: () => Promise<void>;
   createEvent: (input: CreateEventInput) => Promise<Event>;
+  updateEvent: (input: UpdateEventInput) => Promise<Event>;
+  deleteEvent: (eventId: string) => Promise<void>;
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
@@ -322,6 +325,53 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [backend, currentUser, hydrateEvent, mutate, refreshEvents],
   );
 
+  const updateEvent = useCallback(
+    async (input: UpdateEventInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      let updatedEvent!: Event;
+      await mutate(async () => {
+        updatedEvent = await backend.updateEvent(currentUser.id, input);
+        await refreshEvents();
+        await hydrateEvent(input.eventId);
+      });
+      return updatedEvent;
+    },
+    [backend, currentUser, hydrateEvent, mutate, refreshEvents],
+  );
+
+  const deleteEvent = useCallback(
+    async (eventId: string) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        await backend.deleteEvent(currentUser.id, eventId);
+        setSummaries(current => {
+          const next = {...current};
+          delete next[eventId];
+          return next;
+        });
+        setBalances(current => {
+          const next = {...current};
+          delete next[eventId];
+          return next;
+        });
+        setSettlements(current => {
+          const next = {...current};
+          delete next[eventId];
+          return next;
+        });
+        await refreshEvents();
+        await refreshPendingInvites();
+      });
+    },
+    [backend, currentUser, mutate, refreshEvents, refreshPendingInvites],
+  );
+
   const addManualMember = useCallback(
     async (eventId: string, displayName: string) => {
       if (!backend) {
@@ -438,6 +488,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       refreshContacts,
       refreshPendingInvites,
       createEvent,
+      updateEvent,
+      deleteEvent,
       joinEvent,
       hydrateEvent,
       addManualMember,
@@ -454,6 +506,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       addManualMember,
       backendReady,
       createEvent,
+      updateEvent,
+      deleteEvent,
       createInvite,
       currentUser,
       contacts,

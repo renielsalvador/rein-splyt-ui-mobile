@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Animated, Easing, Modal, Pressable, Text, View} from 'react-native';
+import {Animated, Easing, Modal, Pressable, ScrollView, Text, View} from 'react-native';
 import {surfaces} from '../../theme/tokens';
 import {IconButton} from './AppIcon';
 import {styles} from './styles';
@@ -9,12 +9,14 @@ export function AppModal({
   title,
   subtitle,
   onClose,
+  scrollable = false,
   children,
 }: React.PropsWithChildren<{
   visible: boolean;
   title: string;
   subtitle?: string;
   onClose: () => void;
+  scrollable?: boolean;
 }>) {
   const [rendered, setRendered] = useState(visible);
   const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
@@ -92,7 +94,16 @@ export function AppModal({
                 accessibilityLabel="Close modal"
               />
             </View>
-            <View style={styles.modalBody}>{children}</View>
+            {scrollable ? (
+              <ScrollView
+                style={styles.modalBodyScroll}
+                contentContainerStyle={styles.modalBodyScrollContent}
+                showsVerticalScrollIndicator={false}>
+                {children}
+              </ScrollView>
+            ) : (
+              <View style={styles.modalBody}>{children}</View>
+            )}
           </View>
         </Animated.View>
       </View>

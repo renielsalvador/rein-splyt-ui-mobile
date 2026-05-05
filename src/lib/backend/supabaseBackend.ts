@@ -6,6 +6,7 @@ import type {
   CreateEventInput,
   CreateExpenseInput,
   RespondToInviteInput,
+  UpdateEventInput,
   UpdateExpenseInput,
 } from '../../types/domain';
 import {
@@ -25,9 +26,11 @@ import {
 import {
   addManualMember,
   createEvent,
+  deleteEvent,
   getEventSummary,
   joinEvent,
   listEvents,
+  updateEvent,
 } from './supabase/eventService';
 import {
   createInvite,
@@ -84,6 +87,14 @@ export class SupabaseBackend implements AppBackend {
 
   async createEvent(_userId: string, input: CreateEventInput) {
     return createEvent(this.client, input);
+  }
+
+  async updateEvent(_userId: string, input: UpdateEventInput) {
+    return updateEvent(this.client, input);
+  }
+
+  async deleteEvent(_userId: string, eventId: string) {
+    return deleteEvent(this.client, eventId);
   }
 
   async joinEvent(_userId: string, input: {inviteCode: string}) {

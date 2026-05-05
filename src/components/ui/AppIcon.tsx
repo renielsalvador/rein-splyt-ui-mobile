@@ -29,6 +29,8 @@ const iconMap = {
   check: '✓',
   close: '✕',
   refresh: '↻',
+  edit: '✎',
+  delete: '⌫',
 } as const;
 
 export type AppIconName = keyof typeof iconMap;

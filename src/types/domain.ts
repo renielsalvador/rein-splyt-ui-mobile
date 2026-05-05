@@ -162,6 +162,13 @@ export type CreateEventInput = {
   >;
 };
 
+export type UpdateEventInput = {
+  eventId: string;
+  name: string;
+  description?: string;
+  icon?: EventIconName;
+};
+
 export type JoinEventInput = {
   inviteCode: string;
 };
