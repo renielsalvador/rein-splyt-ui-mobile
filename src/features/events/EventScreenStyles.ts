@@ -13,19 +13,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  homeHeaderLogoIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  homeHeaderLogoText: {
-    ...typography.bodyStrong,
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
   homeHeaderUserName: {
     ...typography.bodyStrong,
     color: '#FFFFFF',

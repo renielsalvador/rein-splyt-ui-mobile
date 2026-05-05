@@ -2,7 +2,7 @@ import React, {useEffect, useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {AppAvatar, AppAvatarStack, AppScreen, EmptyState, NotificationButton, SectionHeading} from '../../components/ui';
+import {AppAvatar, AppAvatarStack, AppScreen, BrandLogo, EmptyState, NotificationButton, SectionHeading} from '../../components/ui';
 import {AppIcon} from '../../components/ui';
 import {AppMenu} from '../../components/ui';
 import {HeaderMenuButton} from '../../components/ui';
@@ -30,9 +30,7 @@ export function EventsScreen({navigation, route, hasTabBar}: ScreenProps<'Events
       hasTabBar={hasTabBar}
       headerLeft={
         <View style={styles.headerLeft}>
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoText}>S</Text>
-          </View>
+          <BrandLogo />
           <Text style={styles.headerTitle}>Events</Text>
         </View>
       }
@@ -111,19 +109,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  logoIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    ...typography.bodyStrong,
-    color: '#FFFFFF',
-    fontSize: 16,
   },
   headerTitle: {
     ...typography.bodyStrong,

@@ -6,6 +6,7 @@ import {
   AppCard,
   AppMenu,
   AppScreen,
+  BrandLogo,
   DataPill,
   HeaderMenuButton,
   NotificationButton,
@@ -33,9 +34,7 @@ export function SettingsScreen({
       headerLeft={
         hasTabBar ? (
           <View style={styles.headerLeft}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoText}>S</Text>
-            </View>
+            <BrandLogo />
             <Text style={styles.headerTitle}>Settings</Text>
           </View>
         ) : undefined
@@ -90,19 +89,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  logoIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    ...typography.bodyStrong,
-    color: '#FFFFFF',
-    fontSize: 16,
   },
   headerTitle: {
     ...typography.bodyStrong,

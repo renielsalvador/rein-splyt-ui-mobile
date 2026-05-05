@@ -1,6 +1,7 @@
 export {ActionTile} from './ui/ActionTile';
 export {AppAvatar, AppAvatarStack} from './ui/AppAvatar';
 export {AppButton} from './ui/AppButton';
+export {BrandLogo} from './ui/BrandLogo';
 export type {ButtonVariant} from './ui/AppButton';
 export {AppCard} from './ui/AppCard';
 export {AppIcon, HeaderMenuButton, IconButton, NotificationButton, ScreenBackButton} from './ui/AppIcon';

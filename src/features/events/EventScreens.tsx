@@ -11,6 +11,7 @@ import {
   AppModal,
   AppScreen,
   AppToast,
+  BrandLogo,
   EmptyState,
   HeaderMenuButton,
   InlineError,
@@ -107,9 +108,7 @@ export function HomeScreen({navigation, hasTabBar}: ScreenProps<'Home'> & {hasTa
         hasTabBar={hasTabBar}
         headerLeft={
           <View style={styles.homeHeaderLeft}>
-            <View style={styles.homeHeaderLogoIcon}>
-              <Text style={styles.homeHeaderLogoText}>S</Text>
-            </View>
+            <BrandLogo />
             <Text style={styles.homeHeaderUserName}>{`Hi, ${firstName}`}</Text>
           </View>
         }
