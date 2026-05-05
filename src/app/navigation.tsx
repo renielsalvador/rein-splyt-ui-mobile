@@ -14,7 +14,7 @@ import {ActivityScreen} from '../features/events/ActivityScreen';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
-import {SettingsScreen} from '../features/settings/SettingsScreen';
+import {AccountUpdateScreen, SettingsScreen} from '../features/settings/SettingsScreen';
 import {AppCard, AppScreen, AppTabBar} from '../components/ui';
 import type {TabName} from '../components/ui';
 import {palette} from '../theme/tokens';
@@ -32,6 +32,7 @@ export type AppStackParamList = {
   Balances: {eventId: string};
   Settlement: {eventId: string};
   Settings: undefined;
+  AccountUpdate: undefined;
 };
 
 type ScreenName = keyof AppStackParamList;
@@ -135,6 +136,8 @@ function AppNavigator() {
         return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
       case 'Settings':
         return <SettingsScreen navigation={navigation} route={route as Route<'Settings'>} hasTabBar={isTopLevel} />;
+      case 'AccountUpdate':
+        return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
       default:
         return null;
     }

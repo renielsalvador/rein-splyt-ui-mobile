@@ -150,6 +150,10 @@ export type AuthFormValues = {
   displayName?: string;
 };
 
+export type UpdateUserProfileInput = {
+  displayName: string;
+};
+
 export type CreateEventInput = {
   name: string;
   description?: string;

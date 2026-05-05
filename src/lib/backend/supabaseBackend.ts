@@ -8,6 +8,7 @@ import type {
   RespondToInviteInput,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateUserProfileInput,
 } from '../../types/domain';
 import {
   completeAuthRedirect,
@@ -16,6 +17,7 @@ import {
   signInWithGoogle,
   signOut,
   signUp,
+  updateProfile,
 } from './supabase/authService';
 import {
   getBalances,
@@ -73,6 +75,10 @@ export class SupabaseBackend implements AppBackend {
 
   async signOut() {
     return signOut(this.client);
+  }
+
+  async updateProfile(userId: string, input: UpdateUserProfileInput) {
+    return updateProfile(this.client, userId, input);
   }
 
   async listPendingInvites(email: string) {

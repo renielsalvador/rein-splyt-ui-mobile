@@ -15,6 +15,7 @@ import type {
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateUserProfileInput,
   UserProfile,
 } from '../../types/domain';
 
@@ -35,6 +36,7 @@ export interface AppBackend {
   signInWithGoogle(): Promise<void>;
   completeAuthRedirect(url: string): Promise<AppSession | null>;
   signOut(): Promise<void>;
+  updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
   listPendingInvites(email: string): Promise<PendingInvite[]>;
   respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;
   listEvents(userId: string): Promise<Event[]>;

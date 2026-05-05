@@ -1,7 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {Linking} from 'react-native';
 import {getAuthRedirectUrl} from '../../../config/appConfig';
-import type {AuthFormValues} from '../../../types/domain';
+import type {AuthFormValues, UpdateUserProfileInput, UserProfile} from '../../../types/domain';
 import type {AppSession} from '../types';
 import type {DatabaseUserRow} from './types';
 import {mapUser} from './mappers';
@@ -143,6 +143,35 @@ export async function completeAuthRedirect(
 export async function signOut(client: SupabaseClient) {
   const {error} = await client.auth.signOut();
   assertNoError(error, 'Unable to sign out.');
+}
+
+export async function updateProfile(
+  client: SupabaseClient,
+  userId: string,
+  input: UpdateUserProfileInput,
+): Promise<UserProfile> {
+  const displayName = input.displayName.trim().replace(/\s+/g, ' ');
+
+  if (displayName.length < 2) {
+    throw new Error('Display name must be at least 2 characters.');
+  }
+
+  const {error: authError} = await client.auth.updateUser({
+    data: {
+      display_name: displayName,
+    },
+  });
+  assertNoError(authError, 'Unable to update your account.');
+
+  const {error: profileError} = await client
+    .from('users')
+    .update({
+      display_name: displayName,
+    })
+    .eq('id', userId);
+  assertNoError(profileError, 'Unable to update your profile.');
+
+  return loadSessionForUser(client, userId).then(session => session.user);
 }
 
 function extractAuthParams(url: string) {

@@ -27,6 +27,7 @@ import type {
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateUserProfileInput,
   UserProfile,
 } from '../types/domain';
 
@@ -45,6 +46,7 @@ type AppContextValue = {
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  updateProfile: (input: UpdateUserProfileInput) => Promise<void>;
   refreshEvents: () => Promise<void>;
   refreshContacts: () => Promise<void>;
   refreshPendingInvites: () => Promise<void>;
@@ -290,6 +292,23 @@ export function AppProvider({children}: React.PropsWithChildren) {
     });
   }, [backend, mutate]);
 
+  const updateProfile = useCallback(
+    async (input: UpdateUserProfileInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        const nextUser = await backend.updateProfile(currentUser.id, input);
+        setCurrentUser(nextUser);
+        await refreshContacts();
+        await refreshEvents();
+        await refreshPendingInvites();
+      });
+    },
+    [backend, currentUser, mutate, refreshContacts, refreshEvents, refreshPendingInvites],
+  );
+
   const hydrateEvent = useCallback(
     async (eventId: string) => {
       if (!backend) {
@@ -526,6 +545,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signUp,
       signInWithGoogle,
       signOut,
+      updateProfile,
       refreshEvents,
       refreshContacts,
       refreshPendingInvites,
@@ -567,6 +587,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signInWithGoogle,
       signOut,
       signUp,
+      updateProfile,
       summaries,
       balances,
     ],

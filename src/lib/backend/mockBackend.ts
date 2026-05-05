@@ -24,6 +24,7 @@ import type {
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateUserProfileInput,
   UserProfile,
 } from '../../types/domain';
 
@@ -165,6 +166,31 @@ export class MockBackend implements AppBackend {
 
   async signOut() {
     this.state.sessionUserId = undefined;
+  }
+
+  async updateProfile(userId: string, input: UpdateUserProfileInput) {
+    const user = this.getUser(userId);
+    const displayName = normalizeDisplayName(input.displayName);
+
+    if (displayName.length < 2) {
+      throw new Error('Display name must be at least 2 characters.');
+    }
+
+    user.displayName = displayName;
+
+    this.state.contacts.forEach(contact => {
+      if (contact.userId === userId) {
+        contact.displayName = displayName;
+      }
+    });
+
+    this.state.eventMembers.forEach(member => {
+      if (member.userId === userId) {
+        member.displayName = displayName;
+      }
+    });
+
+    return user;
   }
 
   async listPendingInvites(email: string) {
