@@ -28,8 +28,6 @@ export function EventsScreen({
   return (
     <AppScreen
       variant="main"
-      title="Events"
-      subtitle={`${events.length} active event${events.length === 1 ? '' : 's'}`}
       hasTabBar={hasTabBar}
       tabBarBottomInset={tabBarBottomInset}
       headerLeft={
@@ -84,10 +82,10 @@ export function EventsScreen({
                   {memberNames.length > 0 && (
                     <AppAvatarStack names={memberNames} size="xs" />
                   )}
-                  <Text style={styles.eventMetaText}>
-                    {formatDateRangeLabel(event.startDate, event.endDate)}
-                  </Text>
                 </View>
+                <Text style={styles.eventMetaText}>
+                  {formatDateRangeLabel(event.startDate, event.endDate)}
+                </Text>
               </View>
               <View style={styles.eventTrailing}>
                 {totalSpend > 0 ? (

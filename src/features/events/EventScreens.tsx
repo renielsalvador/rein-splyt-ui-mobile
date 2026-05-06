@@ -746,8 +746,6 @@ export function EventDashboardScreen({
     <>
       <AppScreen
         variant="detail"
-        title={event.name}
-        subtitle={event.description || formatDateRangeLabel(event.startDate, event.endDate)}
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
         <AppCard tone="accent">
           <View style={styles.dashboardHeader}>
