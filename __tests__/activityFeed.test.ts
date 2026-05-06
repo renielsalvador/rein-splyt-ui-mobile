@@ -9,6 +9,7 @@ describe('buildActivityFeed', () => {
       description: 'Island weekend',
       currency: 'PHP',
       icon: 'beach',
+      isActive: true,
       startDate: '2026-05-10',
       endDate: '2026-05-12',
       createdBy: 'user_owner',

@@ -31,6 +31,7 @@ export async function listPendingInvites(
         description: row.event_description,
         currency: row.event_currency,
         icon: row.event_icon,
+        is_active: row.event_is_active,
         start_date: row.event_start_date,
         end_date: row.event_end_date,
         created_by: row.event_created_by,

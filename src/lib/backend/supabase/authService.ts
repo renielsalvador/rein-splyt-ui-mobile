@@ -156,9 +156,33 @@ export async function updateProfile(
     throw new Error('Display name must be at least 2 characters.');
   }
 
+  let avatarUrl: string | null | undefined;
+
+  if (input.avatar) {
+    const response = await fetch(input.avatar.uri);
+    const imageBuffer = await response.arrayBuffer();
+    const extension =
+      input.avatar.fileName?.split('.').pop()?.toLowerCase() ??
+      input.avatar.type?.split('/').pop()?.toLowerCase() ??
+      'jpg';
+    const path = `${userId}/avatar.${extension}`;
+    const {error: uploadError} = await client.storage.from('avatars').upload(path, imageBuffer, {
+      contentType: input.avatar.type ?? 'image/jpeg',
+      upsert: true,
+    });
+
+    assertNoError(uploadError, 'Unable to upload your avatar.');
+
+    const publicUrlResult = client.storage.from('avatars').getPublicUrl(path);
+    avatarUrl = publicUrlResult.data.publicUrl;
+  } else if (input.removeAvatar) {
+    avatarUrl = null;
+  }
+
   const {error: authError} = await client.auth.updateUser({
     data: {
       display_name: displayName,
+      ...(avatarUrl !== undefined ? {avatar_url: avatarUrl} : {}),
     },
   });
   assertNoError(authError, 'Unable to update your account.');
@@ -167,6 +191,7 @@ export async function updateProfile(
     .from('users')
     .update({
       display_name: displayName,
+      ...(avatarUrl !== undefined ? {avatar_url: avatarUrl} : {}),
     })
     .eq('id', userId);
   assertNoError(profileError, 'Unable to update your profile.');

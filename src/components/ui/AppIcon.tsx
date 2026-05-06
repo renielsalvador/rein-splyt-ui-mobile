@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {Image, Pressable, Text, View} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {palette} from '../../theme/tokens';
 import {styles} from './styles';
@@ -138,6 +138,7 @@ export function NotificationButton({
 
 export function HeaderMenuButton({
   onPress,
+  avatarUrl,
   avatarFallbackLabel,
 }: {
   onPress: () => void;
@@ -161,7 +162,18 @@ export function HeaderMenuButton({
       accessibilityLabel="Open menu"
       onPress={onPress}
       style={({pressed}) => [styles.headerAvatarCircle, pressed ? styles.buttonPressed : null]}>
-      <Text style={styles.headerAvatarText}>{initials}</Text>
+      {avatarUrl ? (
+        <Image
+          source={{uri: avatarUrl}}
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: 999,
+          }}
+        />
+      ) : (
+        <Text style={styles.headerAvatarText}>{initials}</Text>
+      )}
     </Pressable>
   );
 }

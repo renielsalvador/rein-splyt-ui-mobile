@@ -84,6 +84,7 @@ export async function updateEvent(
     p_name: input.name.trim(),
     p_description: input.description?.trim() || null,
     p_icon: input.icon ?? 'event',
+    p_is_active: input.isActive,
     p_start_date: input.startDate,
     p_end_date: input.endDate,
   });

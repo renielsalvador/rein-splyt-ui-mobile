@@ -29,6 +29,12 @@ export type UserProfile = {
   createdAt: string;
 };
 
+export type ProfileAvatarAsset = {
+  uri: string;
+  fileName?: string;
+  type?: string;
+};
+
 export type Contact = {
   id: string;
   ownerUserId: string;
@@ -44,6 +50,7 @@ export type Event = {
   description?: string;
   currency: CurrencyCode;
   icon: EventIconName;
+  isActive: boolean;
   startDate: string;
   endDate: string;
   createdBy: string;
@@ -154,6 +161,8 @@ export type AuthFormValues = {
 
 export type UpdateUserProfileInput = {
   displayName: string;
+  avatar?: ProfileAvatarAsset;
+  removeAvatar?: boolean;
 };
 
 export type CreateEventInput = {
@@ -181,6 +190,7 @@ export type UpdateEventInput = {
   name: string;
   description?: string;
   icon?: EventIconName;
+  isActive?: boolean;
   startDate: string;
   endDate: string;
 };

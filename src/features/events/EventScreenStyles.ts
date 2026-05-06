@@ -132,8 +132,17 @@ export const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  eventTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   eventName: {
     ...typography.cardTitle,
+    flexShrink: 1,
+  },
+  eventNameInactive: {
+    color: palette.inkMuted,
   },
   eventMetaRow: {
     flexDirection: 'row',
@@ -142,6 +151,9 @@ export const styles = StyleSheet.create({
   },
   eventMetaText: {
     ...typography.caption,
+    color: palette.inkMuted,
+  },
+  eventMetaTextInactive: {
     color: palette.inkMuted,
   },
   eventTrailing: {
@@ -163,6 +175,12 @@ export const styles = StyleSheet.create({
   eventBalanceSettled: {
     ...typography.caption,
     color: palette.inkMuted,
+  },
+  eventCardInactive: {
+    backgroundColor: '#F7F7F8',
+  },
+  eventIconBadgeInactive: {
+    backgroundColor: '#ECEDEF',
   },
 
   // ─── dashboard ─────────────────────────────────────────────────────────────
@@ -201,6 +219,12 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: palette.surface,
   },
+  dashboardEndedBadge: {
+    backgroundColor: palette.warning,
+  },
+  dashboardInactiveBadge: {
+    backgroundColor: '#C7CCD1',
+  },
   dashboardMemberCount: {
     ...typography.caption,
     color: palette.inkMuted,
@@ -221,6 +245,20 @@ export const styles = StyleSheet.create({
     ...typography.caption,
     color: palette.primary,
     fontWeight: '600',
+  },
+  dashboardHeaderStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  dashboardStatusToggle: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  dashboardStatusToggleLabel: {
+    ...typography.caption,
+    color: palette.surface,
+    fontWeight: '700',
   },
   dashboardMetrics: {
     flexDirection: 'row',

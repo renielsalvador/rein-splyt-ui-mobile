@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Image, Text, View} from 'react-native';
 import {palette, radii, typography} from '../../theme/tokens';
 
 const AVATAR_COLORS = [
@@ -45,10 +45,12 @@ const FONT_SIZE_MAP = {
 
 export function AppAvatar({
   name,
+  uri,
   size = 'sm',
   style,
 }: {
   name: string;
+  uri?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   style?: object;
 }) {
@@ -70,16 +72,27 @@ export function AppAvatar({
         },
         style,
       ]}>
-      <Text
-        style={{
-          ...typography.caption,
-          fontSize,
-          fontWeight: '700',
-          color: colors.text,
-          lineHeight: fontSize + 2,
-        }}>
-        {initials}
-      </Text>
+      {uri ? (
+        <Image
+          source={{uri}}
+          style={{
+            width: dim,
+            height: dim,
+            borderRadius: radii.pill,
+          }}
+        />
+      ) : (
+        <Text
+          style={{
+            ...typography.caption,
+            fontSize,
+            fontWeight: '700',
+            color: colors.text,
+            lineHeight: fontSize + 2,
+          }}>
+          {initials}
+        </Text>
+      )}
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Clipboard, Pressable, ScrollView, Text, View} from 'react-native';
+import {Clipboard, Pressable, ScrollView, Switch, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import type {ScreenProps} from '../../app/navigation';
 import {
@@ -48,15 +48,18 @@ import {
   normalizeEmail,
   type SelectedMemberDraft,
 } from './EventScreenShared';
+import {
+  getEventLifecycle,
+  getEventStatusBadge,
+  getTodayDateString,
+  isEventIncludedInDashboard,
+  sortEventsByStartDate,
+} from './eventStatus';
 
 function shiftDate(value: string, days: number) {
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + days));
   return date.toISOString().slice(0, 10);
-}
-
-function getTodayDateString() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export function HomeScreen({
@@ -79,6 +82,11 @@ export function HomeScreen({
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joinFormError, setJoinFormError] = useState<string>();
+  const sortedEvents = useMemo(() => sortEventsByStartDate(events), [events]);
+  const includedEvents = useMemo(
+    () => sortedEvents.filter(event => isEventIncludedInDashboard(event)),
+    [sortedEvents],
+  );
 
   useEffect(() => {
     events.forEach(event => {
@@ -97,14 +105,14 @@ export function HomeScreen({
 
   const totalSpend = useMemo(
     () =>
-      events.reduce((sum, event) => {
+      includedEvents.reduce((sum, event) => {
         const summary = summaries[event.id];
         return sum + (summary?.expenses.reduce((s, e) => s + e.amount, 0) ?? 0);
       }, 0),
-    [events, summaries],
+    [includedEvents, summaries],
   );
 
-  const primaryCurrency = events[0]?.currency ?? 'PHP';
+  const primaryCurrency = includedEvents[0]?.currency ?? sortedEvents[0]?.currency ?? 'PHP';
 
   async function handleJoin() {
     const parsed = joinSchema.safeParse({inviteCode});
@@ -155,6 +163,7 @@ export function HomeScreen({
               renderTrigger={({toggle}) => (
                 <HeaderMenuButton
                   onPress={toggle}
+                  avatarUrl={currentUser?.avatarUrl}
                   avatarFallbackLabel={currentUser?.displayName}
                 />
               )}
@@ -164,10 +173,10 @@ export function HomeScreen({
         <AppCard tone="accent">
           <View style={styles.heroTopRow}>
             <Text style={styles.heroLabel}>Total tracked spend</Text>
-            {events.length > 0 && (
+            {includedEvents.length > 0 && (
               <View style={styles.heroBadge}>
                 <Text style={styles.heroBadgeText}>
-                  {events.length} event{events.length === 1 ? '' : 's'}
+                  {includedEvents.length} event{includedEvents.length === 1 ? '' : 's'}
                 </Text>
               </View>
             )}
@@ -202,11 +211,11 @@ export function HomeScreen({
           <View style={styles.statCard}>
             <View style={styles.statCardTopRow}>
               <Text style={styles.statCardLabel}>Active events</Text>
-              <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
+            <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
                 <AppIcon name="event" tone="inverted" size={16} />
               </View>
             </View>
-            <Text style={styles.statCardValue}>{events.length}</Text>
+            <Text style={styles.statCardValue}>{includedEvents.length}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statCardTopRow}>
@@ -224,13 +233,13 @@ export function HomeScreen({
           detail="See all"
           onDetailPress={() => navigation.navigate('Events')}
         />
-        {events.length === 0 ? (
+        {sortedEvents.length === 0 ? (
           <EmptyState
             title="No events yet"
             body="Create a trip or join one with an invite code to start tracking shared spending."
           />
         ) : null}
-        {events.slice(0, 3).map(event => {
+        {sortedEvents.slice(0, 3).map(event => {
           const summary = summaries[event.id];
           const totalEventSpend =
             summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
@@ -741,12 +750,39 @@ export function EventDashboardScreen({
       : currentBalance?.net && currentBalance.net < 0
         ? 'I owe the group'
         : 'No payments needed right now';
+  const statusBadge = getEventStatusBadge(event);
+  const lifecycle = getEventLifecycle(event);
 
   return (
     <>
       <AppScreen
         variant="detail"
-        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
+        leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
+        headerRight={
+          <View style={styles.dashboardHeaderStatus}>
+            <View style={styles.dashboardStatusToggle}>
+              <Text style={styles.dashboardStatusToggleLabel}>
+                {event.isActive ? 'Active' : 'Inactive'}
+              </Text>
+            </View>
+            <Switch
+              value={event.isActive}
+              onValueChange={value => {
+                updateEvent({
+                  eventId,
+                  name: event.name,
+                  description: event.description,
+                  icon: event.icon,
+                  isActive: value,
+                  startDate: event.startDate,
+                  endDate: event.endDate,
+                }).catch(() => undefined);
+              }}
+              trackColor={{false: '#CBD5E1', true: '#86EFAC'}}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        }>
         <AppCard tone="accent">
           <View style={styles.dashboardHeader}>
             <View style={styles.dashboardEventIconBadge}>
@@ -761,9 +797,20 @@ export function EventDashboardScreen({
                   {formatDateRangeLabel(event.startDate, event.endDate)}
                 </Text>
               </View>
-              <View style={styles.dashboardLiveBadge}>
-                <Text style={styles.dashboardLiveBadgeText}>Live</Text>
-              </View>
+              {statusBadge ? (
+                <View
+                  style={[
+                    styles.dashboardLiveBadge,
+                    statusBadge.label === 'Ended' ? styles.dashboardEndedBadge : null,
+                    statusBadge.label === 'Inactive' ? styles.dashboardInactiveBadge : null,
+                  ]}>
+                  <Text style={styles.dashboardLiveBadgeText}>{statusBadge.label}</Text>
+                </View>
+              ) : lifecycle === 'ongoing' ? (
+                <View style={styles.dashboardLiveBadge}>
+                  <Text style={styles.dashboardLiveBadgeText}>Ongoing</Text>
+                </View>
+              ) : null}
             </View>
             <Pressable
               accessibilityRole="button"
@@ -949,6 +996,7 @@ export function EventDashboardScreen({
                   name: parsed.data.name,
                   description: parsed.data.description,
                   icon: editIcon,
+                  isActive: event.isActive,
                   startDate: parsed.data.startDate,
                   endDate: parsed.data.endDate,
                 })

@@ -27,6 +27,7 @@ import type {
   SettlementInstruction,
 } from '../../types/domain';
 import {styles} from './EventScreenStyles';
+import {getEventStatusBadge} from './eventStatus';
 import {
   EVENT_ICON_OPTIONS,
   type MemberRosterRow,
@@ -84,20 +85,26 @@ export function HomeEventCard({
   onPress: () => void;
 }) {
   const memberNames = members.map(m => m.displayName);
+  const badge = getEventStatusBadge(event);
 
   return (
     <Pressable onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
-      <View style={styles.eventCard}>
-        <View style={styles.eventIconBadge}>
-          <AppIcon name={event.icon} tone="accent" size={20} />
+      <View style={[styles.eventCard, !event.isActive && styles.eventCardInactive]}>
+        <View style={[styles.eventIconBadge, !event.isActive && styles.eventIconBadgeInactive]}>
+          <AppIcon name={event.icon} tone={event.isActive ? 'accent' : 'muted'} size={20} />
         </View>
         <View style={styles.eventBody}>
-          <Text style={styles.eventName}>{event.name}</Text>
+          <View style={styles.eventTitleRow}>
+            <Text style={[styles.eventName, !event.isActive && styles.eventNameInactive]}>
+              {event.name}
+            </Text>
+            {badge ? <DataPill label={badge.label} tone={badge.tone} /> : null}
+          </View>
           <View style={styles.eventMetaRow}>
             {memberNames.length > 0 && <AppAvatarStack names={memberNames} size="xs" />}
             <Text style={styles.eventMetaText}>{members.length} members</Text>
           </View>
-          <Text style={styles.eventMetaText}>
+          <Text style={[styles.eventMetaText, !event.isActive && styles.eventMetaTextInactive]}>
             {formatDateRangeLabel(event.startDate, event.endDate)}
           </Text>
         </View>

@@ -164,6 +164,7 @@ export class MockBackend implements AppBackend {
       id: createId('user'),
       email,
       displayName: input.displayName.trim(),
+      avatarUrl: undefined,
       createdAt: now,
     };
 
@@ -199,6 +200,11 @@ export class MockBackend implements AppBackend {
     }
 
     user.displayName = displayName;
+    if (input.avatar) {
+      user.avatarUrl = input.avatar.uri;
+    } else if (input.removeAvatar) {
+      user.avatarUrl = undefined;
+    }
 
     this.state.contacts.forEach(contact => {
       if (contact.userId === userId) {
@@ -360,6 +366,7 @@ export class MockBackend implements AppBackend {
       description: input.description?.trim(),
       currency: input.currency,
       icon: input.icon ?? 'event',
+      isActive: true,
       startDate: input.startDate,
       endDate: input.endDate,
       createdBy: userId,
@@ -406,6 +413,7 @@ export class MockBackend implements AppBackend {
     event.name = nextName;
     event.description = input.description?.trim();
     event.icon = input.icon ?? event.icon;
+    event.isActive = input.isActive ?? event.isActive;
     event.startDate = input.startDate;
     event.endDate = input.endDate;
     event.updatedAt = now;

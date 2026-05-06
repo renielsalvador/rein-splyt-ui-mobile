@@ -1,7 +1,9 @@
 import React, {useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {useApp} from '../../app/AppProvider';
 import {
+  AppAvatar,
   AppButton,
   AppCard,
   AppIcon,
@@ -16,19 +18,8 @@ import {
 } from '../../components/ui';
 import type {AppIconName} from '../../components/ui';
 import type {ScreenProps} from '../../app/navigation';
+import type {ProfileAvatarAsset} from '../../types/domain';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
-
-function getInitials(name?: string) {
-  return name
-    ? name
-        .trim()
-        .split(/\s+/)
-        .map(part => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'U';
-}
 
 function SectionLabel({title}: {title: string}) {
   return <Text style={styles.sectionLabel}>{title}</Text>;
@@ -121,6 +112,7 @@ export function SettingsScreen({
               renderTrigger={({toggle}) => (
                 <HeaderMenuButton
                   onPress={toggle}
+                  avatarUrl={currentUser?.avatarUrl}
                   avatarFallbackLabel={currentUser?.displayName}
                 />
               )}
@@ -133,9 +125,12 @@ export function SettingsScreen({
         accessibilityLabel="Open account settings"
         onPress={() => navigation.navigate('AccountUpdate')}
         style={({pressed}) => [styles.profileCard, pressed ? styles.rowPressed : null]}>
-        <View style={styles.profileAvatar}>
-          <Text style={styles.profileAvatarText}>{getInitials(currentUser?.displayName)}</Text>
-        </View>
+        <AppAvatar
+          name={currentUser?.displayName ?? 'Traveler'}
+          uri={currentUser?.avatarUrl}
+          size="lg"
+          style={styles.profileAvatar}
+        />
         <View style={styles.profileCopy}>
           <Text style={styles.profileName}>{currentUser?.displayName ?? 'Traveler'}</Text>
           <Text style={styles.profileEmail}>{currentUser?.email ?? 'No email on file'}</Text>
@@ -177,7 +172,38 @@ export function AccountUpdateScreen({
 }: ScreenProps<'AccountUpdate'>) {
   const {currentUser, updateProfile} = useApp();
   const [displayName, setDisplayName] = useState(currentUser?.displayName ?? '');
+  const [avatar, setAvatar] = useState<ProfileAvatarAsset | undefined>(undefined);
+  const [previewAvatarUrl, setPreviewAvatarUrl] = useState(currentUser?.avatarUrl);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  async function handleAvatarPick(source: 'camera' | 'library') {
+    const result =
+      source === 'camera'
+        ? await launchCamera({
+            mediaType: 'photo',
+            cameraType: 'front',
+            quality: 0.8,
+          })
+        : await launchImageLibrary({
+            mediaType: 'photo',
+            selectionLimit: 1,
+            quality: 0.8,
+          });
+
+    const asset = result.assets?.[0];
+    if (!asset?.uri) {
+      return;
+    }
+
+    setAvatar({
+      uri: asset.uri,
+      fileName: asset.fileName,
+      type: asset.type,
+    });
+    setPreviewAvatarUrl(asset.uri);
+    setRemoveAvatar(false);
+  }
 
   return (
     <AppScreen
@@ -187,14 +213,52 @@ export function AccountUpdateScreen({
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
         <View style={styles.accountHero}>
-          <View style={styles.accountAvatar}>
-            <Text style={styles.accountAvatarText}>{getInitials(currentUser?.displayName)}</Text>
-          </View>
+          <AppAvatar
+            name={currentUser?.displayName ?? 'Traveler'}
+            uri={previewAvatarUrl}
+            size="lg"
+            style={styles.accountAvatar}
+          />
           <View style={styles.accountHeroCopy}>
             <Text style={styles.accountHeroTitle}>{currentUser?.displayName ?? 'Traveler'}</Text>
             <Text style={styles.accountHeroSubtitle}>{currentUser?.email ?? 'No email on file'}</Text>
           </View>
         </View>
+        <View style={styles.avatarActionRow}>
+          <View style={styles.avatarActionItem}>
+            <AppButton
+              label="Take photo"
+              icon="camera"
+              variant="secondary"
+              onPress={() => {
+                handleAvatarPick('camera').catch(() => undefined);
+              }}
+            />
+          </View>
+          <View style={styles.avatarActionItem}>
+            <AppButton
+              label="Upload photo"
+              icon="edit"
+              variant="secondary"
+              onPress={() => {
+                handleAvatarPick('library').catch(() => undefined);
+              }}
+            />
+          </View>
+        </View>
+        {previewAvatarUrl ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setAvatar(undefined);
+              setPreviewAvatarUrl(undefined);
+              setRemoveAvatar(true);
+            }}
+            style={({pressed}) => [styles.removeAvatarButton, pressed ? styles.rowPressed : null]}>
+            <AppIcon name="delete" size={14} tone="danger" />
+            <Text style={styles.removeAvatarButtonText}>Remove avatar</Text>
+          </Pressable>
+        ) : null}
       </AppCard>
 
       <AppCard>
@@ -221,7 +285,7 @@ export function AccountUpdateScreen({
         disabled={saving || displayName.trim().length < 2}
         onPress={() => {
           setSaving(true);
-          updateProfile({displayName})
+          updateProfile({displayName, avatar, removeAvatar})
             .then(() => navigation.goBack())
             .catch(() => undefined)
             .finally(() => setSaving(false));
@@ -263,15 +327,6 @@ const styles = StyleSheet.create({
   profileAvatar: {
     width: 48,
     height: 48,
-    borderRadius: radii.pill,
-    backgroundColor: '#C7F0D1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileAvatarText: {
-    ...typography.bodyStrong,
-    color: palette.primary,
-    fontSize: 20,
   },
   profileCopy: {
     flex: 1,
@@ -350,15 +405,26 @@ const styles = StyleSheet.create({
   accountAvatar: {
     width: 56,
     height: 56,
-    borderRadius: radii.pill,
-    backgroundColor: palette.greenTint,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  accountAvatarText: {
-    ...typography.cardTitle,
-    color: palette.primary,
-    fontSize: 22,
+  avatarActionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  avatarActionItem: {
+    flex: 1,
+  },
+  removeAvatarButton: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  removeAvatarButtonText: {
+    ...typography.caption,
+    color: palette.danger,
+    fontWeight: '600',
   },
   accountHeroCopy: {
     flex: 1,

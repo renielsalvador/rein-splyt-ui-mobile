@@ -42,6 +42,7 @@ export type EventRow = {
     | 'shopping'
     | 'game'
     | 'study';
+  is_active: boolean;
   start_date: string;
   end_date: string;
   created_by: string;
@@ -75,6 +76,7 @@ export type PendingInviteRow = InviteRow & {
   event_description: string | null;
   event_currency: 'USD' | 'PHP';
   event_icon: EventRow['icon'];
+  event_is_active: boolean;
   event_start_date: string;
   event_end_date: string;
   event_created_by: string;
