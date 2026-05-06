@@ -1,5 +1,15 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Animated, Easing, Modal, Pressable, ScrollView, Text, View} from 'react-native';
+import {
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import {surfaces} from '../../theme/tokens';
 import {IconButton} from './AppIcon';
 import {styles} from './styles';
@@ -67,8 +77,15 @@ export function AppModal({
   }
 
   return (
-    <Modal visible={rendered} transparent animationType="none" onRequestClose={onClose}>
-      <View style={styles.modalRoot}>
+    <Modal
+      visible={rendered}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent>
+      <KeyboardAvoidingView
+        style={styles.modalRoot}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Animated.View
           pointerEvents="none"
           style={[styles.modalBackdropTint, {opacity: backdropOpacity}]}
@@ -99,6 +116,9 @@ export function AppModal({
                 style={styles.modalBodyScroll}
                 contentContainerStyle={styles.modalBodyScrollContent}
                 nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                automaticallyAdjustKeyboardInsets
                 showsVerticalScrollIndicator={false}>
                 {children}
               </ScrollView>
@@ -107,7 +127,7 @@ export function AppModal({
             )}
           </View>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

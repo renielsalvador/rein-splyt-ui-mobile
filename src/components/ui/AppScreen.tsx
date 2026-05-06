@@ -1,5 +1,5 @@
 import React from 'react';
-import {ScrollView, Text, View} from 'react-native';
+import {KeyboardAvoidingView, Platform, ScrollView, Text, View} from 'react-native';
 import {styles} from './styles';
 import {spacing} from '../../theme/tokens';
 
@@ -33,7 +33,9 @@ export function AppScreen({
 
   if (variant === 'auth') {
     return (
-      <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
+      <KeyboardAvoidingView
+        style={{flex: 1, backgroundColor: '#FFFFFF'}}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -43,15 +45,19 @@ export function AppScreen({
             gap: spacing.md,
           }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
   return (
-    <View style={{flex: 1}}>
+    <KeyboardAvoidingView
+      style={{flex: 1}}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.gradientHeader}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -73,6 +79,8 @@ export function AppScreen({
             tabBarPadding ? {paddingBottom: tabBarPadding} : null,
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}>
           {title ? (
             <View style={styles.pageHeader}>
@@ -86,6 +94,6 @@ export function AppScreen({
           <View style={styles.footerOverlay}>{footerOverlay}</View>
         ) : null}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
