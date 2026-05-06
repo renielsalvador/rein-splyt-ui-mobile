@@ -115,7 +115,7 @@ export const styles = StyleSheet.create({
   eventCard: {
     ...surfaces.card,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
     padding: spacing.md,
   },
@@ -157,8 +157,22 @@ export const styles = StyleSheet.create({
     color: palette.inkMuted,
   },
   eventTrailing: {
+    marginLeft: 'auto',
     alignItems: 'flex-end',
     gap: 2,
+  },
+  eventStatusText: {
+    ...typography.bodyStrong,
+    color: palette.greenAccent,
+  },
+  eventStatusEnded: {
+    color: palette.danger,
+  },
+  eventStatusUpcoming: {
+    color: palette.warning,
+  },
+  eventStatusInactive: {
+    color: '#8E99A4',
   },
   eventBalanceLabel: {
     ...typography.caption,
@@ -208,22 +222,16 @@ export const styles = StyleSheet.create({
     ...typography.cardTitle,
     color: palette.ink,
   },
-  dashboardLiveBadge: {
-    backgroundColor: palette.greenAccent,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  dashboardLiveBadgeText: {
+  dashboardStatusText: {
     ...typography.caption,
     fontWeight: '700',
-    color: palette.surface,
+    color: palette.greenAccent,
   },
-  dashboardEndedBadge: {
-    backgroundColor: palette.warning,
+  dashboardEndedText: {
+    color: palette.warning,
   },
-  dashboardInactiveBadge: {
-    backgroundColor: '#C7CCD1',
+  dashboardInactiveText: {
+    color: '#8E99A4',
   },
   dashboardMemberCount: {
     ...typography.caption,

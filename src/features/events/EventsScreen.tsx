@@ -6,7 +6,6 @@ import {
   AppAvatarStack,
   AppScreen,
   BrandLogo,
-  DataPill,
   EmptyState,
   NotificationButton,
 } from '../../components/ui';
@@ -93,7 +92,6 @@ export function EventsScreen({
                   <Text style={[styles.eventName, !event.isActive && styles.eventNameInactive]}>
                     {event.name}
                   </Text>
-                  {badge ? <DataPill label={badge.label} tone={badge.tone} /> : null}
                 </View>
                 <View style={styles.eventMeta}>
                   {memberNames.length > 0 && (
@@ -106,13 +104,22 @@ export function EventsScreen({
                 </Text>
               </View>
               <View style={styles.eventTrailing}>
+                {badge ? (
+                  <Text
+                    style={[
+                      styles.eventStatusText,
+                      badge.label === 'Ended' ? styles.eventStatusEnded : null,
+                      badge.label === 'Upcoming' ? styles.eventStatusUpcoming : null,
+                      badge.label === 'Inactive' ? styles.eventStatusInactive : null,
+                    ]}>
+                    {badge.label}
+                  </Text>
+                ) : null}
                 {totalSpend > 0 ? (
-                  <>
-                    <Text
-                      style={[styles.eventBalance, !event.isActive && styles.eventBalanceInactive]}>
-                      {formatCurrency(totalSpend, event.currency ?? 'PHP')}
-                    </Text>
-                  </>
+                  <Text
+                    style={[styles.eventBalance, !event.isActive && styles.eventBalanceInactive]}>
+                    {formatCurrency(totalSpend, event.currency ?? 'PHP')}
+                  </Text>
                 ) : (
                   <Text style={styles.eventSettled}>Settled</Text>
                 )}
@@ -144,7 +151,7 @@ const styles = StyleSheet.create({
   eventCard: {
     ...surfaces.card,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
     padding: spacing.md,
   },
@@ -186,8 +193,22 @@ const styles = StyleSheet.create({
     color: palette.inkMuted,
   },
   eventTrailing: {
+    marginLeft: 'auto',
     alignItems: 'flex-end',
     gap: 2,
+  },
+  eventStatusText: {
+    ...typography.bodyStrong,
+    color: palette.greenAccent,
+  },
+  eventStatusEnded: {
+    color: palette.danger,
+  },
+  eventStatusUpcoming: {
+    color: palette.warning,
+  },
+  eventStatusInactive: {
+    color: '#8E99A4',
   },
   eventBalance: {
     ...typography.bodyStrong,

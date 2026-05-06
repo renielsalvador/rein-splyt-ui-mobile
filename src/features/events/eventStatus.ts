@@ -62,7 +62,10 @@ export function getEventStatusBadge(
     };
   }
 
-  return null;
+  return {
+    label: 'Upcoming',
+    tone: 'warning' as const,
+  };
 }
 
 export function sortEventsByStartDate(events: Event[], today = getTodayDateString()) {

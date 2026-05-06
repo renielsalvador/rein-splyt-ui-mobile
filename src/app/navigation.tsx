@@ -87,9 +87,19 @@ function AppNavigator() {
   const navigation = useMemo<Navigator>(
     () => ({
       navigate(name, ...args) {
+        if (TAB_SCREENS.has(name)) {
+          setCurrentTab(name as TabName);
+          setStack([{name} as AnyRoute]);
+          return;
+        }
         setStack(current => [...current, createRoute(name, ...args) as MutableRoute]);
       },
       replace(name, ...args) {
+        if (TAB_SCREENS.has(name)) {
+          setCurrentTab(name as TabName);
+          setStack([{name} as AnyRoute]);
+          return;
+        }
         setStack(current => {
           const next = createRoute(name, ...args) as MutableRoute;
           return current.length > 0 ? [...current.slice(0, -1), next] : [next];

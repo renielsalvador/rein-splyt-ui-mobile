@@ -10,7 +10,6 @@ import {
   type AppIconName,
   SectionHeading,
 } from '../../components/ui';
-import {DataPill} from '../../components/ui';
 import {
   formatCurrency,
   formatDateLabel,
@@ -98,7 +97,6 @@ export function HomeEventCard({
             <Text style={[styles.eventName, !event.isActive && styles.eventNameInactive]}>
               {event.name}
             </Text>
-            {badge ? <DataPill label={badge.label} tone={badge.tone} /> : null}
           </View>
           <View style={styles.eventMetaRow}>
             {memberNames.length > 0 && <AppAvatarStack names={memberNames} size="xs" />}
@@ -109,6 +107,17 @@ export function HomeEventCard({
           </Text>
         </View>
         <View style={styles.eventTrailing}>
+          {badge ? (
+            <Text
+              style={[
+                styles.eventStatusText,
+                badge.label === 'Ended' ? styles.eventStatusEnded : null,
+                badge.label === 'Upcoming' ? styles.eventStatusUpcoming : null,
+                badge.label === 'Inactive' ? styles.eventStatusInactive : null,
+              ]}>
+              {badge.label}
+            </Text>
+          ) : null}
           {currentBalance !== undefined ? (
             <>
               <Text style={styles.eventBalanceLabel}>

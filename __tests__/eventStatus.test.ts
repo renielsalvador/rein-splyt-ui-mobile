@@ -59,6 +59,12 @@ describe('eventStatus helpers', () => {
       label: 'Ended',
       tone: 'danger',
     });
+    expect(
+      getEventStatusBadge(buildEvent({startDate: '2026-05-20', endDate: '2026-05-22'}), '2026-05-07'),
+    ).toEqual({
+      label: 'Upcoming',
+      tone: 'warning',
+    });
   });
 
   test('sorts ongoing included events first, then remaining by start date', () => {

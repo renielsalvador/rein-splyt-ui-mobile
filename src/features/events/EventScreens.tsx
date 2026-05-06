@@ -798,18 +798,18 @@ export function EventDashboardScreen({
                 </Text>
               </View>
               {statusBadge ? (
-                <View
+                <Text
                   style={[
-                    styles.dashboardLiveBadge,
-                    statusBadge.label === 'Ended' ? styles.dashboardEndedBadge : null,
-                    statusBadge.label === 'Inactive' ? styles.dashboardInactiveBadge : null,
+                    styles.dashboardStatusText,
+                    statusBadge.label === 'Ended' ? styles.dashboardEndedText : null,
+                    statusBadge.label === 'Inactive'
+                      ? styles.dashboardInactiveText
+                      : null,
                   ]}>
-                  <Text style={styles.dashboardLiveBadgeText}>{statusBadge.label}</Text>
-                </View>
+                  {statusBadge.label}
+                </Text>
               ) : lifecycle === 'ongoing' ? (
-                <View style={styles.dashboardLiveBadge}>
-                  <Text style={styles.dashboardLiveBadgeText}>Ongoing</Text>
-                </View>
+                <Text style={styles.dashboardStatusText}>Ongoing</Text>
               ) : null}
             </View>
             <Pressable
