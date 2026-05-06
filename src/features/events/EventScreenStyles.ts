@@ -357,12 +357,13 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   eventIconSelectorTitle: {
-    ...typography.bodyStrong,
+    ...typography.cardTitle,
+    fontSize: 18,
+    lineHeight: 30,
     flex: 1,
   },
   eventIconSelectorCopy: {
-    flex: 1,
-    gap: 2,
+    flex: 1
   },
   eventMeta: {
     ...typography.caption,
