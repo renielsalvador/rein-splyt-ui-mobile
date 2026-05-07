@@ -1,5 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Image, Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {AppButton, AppInput, AppToast, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
@@ -60,6 +69,7 @@ export function AuthScreen() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -67,6 +77,22 @@ export function AuthScreen() {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, event => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
     };
   }, []);
 
@@ -190,7 +216,13 @@ export function AuthScreen() {
           </View>
         </View>
         {toastMessage ? (
-          <View style={styles.toastWrap}>
+          <View
+            style={[
+              styles.toastWrap,
+              keyboardHeight > 0
+                ? {bottom: keyboardHeight + spacing.sm}
+                : null,
+            ]}>
             <AppToast message={toastMessage} />
           </View>
         ) : null}
@@ -316,7 +348,13 @@ export function AuthScreen() {
         </View>
       </View>
       {toastMessage ? (
-        <View style={styles.toastWrap}>
+        <View
+          style={[
+            styles.toastWrap,
+            keyboardHeight > 0
+              ? {bottom: keyboardHeight + spacing.sm}
+              : null,
+          ]}>
           <AppToast message={toastMessage} />
         </View>
       ) : null}

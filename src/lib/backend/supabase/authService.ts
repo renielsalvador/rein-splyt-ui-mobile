@@ -139,22 +139,14 @@ export async function completeAuthRedirect(
     throw new Error(params.errorDescription);
   }
 
-  if (!params.accessToken || !params.refreshToken) {
-    throw new Error('Google sign-in did not return a complete Supabase session.');
+  const authData = await resolveRedirectSession(client, params);
+  const user = authData.user ?? authData.session?.user;
+
+  if (!user) {
+    throw new Error('Supabase did not return a user after completing authentication.');
   }
 
-  const {data, error} = await client.auth.setSession({
-    access_token: params.accessToken,
-    refresh_token: params.refreshToken,
-  });
-
-  assertNoError(error, 'Unable to complete Google sign in.');
-
-  if (!data.user) {
-    throw new Error('Supabase did not return a user after Google sign in.');
-  }
-
-  const session = await loadSessionForUser(client, data.user.id);
+  const session = await loadSessionForUser(client, user.id);
 
   return {
     session,
@@ -249,22 +241,75 @@ function extractAuthParams(url: string) {
 
   const accessToken = mergedParams.get('access_token');
   const refreshToken = mergedParams.get('refresh_token');
+  const code = mergedParams.get('code');
+  const tokenHash = mergedParams.get('token_hash');
   const errorDescription =
     mergedParams.get('error_description') ??
     mergedParams.get('error') ??
     mergedParams.get('error_code');
   const type = mergedParams.get('type');
 
-  if (!accessToken && !refreshToken && !errorDescription && !type) {
+  if (!accessToken && !refreshToken && !code && !tokenHash && !errorDescription && !type) {
     return null;
   }
 
   return {
     accessToken,
     refreshToken,
+    code,
+    tokenHash,
     errorDescription,
     type,
   };
+}
+
+async function resolveRedirectSession(
+  client: SupabaseClient,
+  params: NonNullable<ReturnType<typeof extractAuthParams>>,
+) {
+  if (params.accessToken && params.refreshToken) {
+    const {data, error} = await client.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+
+    assertNoError(error, 'Unable to complete authentication.');
+    return data;
+  }
+
+  if (params.code) {
+    const {data, error} = await client.auth.exchangeCodeForSession(params.code);
+    assertNoError(error, 'Unable to complete authentication.');
+    return data;
+  }
+
+  if (params.tokenHash && isEmailOtpType(params.type)) {
+    const {data, error} = await client.auth.verifyOtp({
+      token_hash: params.tokenHash,
+      type: params.type,
+    });
+
+    assertNoError(error, 'Unable to complete authentication.');
+    return data;
+  }
+
+  throw new Error('Authentication redirect did not return a supported Supabase session.');
+}
+
+function isEmailOtpType(
+  value: string | null,
+): value is 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' {
+  return Boolean(
+    value &&
+      [
+        'signup',
+        'invite',
+        'magiclink',
+        'recovery',
+        'email_change',
+        'email',
+      ].includes(value),
+  );
 }
 
 export async function loadSessionForUser(
