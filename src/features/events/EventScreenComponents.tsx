@@ -8,6 +8,7 @@ import {
   AppCard,
   AppIcon,
   type AppIconName,
+  DataPill,
   SectionHeading,
 } from '../../components/ui';
 import {
