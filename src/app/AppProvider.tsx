@@ -34,6 +34,7 @@ import type {
 type AppContextValue = {
   backendReady: boolean;
   currentUser: UserProfile | null;
+  recoveryUser: UserProfile | null;
   events: Event[];
   contacts: Contact[];
   pendingInvites: PendingInvite[];
@@ -45,6 +46,8 @@ type AppContextValue = {
   signIn: (input: AuthFormValues) => Promise<void>;
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (input: UpdateUserProfileInput) => Promise<void>;
   refreshEvents: () => Promise<void>;
@@ -69,6 +72,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
   const [backend, setBackend] = useState<AppBackend | null>(null);
   const [backendReady, setBackendReady] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [recoveryUser, setRecoveryUser] = useState<UserProfile | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
@@ -99,16 +103,19 @@ export function AppProvider({children}: React.PropsWithChildren) {
       try {
         const nextBackend = await getBackend();
         const initialUrl = await Linking.getInitialURL();
-        const redirectedSession = initialUrl
+        const redirectedAuth = initialUrl
           ? await nextBackend.completeAuthRedirect(initialUrl)
           : null;
-        const session = redirectedSession ?? (await nextBackend.getSession());
+        const session = redirectedAuth?.session ?? (await nextBackend.getSession());
 
         if (!isMounted) {
           return;
         }
 
         setBackend(nextBackend);
+        if (redirectedAuth?.flow === 'recovery') {
+          setRecoveryUser(redirectedAuth.session.user);
+        }
         if (session?.user) {
           await applySession(nextBackend, session.user);
         }
@@ -142,13 +149,16 @@ export function AppProvider({children}: React.PropsWithChildren) {
     const subscription = Linking.addEventListener('url', event => {
       backend
         .completeAuthRedirect(event.url)
-        .then(session => {
-          if (!session) {
+        .then(result => {
+          if (!result) {
             return;
           }
 
           setError(null);
-          return applySession(backend, session.user);
+          if (result.flow === 'recovery') {
+            setRecoveryUser(result.session.user);
+          }
+          return applySession(backend, result.session.user);
         })
         .catch(nextError => {
           setError(nextError instanceof Error ? nextError.message : 'Unable to sign in.');
@@ -275,6 +285,40 @@ export function AppProvider({children}: React.PropsWithChildren) {
     });
   }, [backend, mutate]);
 
+  const requestPasswordReset = useCallback(
+    async (email: string) => {
+      if (!backend) {
+        return;
+      }
+
+      await mutate(async () => {
+        await backend.requestPasswordReset(email);
+      });
+    },
+    [backend, mutate],
+  );
+
+  const updatePassword = useCallback(
+    async (password: string) => {
+      if (!backend) {
+        return;
+      }
+
+      await mutate(async () => {
+        await backend.updatePassword(password);
+        const session = await backend.getSession();
+
+        if (!session?.user) {
+          throw new Error('Unable to restore your account after updating the password.');
+        }
+
+        setRecoveryUser(null);
+        await applySession(backend, session.user);
+      });
+    },
+    [applySession, backend, mutate],
+  );
+
   const signOut = useCallback(async () => {
     if (!backend) {
       return;
@@ -282,6 +326,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
     await mutate(async () => {
       await backend.signOut();
+      setRecoveryUser(null);
       setCurrentUser(null);
       setEvents([]);
       setContacts([]);
@@ -533,6 +578,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
     () => ({
       backendReady,
       currentUser,
+      recoveryUser,
       events,
       contacts,
       pendingInvites,
@@ -544,6 +590,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signIn,
       signUp,
       signInWithGoogle,
+      requestPasswordReset,
+      updatePassword,
       signOut,
       updateProfile,
       refreshEvents,
@@ -572,6 +620,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       deleteEvent,
       createInvite,
       currentUser,
+      recoveryUser,
       contacts,
       pendingInvites,
       error,
@@ -582,11 +631,13 @@ export function AppProvider({children}: React.PropsWithChildren) {
       refreshContacts,
       refreshPendingInvites,
       respondToInvite,
+      requestPasswordReset,
       settlements,
       signIn,
       signInWithGoogle,
       signOut,
       signUp,
+      updatePassword,
       updateProfile,
       summaries,
       balances,

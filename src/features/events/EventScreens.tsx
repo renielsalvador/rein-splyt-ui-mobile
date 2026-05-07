@@ -81,7 +81,7 @@ export function HomeScreen({
   const [joinModalVisible, setJoinModalVisible] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
-  const [joinFormError, setJoinFormError] = useState<string>();
+  const [joinFieldError, setJoinFieldError] = useState<string>();
   const sortedEvents = useMemo(() => sortEventsByStartDate(events), [events]);
   const includedEvents = useMemo(
     () => sortedEvents.filter(event => isEventIncludedInDashboard(event)),
@@ -117,10 +117,10 @@ export function HomeScreen({
   async function handleJoin() {
     const parsed = joinSchema.safeParse({inviteCode});
     if (!parsed.success) {
-      setJoinFormError(parsed.error.issues[0]?.message);
+      setJoinFieldError(parsed.error.issues[0]?.message);
       return;
     }
-    setJoinFormError(undefined);
+    setJoinFieldError(undefined);
     const event = await joinEvent(parsed.data);
     setInviteCode('');
     setJoinModalVisible(false);
@@ -199,7 +199,7 @@ export function HomeScreen({
                 variant="secondary"
                 size="compact"
                 onPress={() => {
-                  setJoinFormError(undefined);
+                  setJoinFieldError(undefined);
                   setJoinModalVisible(true);
                 }}
               />
@@ -291,18 +291,22 @@ export function HomeScreen({
         subtitle="Paste the invite code shared by the event owner."
         onClose={() => {
           setJoinModalVisible(false);
-          setJoinFormError(undefined);
+          setJoinFieldError(undefined);
           setInviteCode('');
         }}>
         <AppInput
           label="Invite code"
           value={inviteCode}
-          onChangeText={setInviteCode}
+          onChangeText={value => {
+            setInviteCode(value);
+            setJoinFieldError(undefined);
+          }}
           placeholder="ABC123"
           autoCapitalize="characters"
           autoFocus
+          errorMessage={joinFieldError}
         />
-        <InlineError message={joinFormError ?? error ?? undefined} />
+        <InlineError message={error ?? undefined} />
         <AppButton
           label="Join event"
           icon="join"
@@ -375,7 +379,11 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const [icon, setIcon] = useState<EventIconName>('event');
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(() => shiftDate(defaultStartDate, 2));
-  const [formError, setFormError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    description?: string;
+    dates?: string;
+  }>({});
   const [iconModalVisible, setIconModalVisible] = useState(false);
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [memberModalVisible, setMemberModalVisible] = useState(false);
@@ -447,10 +455,14 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       endDate,
     });
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message);
+      const message = parsed.error.issues[0]?.message;
+      setFieldErrors({
+        name: message === 'Event name is required.' ? message : undefined,
+        dates: message === 'Select an event date range.' || message === 'Event end date must be after the start date.' ? message : undefined,
+      });
       return;
     }
-    setFormError(undefined);
+    setFieldErrors({});
     const event = await createEvent({
       ...parsed.data,
       icon,
@@ -486,8 +498,12 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         <AppInput
           label="Event name"
           value={name}
-          onChangeText={setName}
+          onChangeText={value => {
+            setName(value);
+            setFieldErrors(current => ({...current, name: undefined}));
+          }}
           placeholder="Boracay long weekend"
+          errorMessage={fieldErrors.name}
         />
         <AppInput
           label="Description"
@@ -503,6 +519,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           helperText="Tap to select the start and end dates."
           onPress={() => setDateModalVisible(true)}
         />
+        <InlineError message={fieldErrors.dates} />
         <View style={styles.memberPickerBlock}>
           <SectionHeading
             title="Add members"
@@ -546,7 +563,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             />
           </View>
         </View>
-        <InlineError message={formError ?? error ?? undefined} />
+        <InlineError message={error ?? undefined} />
       </AppCard>
 
       <AppModal
@@ -576,6 +593,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           onChange={next => {
             setStartDate(next.startDate);
             setEndDate(next.endDate);
+            setFieldErrors(current => ({...current, dates: undefined}));
           }}
           onClose={() => setDateModalVisible(false)}
         />
@@ -662,7 +680,10 @@ export function EventDashboardScreen({
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
   const [editStartDate, setEditStartDate] = useState(getTodayDateString());
   const [editEndDate, setEditEndDate] = useState(getTodayDateString());
-  const [editFormError, setEditFormError] = useState<string>();
+  const [editFieldErrors, setEditFieldErrors] = useState<{
+    name?: string;
+    dates?: string;
+  }>({});
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const summary = summaries[eventId];
   const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
@@ -812,12 +833,12 @@ export function EventDashboardScreen({
                 <Text style={styles.dashboardStatusText}>Ongoing</Text>
               ) : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setEditFormError(undefined);
-                setEditModalStep('details');
-              }}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setEditFieldErrors({});
+                  setEditModalStep('details');
+                }}
               style={({pressed}) => [styles.dashboardEditButton, pressed && styles.pressed]}>
               <AppIcon name="edit" tone="accent" size={12} />
               <Text style={styles.dashboardEditText}>Edit</Text>
@@ -934,7 +955,7 @@ export function EventDashboardScreen({
             return;
           }
           setEditModalStep(null);
-          setEditFormError(undefined);
+          setEditFieldErrors({});
         }}>
         {editModalStep === 'dates' ? (
           <EventDateRangePicker
@@ -943,6 +964,7 @@ export function EventDashboardScreen({
             onChange={next => {
               setEditStartDate(next.startDate);
               setEditEndDate(next.endDate);
+              setEditFieldErrors(current => ({...current, dates: undefined}));
             }}
             onClose={() => setEditModalStep('details')}
           />
@@ -958,8 +980,12 @@ export function EventDashboardScreen({
             <AppInput
               label="Event name"
               value={editName}
-              onChangeText={setEditName}
+              onChangeText={value => {
+                setEditName(value);
+                setEditFieldErrors(current => ({...current, name: undefined}));
+              }}
               placeholder="Boracay long weekend"
+              errorMessage={editFieldErrors.name}
             />
             <AppInput
               label="Description"
@@ -975,6 +1001,7 @@ export function EventDashboardScreen({
               helperText="Tap to update the event date range."
               onPress={() => setEditModalStep('dates')}
             />
+            <InlineError message={editFieldErrors.dates} />
             <AppButton
               label="Save changes"
               icon="edit"
@@ -987,10 +1014,18 @@ export function EventDashboardScreen({
                   endDate: editEndDate,
                 });
                 if (!parsed.success) {
-                  setEditFormError(parsed.error.issues[0]?.message);
+                  const message = parsed.error.issues[0]?.message;
+                  setEditFieldErrors({
+                    name: message === 'Event name is required.' ? message : undefined,
+                    dates:
+                      message === 'Select an event date range.' ||
+                      message === 'Event end date must be after the start date.'
+                        ? message
+                        : undefined,
+                  });
                   return;
                 }
-                setEditFormError(undefined);
+                setEditFieldErrors({});
                 updateEvent({
                   eventId,
                   name: parsed.data.name,
@@ -1004,7 +1039,7 @@ export function EventDashboardScreen({
                   .catch(() => undefined);
               }}
             />
-            <InlineError message={editFormError ?? error ?? undefined} />
+            <InlineError message={error ?? undefined} />
           </>
         )}
       </AppModal>
@@ -1069,8 +1104,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const summary = summaries[eventId];
   const [displayName, setDisplayName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [memberFormError, setMemberFormError] = useState<string>();
-  const [inviteFormError, setInviteFormError] = useState<string>();
+  const [memberFieldError, setMemberFieldError] = useState<string>();
+  const [inviteFieldError, setInviteFieldError] = useState<string>();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const latestInvite = useMemo(
@@ -1182,27 +1217,27 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           value={displayName}
           onChangeText={value => {
             setDisplayName(value);
-            setMemberFormError(undefined);
+            setMemberFieldError(undefined);
           }}
           placeholder="Bea Santos"
+          errorMessage={memberFieldError}
         />
         <AppButton
           label="Add placeholder member"
           icon="members"
           onPress={() => {
             if (displayName.trim().length < 2) {
-              setMemberFormError('Enter a display name.');
+              setMemberFieldError('Enter a display name.');
               return;
             }
             addManualMember(eventId, displayName)
               .then(() => {
                 setDisplayName('');
-                setMemberFormError(undefined);
+                setMemberFieldError(undefined);
               })
               .catch(() => undefined);
           }}
         />
-        <InlineError message={memberFormError ?? undefined} />
       </AppCard>
 
       <AppCard>
@@ -1212,10 +1247,11 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           value={inviteEmail}
           onChangeText={value => {
             setInviteEmail(value);
-            setInviteFormError(undefined);
+            setInviteFieldError(undefined);
           }}
           placeholder="email@example.com"
           autoCapitalize="none"
+          errorMessage={inviteFieldError}
         />
         <AppButton
           label="Send invite"
@@ -1223,19 +1259,18 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           onPress={() => {
             const normalizedEmail = normalizeEmail(inviteEmail);
             if (!isEmailAddress(normalizedEmail)) {
-              setInviteFormError('Enter a valid email.');
+              setInviteFieldError('Enter a valid email.');
               return;
             }
             createInvite(eventId, {email: normalizedEmail})
               .then(() => {
                 setInviteEmail('');
-                setInviteFormError(undefined);
+                setInviteFieldError(undefined);
                 setToastMessage('Invite sent');
               })
               .catch(() => undefined);
           }}
         />
-        <InlineError message={inviteFormError ?? undefined} />
       </AppCard>
 
       <SectionHeading title="Member list" detail={`${memberRows.length} total`} />

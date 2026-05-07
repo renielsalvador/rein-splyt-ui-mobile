@@ -2,7 +2,7 @@ import type {SupabaseClient} from '@supabase/supabase-js';
 import {Linking} from 'react-native';
 import {getAuthRedirectUrl} from '../../../config/appConfig';
 import type {AuthFormValues, UpdateUserProfileInput, UserProfile} from '../../../types/domain';
-import type {AppSession} from '../types';
+import type {AppSession, AuthRedirectResult} from '../types';
 import type {DatabaseUserRow} from './types';
 import {mapUser} from './mappers';
 import {assertNoError} from './utils';
@@ -109,10 +109,27 @@ export async function signInWithGoogle(client: SupabaseClient): Promise<void> {
   await Linking.openURL(authUrl.toString());
 }
 
+export async function requestPasswordReset(
+  client: SupabaseClient,
+  email: string,
+): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail.includes('@') || !normalizedEmail.includes('.')) {
+    throw new Error('Enter a valid email.');
+  }
+
+  const {error} = await client.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo: getAuthRedirectUrl(),
+  });
+
+  assertNoError(error, 'Unable to send a password reset email.');
+}
+
 export async function completeAuthRedirect(
   client: SupabaseClient,
   url: string,
-): Promise<AppSession | null> {
+): Promise<AuthRedirectResult | null> {
   const params = extractAuthParams(url);
   if (!params) {
     return null;
@@ -137,7 +154,26 @@ export async function completeAuthRedirect(
     throw new Error('Supabase did not return a user after Google sign in.');
   }
 
-  return loadSessionForUser(client, data.user.id);
+  const session = await loadSessionForUser(client, data.user.id);
+
+  return {
+    session,
+    flow: params.type === 'recovery' ? 'recovery' : 'oauth',
+  };
+}
+
+export async function updatePassword(
+  client: SupabaseClient,
+  password: string,
+) {
+  if (password.length < 6) {
+    throw new Error('Use at least 6 characters.');
+  }
+
+  const {error} = await client.auth.updateUser({
+    password,
+  });
+  assertNoError(error, 'Unable to update your password.');
 }
 
 export async function signOut(client: SupabaseClient) {
@@ -217,8 +253,9 @@ function extractAuthParams(url: string) {
     mergedParams.get('error_description') ??
     mergedParams.get('error') ??
     mergedParams.get('error_code');
+  const type = mergedParams.get('type');
 
-  if (!accessToken && !refreshToken && !errorDescription) {
+  if (!accessToken && !refreshToken && !errorDescription && !type) {
     return null;
   }
 
@@ -226,6 +263,7 @@ function extractAuthParams(url: string) {
     accessToken,
     refreshToken,
     errorDescription,
+    type,
   };
 }
 

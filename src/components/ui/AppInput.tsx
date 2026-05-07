@@ -15,6 +15,7 @@ export function AppInput({
   autoFocus = false,
   prefixIcon,
   keyboardType,
+  errorMessage,
 }: {
   label: string;
   value: string;
@@ -26,6 +27,7 @@ export function AppInput({
   autoFocus?: boolean;
   prefixIcon?: AppIconName;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'decimal-pad';
+  errorMessage?: string;
 }) {
   const [focused, setFocused] = useState(false);
 
@@ -37,6 +39,7 @@ export function AppInput({
           styles.inputWrapper,
           multiline ? styles.inputWrapperMultiline : null,
           focused ? styles.inputWrapperFocused : null,
+          errorMessage ? styles.inputWrapperError : null,
         ]}>
         {prefixIcon ? (
           <AppIcon name={prefixIcon} tone="muted" size={16} />
@@ -59,6 +62,7 @@ export function AppInput({
           onBlur={() => setFocused(false)}
         />
       </View>
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
     </View>
   );
 }

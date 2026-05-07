@@ -1,7 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import {Platform, SafeAreaView, Text, View} from 'react-native';
 import {AppProvider, useApp} from './AppProvider';
-import {AuthScreen} from '../features/auth/AuthScreen';
+import {AuthScreen, ResetPasswordScreen} from '../features/auth/AuthScreen';
 import {
   CreateEventScreen,
   EventDashboardScreen,
@@ -218,7 +218,7 @@ function AppNavigator() {
 }
 
 function AppStateRouter() {
-  const {backendReady, currentUser} = useApp();
+  const {backendReady, currentUser, recoveryUser} = useApp();
 
   if (!backendReady) {
     return (
@@ -232,6 +232,10 @@ function AppStateRouter() {
         </SafeAreaView>
       </View>
     );
+  }
+
+  if (recoveryUser) {
+    return <ResetPasswordScreen />;
   }
 
   return currentUser ? <AppNavigator /> : <AuthScreen />;

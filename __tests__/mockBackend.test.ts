@@ -130,4 +130,37 @@ describe('MockBackend invited members', () => {
       status: 'joined',
     });
   });
+
+  test('updating the password replaces the current credential for future sign-ins', async () => {
+    const backend = new MockBackend();
+    await backend.initialize();
+    const email = `owner-${Math.random().toString(36).slice(2, 8)}@example.com`;
+
+    await backend.signUp({
+      email,
+      password: 'password123',
+      displayName: 'Owner',
+    });
+
+    await backend.updatePassword('newpass456');
+    await backend.signOut();
+
+    await expect(
+      backend.signIn({
+        email,
+        password: 'password123',
+      }),
+    ).rejects.toThrow('Invalid email or password.');
+
+    await expect(
+      backend.signIn({
+        email,
+        password: 'newpass456',
+      }),
+    ).resolves.toMatchObject({
+      user: {
+        email,
+      },
+    });
+  });
 });

@@ -28,13 +28,20 @@ export type AppSession = {
   user: UserProfile;
 };
 
+export type AuthRedirectResult = {
+  session: AppSession;
+  flow: 'oauth' | 'recovery';
+};
+
 export interface AppBackend {
   initialize(): Promise<void>;
   getSession(): Promise<AppSession | null>;
   signIn(input: AuthFormValues): Promise<AppSession>;
   signUp(input: Required<AuthFormValues>): Promise<AppSession>;
   signInWithGoogle(): Promise<void>;
-  completeAuthRedirect(url: string): Promise<AppSession | null>;
+  requestPasswordReset(email: string): Promise<void>;
+  completeAuthRedirect(url: string): Promise<AuthRedirectResult | null>;
+  updatePassword(password: string): Promise<void>;
   signOut(): Promise<void>;
   updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
   listPendingInvites(email: string): Promise<PendingInvite[]>;

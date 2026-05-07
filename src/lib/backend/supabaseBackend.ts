@@ -1,5 +1,5 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import type {AppBackend, AppSession, InviteRecipient} from './types';
+import type {AppBackend, AppSession, AuthRedirectResult, InviteRecipient} from './types';
 import type {
   AuthFormValues,
   CreateContributionInput,
@@ -13,10 +13,12 @@ import type {
 import {
   completeAuthRedirect,
   getSession,
+  requestPasswordReset,
   signIn,
   signInWithGoogle,
   signOut,
   signUp,
+  updatePassword,
   updateProfile,
 } from './supabase/authService';
 import {
@@ -69,8 +71,16 @@ export class SupabaseBackend implements AppBackend {
     return signInWithGoogle(this.client);
   }
 
-  async completeAuthRedirect(url: string) {
+  async requestPasswordReset(email: string) {
+    return requestPasswordReset(this.client, email);
+  }
+
+  async completeAuthRedirect(url: string): Promise<AuthRedirectResult | null> {
     return completeAuthRedirect(this.client, url);
+  }
+
+  async updatePassword(password: string) {
+    return updatePassword(this.client, password);
   }
 
   async signOut() {

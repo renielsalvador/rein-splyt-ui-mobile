@@ -33,7 +33,12 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   );
   const [payerId, setPayerId] = useState<string>();
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-  const [formError, setFormError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    amount?: string;
+    participantMemberIds?: string;
+    payerId?: string;
+  }>({});
   const [didPrefill, setDidPrefill] = useState(false);
   const [payerModalVisible, setPayerModalVisible] = useState(false);
 
@@ -92,9 +97,10 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   }
 
   async function handleSubmit() {
+    const nextErrors: typeof fieldErrors = {};
+
     if (!payerId) {
-      setFormError('Select a payer.');
-      return;
+      nextErrors.payerId = 'Select a payer.';
     }
 
     const parsed = expenseSchema.safeParse({
@@ -104,16 +110,29 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
     });
 
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message);
-      return;
+      const message = parsed.error.issues[0]?.message;
+
+      if (message === 'Expense title is required.') {
+        nextErrors.title = message;
+      } else if (message === 'Enter an amount greater than zero.') {
+        nextErrors.amount = message;
+      }
     }
 
     if (selectedMemberIds.length === 0) {
-      setFormError('Select at least one participant.');
+      nextErrors.participantMemberIds = 'Select at least one participant.';
+    }
+
+    if (Object.keys(nextErrors).length > 0 || !parsed.success) {
+      setFieldErrors(nextErrors);
       return;
     }
 
-    setFormError(undefined);
+    const nextPayerId = payerId;
+    if (!nextPayerId) {
+      return;
+    }
+    setFieldErrors({});
     if (expenseId) {
       await updateExpense({
         expenseId,
@@ -121,7 +140,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         title: parsed.data.title,
         amount: parsed.data.amount,
         currency: summary.event.currency,
-        paidByMemberId: payerId,
+        paidByMemberId: nextPayerId,
         paymentSource,
         participantMemberIds: selectedMemberIds,
         note: parsed.data.note,
@@ -132,7 +151,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         title: parsed.data.title,
         amount: parsed.data.amount,
         currency: summary.event.currency,
-        paidByMemberId: payerId,
+        paidByMemberId: nextPayerId,
         paymentSource,
         participantMemberIds: selectedMemberIds,
         note: parsed.data.note,
@@ -153,8 +172,27 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       variant="detail"
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard>
-        <AppInput label="Title" value={title} onChangeText={setTitle} placeholder="Villa down payment" />
-        <AppInput label="Amount" value={amount} onChangeText={setAmount} placeholder="1200" autoCapitalize="none" />
+        <AppInput
+          label="Title"
+          value={title}
+          onChangeText={value => {
+            setTitle(value);
+            setFieldErrors(current => ({...current, title: undefined}));
+          }}
+          placeholder="Villa down payment"
+          errorMessage={fieldErrors.title}
+        />
+        <AppInput
+          label="Amount"
+          value={amount}
+          onChangeText={value => {
+            setAmount(value);
+            setFieldErrors(current => ({...current, amount: undefined}));
+          }}
+          placeholder="1200"
+          autoCapitalize="none"
+          errorMessage={fieldErrors.amount}
+        />
         <AppInput label="Note" value={note} onChangeText={setNote} placeholder="Optional context" multiline />
         <SectionHeading title="Payment source" />
         <View style={styles.toggleRow}>
@@ -178,7 +216,10 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Choose payer"
-          onPress={() => setPayerModalVisible(true)}
+          onPress={() => {
+            setFieldErrors(current => ({...current, payerId: undefined}));
+            setPayerModalVisible(true);
+          }}
           style={({pressed}) => [styles.payerDropdown, pressed ? styles.payerDropdownPressed : null]}>
           <View style={styles.payerDropdownLead}>
             <AppAvatar name={payer?.displayName ?? 'Unknown member'} size="md" />
@@ -189,6 +230,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           </View>
           <AppIcon name="chevronDown" tone="muted" size={18} />
         </Pressable>
+        <InlineError message={fieldErrors.payerId} />
       </AppCard>
 
       <AppCard>
@@ -203,19 +245,21 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
               detail={selected ? 'Included in split' : 'Tap to include'}
               avatarLabel={member.displayName}
               selected={selected}
-              onPress={() =>
+              onPress={() => {
+                setFieldErrors(current => ({...current, participantMemberIds: undefined}));
                 setSelectedMemberIds(current =>
                   selected
                     ? current.filter(memberId => memberId !== member.id)
                     : [...current, member.id],
-                )
-              }
+                );
+              }}
             />
           );
         })}
+        <InlineError message={fieldErrors.participantMemberIds} />
       </AppCard>
 
-      <InlineError message={formError ?? error ?? undefined} />
+      <InlineError message={error ?? undefined} />
       <AppButton
         label={expenseId ? 'Update expense' : 'Save expense'}
         icon="expense"

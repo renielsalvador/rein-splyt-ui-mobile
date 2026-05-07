@@ -183,8 +183,41 @@ export class MockBackend implements AppBackend {
     throw new Error('Google sign-in requires a configured Supabase backend.');
   }
 
-  async completeAuthRedirect(_url: string): Promise<AppSession | null> {
+  async requestPasswordReset(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail.includes('@') || !normalizedEmail.includes('.')) {
+      throw new Error('Enter a valid email.');
+    }
+
+    const credential = this.state.credentials.find(item => item.email === normalizedEmail);
+    if (!credential) {
+      return;
+    }
+  }
+
+  async completeAuthRedirect(_url: string) {
     return null;
+  }
+
+  async updatePassword(password: string) {
+    if (password.length < 6) {
+      throw new Error('Use at least 6 characters.');
+    }
+
+    if (!this.state.sessionUserId) {
+      throw new Error('You must be signed in.');
+    }
+
+    const credential = this.state.credentials.find(
+      item => item.userId === this.state.sessionUserId,
+    );
+
+    if (!credential) {
+      throw new Error('Unable to update your password.');
+    }
+
+    credential.password = password;
   }
 
   async signOut() {

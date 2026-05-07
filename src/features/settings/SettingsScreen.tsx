@@ -13,6 +13,7 @@ import {
   BrandLogo,
   DataPill,
   HeaderMenuButton,
+  InlineError,
   NotificationButton,
   ScreenBackButton,
 } from '../../components/ui';
@@ -170,12 +171,13 @@ export function SettingsScreen({
 export function AccountUpdateScreen({
   navigation,
 }: ScreenProps<'AccountUpdate'>) {
-  const {currentUser, updateProfile} = useApp();
+  const {currentUser, updateProfile, error, clearError} = useApp();
   const [displayName, setDisplayName] = useState(currentUser?.displayName ?? '');
   const [avatar, setAvatar] = useState<ProfileAvatarAsset | undefined>(undefined);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState(currentUser?.avatarUrl);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<string>();
 
   async function handleAvatarPick(source: 'camera' | 'library') {
     const result =
@@ -252,10 +254,15 @@ export function AccountUpdateScreen({
         <AppInput
           label="Display name"
           value={displayName}
-          onChangeText={setDisplayName}
+          onChangeText={value => {
+            setDisplayName(value);
+            setDisplayNameError(undefined);
+            clearError();
+          }}
           placeholder="Enter your display name"
           autoCapitalize="words"
           prefixIcon="person"
+          errorMessage={displayNameError}
         />
 
         <View style={styles.field}>
@@ -271,6 +278,12 @@ export function AccountUpdateScreen({
         label={saving ? 'Saving...' : 'Save changes'}
         disabled={saving || displayName.trim().length < 2}
         onPress={() => {
+          if (displayName.trim().length < 2) {
+            setDisplayNameError('Display name must be at least 2 characters.');
+            return;
+          }
+
+          setDisplayNameError(undefined);
           setSaving(true);
           updateProfile({displayName, avatar, removeAvatar})
             .then(() => navigation.goBack())
@@ -278,6 +291,7 @@ export function AccountUpdateScreen({
             .finally(() => setSaving(false));
         }}
       />
+      <InlineError message={error ?? undefined} />
     </AppScreen>
   );
 }

@@ -24,7 +24,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
   const summary = summaries[eventId];
   const [memberId, setMemberId] = useState<string>();
   const [amount, setAmount] = useState('');
-  const [formError, setFormError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<{amount?: string; memberId?: string}>({});
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -62,17 +62,25 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
   }
 
   async function handleSubmit() {
+    const nextErrors: typeof fieldErrors = {};
+
     if (!memberId) {
-      setFormError('Select a member.');
-      return;
+      nextErrors.memberId = 'Select a member.';
     }
     const parsed = contributionSchema.safeParse({amount: toAmount(amount)});
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message);
+      nextErrors.amount = parsed.error.issues[0]?.message;
+    }
+    if (Object.keys(nextErrors).length > 0 || !parsed.success) {
+      setFieldErrors(nextErrors);
       return;
     }
-    setFormError(undefined);
-    await addContribution({eventId, memberId, amount: parsed.data.amount});
+    const nextMemberId = memberId;
+    if (!nextMemberId) {
+      return;
+    }
+    setFieldErrors({});
+    await addContribution({eventId, memberId: nextMemberId, amount: parsed.data.amount});
     setAmount('');
   }
 
@@ -98,10 +106,14 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
         <AppInput
           label="Amount"
           value={amount}
-          onChangeText={setAmount}
+          onChangeText={value => {
+            setAmount(value);
+            setFieldErrors(current => ({...current, amount: undefined}));
+          }}
           placeholder="300"
           autoCapitalize="none"
           keyboardType="decimal-pad"
+          errorMessage={fieldErrors.amount}
         />
         {summary.members.map(member => (
           <SelectableRow
@@ -110,10 +122,13 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
             detail="Contributor"
             avatarLabel={member.displayName}
             selected={memberId === member.id}
-            onPress={() => setMemberId(member.id)}
+            onPress={() => {
+              setMemberId(member.id);
+              setFieldErrors(current => ({...current, memberId: undefined}));
+            }}
           />
         ))}
-        <InlineError message={formError ?? error ?? undefined} />
+        <InlineError message={fieldErrors.memberId ?? error ?? undefined} />
         <AppButton
           label="Add contribution"
           icon="fund"

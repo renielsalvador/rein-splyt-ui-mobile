@@ -137,6 +137,10 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: palette.primary,
   },
+  inputWrapperError: {
+    borderWidth: 1.5,
+    borderColor: palette.danger,
+  },
   inputWrapperMultiline: {
     height: 'auto' as any,
     minHeight: 88,

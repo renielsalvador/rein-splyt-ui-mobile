@@ -1,19 +1,97 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Image, Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
-import {AppButton, AppInput, InlineError} from '../../components/ui';
+import {AppButton, AppInput, AppToast, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
 import {palette, radii, spacing, typography} from '../../theme/tokens';
 
+type AuthMode = 'login' | 'signup' | 'forgot';
+
+type FieldErrors = {
+  displayName?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+};
+
+function validateEmail(value: string) {
+  const normalizedEmail = value.trim().toLowerCase();
+
+  if (!normalizedEmail.includes('@') || !normalizedEmail.includes('.')) {
+    return 'Enter a valid email.';
+  }
+
+  return undefined;
+}
+
+function AuthHeader({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <View style={styles.wordmarkBlock}>
+      <Image
+        source={require('../../../assets/branding/splyt-app-icon-no-bg.png')}
+        style={styles.brandLogo}
+        resizeMode="contain"
+      />
+      <Text style={styles.wordmark}>{title}</Text>
+      <Text style={styles.tagline}>{subtitle}</Text>
+    </View>
+  );
+}
+
 export function AuthScreen() {
-  const {signIn, signUp, signInWithGoogle, error} = useApp();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const {
+    signIn,
+    signUp,
+    signInWithGoogle,
+    requestPasswordReset,
+    error,
+    clearError,
+  } = useApp();
+  const [mode, setMode] = useState<AuthMode>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [formError, setFormError] = useState<string | undefined>();
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function showToast(message: string) {
+    setToastMessage(message);
+
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 2500);
+  }
+
+  function resetTransientState(nextMode: AuthMode) {
+    clearError();
+    setFieldErrors({});
+    setMode(nextMode);
+  }
 
   async function handleSubmit() {
+    clearError();
+
     const parsed = authSchema.safeParse({
       email,
       password,
@@ -21,11 +99,22 @@ export function AuthScreen() {
     });
 
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message);
+      const nextErrors: FieldErrors = {};
+      const message = parsed.error.issues[0]?.message;
+
+      if (message === 'Enter a valid email.') {
+        nextErrors.email = message;
+      } else if (message === 'Use at least 6 characters.') {
+        nextErrors.password = message;
+      } else if (message === 'Enter a display name.') {
+        nextErrors.displayName = message;
+      }
+
+      setFieldErrors(nextErrors);
       return;
     }
 
-    setFormError(undefined);
+    setFieldErrors({});
 
     if (mode === 'signup') {
       await signUp({
@@ -42,59 +131,143 @@ export function AuthScreen() {
     });
   }
 
+  async function handlePasswordReset() {
+    clearError();
+    const emailError = validateEmail(forgotEmail);
+
+    if (emailError) {
+      setFieldErrors({email: emailError});
+      return;
+    }
+
+    setFieldErrors({});
+    await requestPasswordReset(forgotEmail.trim().toLowerCase());
+    setForgotEmail('');
+    showToast('Reset email sent.');
+  }
+
+  if (mode === 'forgot') {
+    return (
+      <SafeAreaView style={styles.root}>
+        <View style={styles.inner}>
+          <AuthHeader
+            title="Forgot password"
+            subtitle="Enter your email and we’ll send a reset link."
+          />
+
+          <View style={styles.formBlock}>
+            <AppInput
+              label="Email"
+              value={forgotEmail}
+              onChangeText={value => {
+                setForgotEmail(value);
+                setFieldErrors(current => ({...current, email: undefined}));
+                clearError();
+              }}
+              placeholder="mark@splyt.app"
+              autoCapitalize="none"
+              prefixIcon="mail"
+              keyboardType="email-address"
+              errorMessage={fieldErrors.email}
+              autoFocus
+            />
+
+            <InlineError message={error ?? undefined} />
+
+            <AppButton
+              label="Send reset link"
+              onPress={() => {
+                handlePasswordReset().catch(() => undefined);
+              }}
+            />
+            <AppButton
+              label="Back to sign in"
+              variant="secondary"
+              onPress={() => {
+                resetTransientState('login');
+              }}
+            />
+          </View>
+        </View>
+        {toastMessage ? (
+          <View style={styles.toastWrap}>
+            <AppToast message={toastMessage} />
+          </View>
+        ) : null}
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.inner}>
-        <View style={styles.wordmarkBlock}>
-          <Image
-            source={require('../../../assets/branding/splyt-app-icon-no-bg.png')}
-            style={styles.brandLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.wordmark}>Splyt</Text>
-          <Text style={styles.tagline}>
-            {mode === 'login'
+        <AuthHeader
+          title="Splyt"
+          subtitle={
+            mode === 'login'
               ? 'Track shared expenses without the napkin math.'
-              : 'One identity for every trip you split.'}
-          </Text>
-        </View>
+              : 'One identity for every trip you split.'
+          }
+        />
 
         <View style={styles.formBlock}>
           {mode === 'signup' ? (
             <AppInput
               label="Display name"
               value={displayName}
-              onChangeText={setDisplayName}
+              onChangeText={value => {
+                setDisplayName(value);
+                setFieldErrors(current => ({...current, displayName: undefined}));
+                clearError();
+              }}
               placeholder="Mark Cruz"
               prefixIcon="person"
+              errorMessage={fieldErrors.displayName}
             />
           ) : null}
           <AppInput
             label="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={value => {
+              setEmail(value);
+              setFieldErrors(current => ({...current, email: undefined}));
+              clearError();
+            }}
             placeholder="mark@splyt.app"
             autoCapitalize="none"
             prefixIcon="mail"
             keyboardType="email-address"
+            errorMessage={fieldErrors.email}
           />
           <AppInput
             label="Password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={value => {
+              setPassword(value);
+              setFieldErrors(current => ({...current, password: undefined}));
+              clearError();
+            }}
             placeholder={mode === 'login' ? '••••••••' : 'At least 8 characters'}
             secureTextEntry
             autoCapitalize="none"
             prefixIcon="lock"
+            errorMessage={fieldErrors.password}
           />
 
           {mode === 'login' ? (
             <View style={styles.forgotRow}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text
+                style={styles.forgotText}
+                onPress={() => {
+                  setForgotEmail(email);
+                  resetTransientState('forgot');
+                }}>
+                Forgot password?
+              </Text>
             </View>
           ) : null}
 
-          <InlineError message={formError ?? error ?? undefined} />
+          <InlineError message={error ?? undefined} />
 
           <AppButton
             label={mode === 'login' ? 'Sign in' : 'Create account'}
@@ -112,6 +285,7 @@ export function AuthScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
+              clearError();
               signInWithGoogle().catch(() => undefined);
             }}
             style={({pressed}) => [styles.oauthButton, pressed ? styles.oauthButtonPressed : null]}>
@@ -133,10 +307,108 @@ export function AuthScreen() {
             {mode === 'login' ? 'New to Splyt? ' : 'Already have an account? '}
             <Text
               style={styles.switchLink}
-              onPress={() => setMode(mode === 'login' ? 'signup' : 'login')}>
+              onPress={() => {
+                resetTransientState(mode === 'login' ? 'signup' : 'login');
+              }}>
               {mode === 'login' ? 'Create account' : 'Sign in'}
             </Text>
           </Text>
+        </View>
+      </View>
+      {toastMessage ? (
+        <View style={styles.toastWrap}>
+          <AppToast message={toastMessage} />
+        </View>
+      ) : null}
+    </SafeAreaView>
+  );
+}
+
+export function ResetPasswordScreen() {
+  const {recoveryUser, updatePassword, error, clearError} = useApp();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit() {
+    clearError();
+    const nextErrors: FieldErrors = {};
+
+    if (password.length < 6) {
+      nextErrors.password = 'Use at least 6 characters.';
+    }
+
+    if (confirmPassword !== password) {
+      nextErrors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (nextErrors.password || nextErrors.confirmPassword) {
+      setFieldErrors(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    setSaving(true);
+
+    try {
+      await updatePassword(password);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.root}>
+      <View style={styles.inner}>
+        <AuthHeader
+          title="Reset password"
+          subtitle={
+            recoveryUser
+              ? `Set a new password for ${recoveryUser.email}.`
+              : 'Set a new password to finish recovering your account.'
+          }
+        />
+
+        <View style={styles.formBlock}>
+          <AppInput
+            label="New password"
+            value={password}
+            onChangeText={value => {
+              setPassword(value);
+              setFieldErrors(current => ({...current, password: undefined}));
+              clearError();
+            }}
+            placeholder="At least 6 characters"
+            secureTextEntry
+            autoCapitalize="none"
+            prefixIcon="lock"
+            errorMessage={fieldErrors.password}
+          />
+          <AppInput
+            label="Confirm password"
+            value={confirmPassword}
+            onChangeText={value => {
+              setConfirmPassword(value);
+              setFieldErrors(current => ({...current, confirmPassword: undefined}));
+              clearError();
+            }}
+            placeholder="Repeat new password"
+            secureTextEntry
+            autoCapitalize="none"
+            prefixIcon="lock"
+            errorMessage={fieldErrors.confirmPassword}
+          />
+
+          <InlineError message={error ?? undefined} />
+
+          <AppButton
+            label={saving ? 'Updating password...' : 'Update password'}
+            disabled={saving}
+            onPress={() => {
+              handleSubmit().catch(() => undefined);
+            }}
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -239,5 +511,12 @@ const styles = StyleSheet.create({
   switchLink: {
     ...typography.bodyStrong,
     color: palette.ink,
+  },
+  toastWrap: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.lg,
+    alignItems: 'center',
   },
 });
