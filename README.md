@@ -6,15 +6,18 @@ React Native CLI app for group expense tracking, balances, centralized funds, an
 
 The app now includes:
 
-- Auth flow with sign in and sign up
+- Auth flow with sign in, sign up, Google OAuth, and password reset
 - Event list, create event, and join by invite code
-- Event dashboard with members, expenses, and balances preview
+- Event dashboard with members, expenses, activity, and balances preview
 - Manual member creation and invite-code generation
-- Equal-split expense entry
+- Equal-split expense entry and expense editing
 - Central fund contribution tracking
 - Computed balances and settlement summary
+- Profile management with avatar upload
+- Live Supabase backend support with mock fallback
+- Branded iOS and Android splash screens
 
-By default, the app runs on a local mock backend adapter so the flows work without live infrastructure. The backend entrypoint is already structured for a Supabase handoff.
+By default, the app can run on the local mock backend for development, or switch to the live Supabase backend when environment config is present.
 
 ## Tooling
 
@@ -63,12 +66,13 @@ npm run lint
 npm test -- --runInBand
 ```
 
-## Supabase Handoff
+## Backend Setup
 
-The current backend adapter lives under `src/lib/backend`.
+The backend adapter lives under `src/lib/backend`.
 
 - `src/lib/backend/mockBackend.ts` powers the working local flows
-- `src/lib/backend/index.ts` is the backend entrypoint
+- `src/lib/backend/supabaseBackend.ts` implements the live Supabase adapter
+- `src/lib/backend/index.ts` selects the backend at runtime
 - `src/config/appConfig.ts` is the single config read point for Supabase credentials
 
 Create a root `.env` file from `.env.example` and set:
@@ -82,4 +86,4 @@ Google OAuth in the mobile app also expects a Supabase redirect URL of
 and the Google provider must be enabled in the Supabase dashboard.
 ```
 
-To switch from mock to live Supabase, the next implementation step is to replace the mock-backed methods behind the `AppBackend` interface with real auth, table, and RPC operations.
+When `SUPABASE_URL` and `SUPABASE_ANON_KEY` are present, the app uses the live `SupabaseBackend`. Without them, it falls back to the mock backend automatically.
