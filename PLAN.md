@@ -6,6 +6,12 @@
 
 The goal is to make it easy for groups to track expenses, identify who paid for what, account for centralized funds, and automatically calculate who owes whom.
 
+**Core differentiators:**
+
+- Central fund concept — pooled group money before and during a trip (Splitwise has no equivalent)
+- Simpler UX — less friction to add expenses and settle up
+- Real-time collaboration — everyone sees updates instantly (v2)
+
 ## 2. Core Problem
 
 Groups often track expenses manually, but settlement is still difficult because:
@@ -16,61 +22,50 @@ Groups often track expenses manually, but settlement is still difficult because:
 - Receipts may contain multiple items assigned to different people.
 - Final balances are hard to calculate and simplify manually.
 
-## 3. MVP Scope
+## 3. Target Users
 
-The first version should focus on the core expense and settlement flow.
+**Primary:** Friend groups and travelers — splitting trip costs, restaurant bills, and group outings.
 
-### MVP Features
+**Secondary:** Housemates — ongoing shared bills such as rent, utilities, and groceries.
 
-- User account creation and login
+## 4. MVP Status
+
+The following features are fully implemented and working:
+
+- User account creation and login (email/password + Google OAuth)
 - Create an event
-- Invite members to an event
-- Add members manually
-- Add expense manually
-- Select who paid
-- Select who shares the expense
-- Support equal split
-- Support centralized fund tracking
+- Invite members to an event (by email or invite code)
+- Add members manually (placeholder members)
+- Add and edit expenses
+- Select who paid and who shares the expense
+- Equal split
+- Centralized fund tracking
 - View balances
 - Generate settlement summary
+- Activity feed
+- Profile management with avatar upload
 
-### Not Yet in MVP
-
-- Receipt OCR
-- Itemized receipt splitting
-- Push notifications
-- Payment gateway integration
-- Advanced analytics
-- Multi-currency conversion
-
-## 4. Recommended Tech Stack
+## 5. Recommended Tech Stack
 
 ### Frontend
 
-- React Native
-- Expo
+- React Native 0.85
 - TypeScript
+- React Context API for state management
 
 ### Backend / Platform
 
-- Supabase
-
-### Database
-
-- PostgreSQL through Supabase
-
-### Storage
-
-- Supabase Storage for receipts and uploaded images
+- Supabase (Auth, PostgreSQL, Storage, Edge Functions)
+- Mock backend for local development
 
 ### Authentication
 
 - Supabase Auth
-- Email/password for MVP
-- Google login optional
-- Apple login later for iOS production release
+- Email/password
+- Google OAuth
+- Apple login — later for iOS production release
 
-## 5. Architecture
+## 6. Architecture
 
 ```text
 React Native App
@@ -79,9 +74,9 @@ React Native App
   → PostgreSQL Database
 ```
 
-Splyt can start without a custom Node.js or Laravel backend. Supabase acts as the backend layer for authentication, database access, file storage, and realtime updates.
+Splyt does not use a custom Node.js or Laravel backend. Supabase acts as the backend layer for authentication, database access, file storage, and realtime updates.
 
-Important business logic should not live only in the React Native app. Shared logic should move into:
+Important business logic lives in:
 
 - PostgreSQL functions
 - SQL views
@@ -89,7 +84,7 @@ Important business logic should not live only in the React Native app. Shared lo
 
 This keeps logic reusable later if Splyt adds a web dashboard.
 
-## 6. Account and Login Plan
+## 7. Account and Login Plan
 
 ### User Flow
 
@@ -103,23 +98,23 @@ Open App
 
 ### Login Methods
 
-MVP:
+Current:
 
 - Email and password
+- Google OAuth
 
 Later:
 
-- Google login
 - Apple login
 - Magic link
 
-## 7. Invite Plan
+## 8. Invite Plan
 
 ### Invite Options
 
-- Share invite link
 - Copy invite code
 - Invite by email
+- Share invite link
 - QR code later
 
 ### Invite Flow
@@ -133,18 +128,9 @@ Event owner creates invite
 → Join event after authentication
 ```
 
-Example links:
-
-```text
-splyt://invite/ABC123
-https://splyt.app/invite/ABC123
-```
-
-## 8. Database Plan
+## 9. Database Plan
 
 ## users
-
-Stores user profile data.
 
 ```text
 users
@@ -152,12 +138,11 @@ users
 - email
 - display_name
 - avatar_url
+- push_token
 - created_at
 ```
 
 ## events
-
-Represents a trip, staycation, camping trip, road trip, or shared activity.
 
 ```text
 events
@@ -172,45 +157,22 @@ events
 
 ## event_members
 
-Represents users or placeholder members inside an event.
-
 ```text
 event_members
 - id
 - event_id
-- user_id
+- user_id (nullable for placeholder members)
 - display_name
 - role
 - status
 - joined_at
 ```
 
-Notes:
+Roles: `owner`, `admin`, `member`, `viewer`
 
-- `user_id` should be nullable so that a member can be added before creating an account.
-- `display_name` allows temporary participants.
-
-Roles:
-
-```text
-owner
-admin
-member
-viewer
-```
-
-Statuses:
-
-```text
-invited
-joined
-declined
-removed
-```
+Statuses: `invited`, `joined`, `declined`, `removed`
 
 ## invites
-
-Stores event invitations.
 
 ```text
 invites
@@ -224,18 +186,9 @@ invites
 - created_at
 ```
 
-Statuses:
-
-```text
-pending
-accepted
-expired
-revoked
-```
+Statuses: `pending`, `accepted`, `expired`, `revoked`
 
 ## expenses
-
-Stores each expense entry.
 
 ```text
 expenses
@@ -246,46 +199,26 @@ expenses
 - title
 - note
 - paid_by_member_id
-- payment_source
+- payment_source (personal | central_fund)
 - receipt_url
 - created_by
 - created_at
 - updated_at
 ```
 
-Payment sources:
-
-```text
-personal
-central_fund
-```
-
 ## expense_splits
-
-Stores who is responsible for each expense.
 
 ```text
 expense_splits
 - id
 - expense_id
 - member_id
-- split_type
+- split_type (equal | custom_amount | percentage)
 - share_amount
 - share_percent
 ```
 
-Split types:
-
-```text
-equal
-custom_amount
-percentage
-itemized
-```
-
 ## central_funds
-
-Represents a shared group fund for the event.
 
 ```text
 central_funds
@@ -293,12 +226,11 @@ central_funds
 - event_id
 - name
 - currency
+- target_amount
 - created_at
 ```
 
 ## central_fund_contributions
-
-Tracks contributions to the central fund.
 
 ```text
 central_fund_contributions
@@ -311,8 +243,6 @@ central_fund_contributions
 
 ## settlements
 
-Stores final or suggested payments between members.
-
 ```text
 settlements
 - id
@@ -320,247 +250,198 @@ settlements
 - from_member_id
 - to_member_id
 - amount
-- status
+- status (pending | paid | cancelled)
 - created_at
 ```
 
-Statuses:
-
-```text
-pending
-paid
-cancelled
-```
-
-## 9. Permission Plan
+## 10. Permission Plan
 
 ### Owner
 
-Can:
-
-- Edit event
-- Invite members
-- Remove members
-- Delete event
+- Edit event, invite and remove members, delete event
 - Edit all expenses
-- Manage central fund
-- Finalize settlement
+- Manage central fund, finalize settlement
 
 ### Admin
 
-Can:
-
-- Invite members
-- Add expenses
-- Edit expenses
-- Manage settlements
+- Invite members, add and edit expenses, manage settlements
 
 ### Member
 
-Can:
-
-- Add expenses
-- Edit own expenses
-- View balances
-- Mark settlements as paid
+- Add and edit own expenses, view balances, mark settlements as paid
 
 ### Viewer
 
-Can:
+- View event details, expenses, and balances
 
-- View event details
-- View expenses
-- View balances
-
-## 10. Security Plan
+## 11. Security Plan
 
 Use Supabase Row-Level Security.
 
-Rules should enforce:
+Rules enforce:
 
 - Users can only view events where they are members.
 - Users can only view expenses for events they belong to.
 - Members can add expenses only to events they belong to.
 - Members can edit their own expenses.
 - Owners and admins can edit all expenses in the event.
-- Only owners/admins can invite or remove members.
+- Only owners and admins can invite or remove members.
 
-## 11. Balance Calculation Plan
-
-Each member has a running balance.
-
-Concept:
+## 12. Balance Calculation Plan
 
 ```text
 balance = amount_paid - amount_owed
 ```
 
-If balance is positive:
+Positive balance → member should receive money.
+Negative balance → member owes money.
 
-```text
-member should receive money
-```
+Central fund expenses reduce the fund balance instead of crediting a specific person.
 
-If balance is negative:
-
-```text
-member owes money
-```
-
-Example:
-
-```text
-Mark paid ₱3,000 for gas split by 4 people.
-Each person owes ₱750.
-Mark balance: +₱2,250
-Other members: -₱750 each
-```
-
-Central fund expenses should reduce the fund balance instead of crediting a specific person.
-
-## 12. Settlement Algorithm
-
-After balances are calculated:
+## 13. Settlement Algorithm
 
 1. Get all members with positive balances.
 2. Get all members with negative balances.
 3. Match debtors to creditors.
 4. Generate simplified payment instructions.
 
-Example:
+Settlement logic lives in a PostgreSQL function / Supabase Edge Function.
 
-```text
-Ana pays Mark ₱750
-Jay pays Mark ₱750
-Bea pays Mark ₱750
-```
-
-Later, this logic should be moved into a PostgreSQL function or Supabase Edge Function.
-
-## 13. Mobile App Screens
+## 14. Mobile App Screens
 
 ### Auth
 
-- Login
-- Sign Up
+- Login / Sign Up
 - Forgot Password
+- Reset Password (deep link)
 
 ### Main
 
-- Home / Events List
+- Home / Dashboard
+- Events List
 - Create Event
 - Join Event
-- Event Dashboard
+- Activity Feed
 
 ### Event
 
+- Event Dashboard
 - Members
-- Add Expense
-- Expense Details
-- Edit Expense
+- Add / Edit Expense
 - Central Fund
 - Balances
 - Settlement Summary
-- Invite Friends
+- Notification Detail
 
 ### User
 
-- Profile
 - Settings
+- Account Update
+- Plan & Billing
 
-## 14. Suggested Build Order
+## 15. Development Roadmap
 
-### Phase 1: Project Setup
+### Phase 1: Pre-Launch Blockers ✅ In Progress
 
-- Create React Native / Expo app
-- Add TypeScript
-- Set up navigation
-- Set up Supabase project
-- Add Supabase client
-- Configure environment variables
+Must be resolved before App Store / Play Store submission.
 
-### Phase 2: Authentication
+- [ ] Forgot password — `AuthScreen.tsx` (currently a no-op tap)
+  - Call `supabase.auth.resetPasswordForEmail(email)`
+  - Add `ResetPasswordScreen` for deep link handler
+- [ ] Email change in-app — `SettingsScreen.tsx` (shows placeholder text)
+  - Call `supabase.auth.updateUser({ email })`
+  - Add `EmailUpdateScreen` or modal
+- [ ] Push notification toggle wiring — currently does nothing in `SettingsScreen.tsx`
+  - Wire to actual permission state (resolved in Phase 2)
 
-- Implement sign up
-- Implement login
-- Implement logout
-- Create user profile after sign up
-- Protect authenticated screens
+### Phase 2: Push Notifications
 
-### Phase 3: Events
+Library: `expo-notifications` (no native FCM setup required)
 
-- Create event table
-- Create event screen
-- Create event form
-- List user events
-- View event details
+- [ ] Add `expo-notifications` and `expo-device`
+- [ ] Create `src/hooks/usePushNotifications.ts` — request permission on first login, store Expo push token
+- [ ] Add `push_token` column to `user_profiles` Supabase table
+- [ ] Wire notification toggle in `SettingsScreen.tsx`
+- [ ] Create Supabase Edge Function `notify` to send push notifications
+- [ ] Handle notification tap deep links in `src/app/navigation.tsx`
 
-### Phase 4: Members and Invites
+Notification triggers:
 
-- Add event_members table
-- Add members screen
-- Generate invite code
-- Join event by invite code
-- Support placeholder members
+| Event | Recipients | Deep link |
+|-------|-----------|-----------|
+| New expense added | All event members | EventDashboard |
+| Invite accepted | Event creator | Members screen |
+| Settlement marked complete | Person owed | Settlement screen |
+| Fund contribution requested | Members who haven't contributed | CentralFund screen |
+| New event invite | Invitee | NotificationDetail screen |
 
-### Phase 5: Expenses
+### Phase 3: Split Types
 
-- Add expenses table
-- Add expense_splits table
-- Create add expense form
-- Select payer
-- Select split participants
-- Support equal split
+Current state: only equal split is supported (`splitType: 'equal'` in `domain.ts`)
 
-### Phase 6: Balances
+- [ ] Update `src/types/domain.ts` — `splitType: 'equal' | 'custom' | 'percentage'`
+- [ ] Update `AddExpenseScreen.tsx` — add split type toggle (Equal / Custom / Percentage)
+  - Custom: per-participant amount input, validate sum equals total
+  - Percentage: per-participant % input, validate sum equals 100%
+- [ ] Update `src/lib/backend/supabase/expense.ts` — handle new split types
+- [ ] Update `src/lib/backend/mockBackend.ts` — support new split types
 
-- Calculate member balances
-- Show who paid and who owes
-- Show total event spending
-- Show per-member share
+Equal split remains the default.
 
-### Phase 7: Settlements
+### Phase 4: Central Fund Improvements
 
-- Generate simplified settlement suggestions
-- Allow members to mark payment as paid
-- Store settlement records
+The central fund is Splyt's core differentiator. Make it active, not passive.
 
-### Phase 8: Central Fund
+- [ ] **Contribution requests** — event owner sets a target amount and requests contributions
+  - Add `targetAmount?: number` to `CentralFund` model in `domain.ts`
+  - Add target input and "Request Contributions" button to `CentralFundScreen.tsx`
+  - Sends push notification to members who haven't contributed
+- [ ] **Fund health indicator** — color-coded pill on `EventDashboardScreen.tsx`
+  - Green: target met or exceeded
+  - Yellow: contributions below target
+  - Grey: no target set
+- [ ] **Who hasn't contributed** — add "Pending" section to `CentralFundScreen.tsx`
+- [ ] **Surplus handling** — prompt when event ends with leftover fund balance
+  - Options: distribute equally back to contributors, or leave as is
 
-- Create central fund
-- Add member contributions
-- Add expenses paid from central fund
-- Show fund balance
+### Phase 5: Monetization (v1.1 — post-launch)
 
-### Phase 9: Receipt Upload
+Model: one-time Pro purchase ($9.99–$14.99). Better fit than subscription for occasional friend-group users.
 
-- Upload receipt image
-- Store in Supabase Storage
-- Attach receipt to expense
+Library: `react-native-purchases` (RevenueCat)
 
-### Phase 10: Polish
+**Free vs Pro limits:**
 
-- Improve UI
-- Add validations
-- Add empty states
-- Add loading states
-- Add error handling
+| Feature | Free | Pro |
+|---------|------|-----|
+| Active events | 3 | Unlimited |
+| Members per event | 8 | Unlimited |
+| Split types | Equal only | Equal + Custom + Percentage |
+| Receipt photo per expense | — | ✓ |
+| Export to CSV/PDF | — | ✓ |
+| Event archive access | Last 3 | All time |
 
-## 15. Later Features
+- [ ] Create `src/hooks/useEntitlements.ts` — wraps RevenueCat, exposes `isPro: boolean`
+- [ ] Create `src/components/ui/UpgradePrompt.tsx` — paywall modal (lock icon, not hidden UI)
+- [ ] Add Plan & Billing section to `SettingsScreen.tsx`
+  - Current plan badge (Free / Pro)
+  - Upgrade to Pro button
+  - Restore Purchases button
+- [ ] Gate at action points: 4th event (`CreateEventScreen`), 9th member (`MembersScreen`), non-equal splits (`AddExpenseScreen`)
 
-- Receipt OCR
-- Itemized receipt splitting
-- QR invite
-- Push notifications
-- Offline mode
-- Multi-currency support
-- Expense categories
-- Trip summary export
-- Web dashboard
-- Payment app integration
-- AI-assisted receipt parsing
+## 16. Deferred to v2
 
-## 16. Key Product Principle
+- **Real-time collaboration** — Supabase Realtime on `EventDashboard`. Deferred due to connection costs at scale. Use pull-to-refresh for v1.
+- **Receipt capture** — Camera/photo attach to expense (Pro feature).
+- **Currency conversion** — Live FX rates for international trips.
+- **Recurring expenses** — For housemates (rent, utilities).
+- **CSV/PDF export** — Pro feature.
+- **QR invite** — Scan to join event.
+- **Web dashboard** — View and manage events from a browser.
+- **AI-assisted receipt parsing** — OCR and itemized splitting.
+- **Offline mode** — For travelers with limited connectivity.
+
+## 17. Key Product Principle
 
 Splyt should feel simple during the trip and reliable at the end.
 
@@ -571,4 +452,3 @@ The user should never need to manually calculate:
 - Who should receive money
 - How much is left in the shared fund
 - What the final settlement should be
-
