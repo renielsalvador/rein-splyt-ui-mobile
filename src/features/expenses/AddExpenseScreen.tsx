@@ -20,10 +20,11 @@ import {expenseSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
+import {formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>) {
   const {eventId, expenseId} = route.params;
-  const {hydrateEvent, summaries, addExpense, updateExpense, error} = useApp();
+  const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error} = useApp();
   const summary = summaries[eventId];
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -224,7 +225,14 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           <View style={styles.payerDropdownLead}>
             <AppAvatar name={payer?.displayName ?? 'Unknown member'} size="md" />
             <View style={styles.payerDropdownCopy}>
-              <Text style={styles.payerDropdownLabel}>{payer?.displayName ?? 'Select payer'}</Text>
+              <Text style={styles.payerDropdownLabel}>
+                {payer
+                  ? formatSelfDisplayName(
+                      payer.displayName,
+                      payer.userId === currentUser?.id,
+                    )
+                  : 'Select payer'}
+              </Text>
               <Text style={styles.payerDropdownDetail}>Paid for this expense</Text>
             </View>
           </View>
@@ -241,7 +249,10 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           return (
             <SelectableRow
               key={member.id}
-              label={member.displayName}
+              label={formatSelfDisplayName(
+                member.displayName,
+                member.userId === currentUser?.id,
+              )}
               detail={selected ? 'Included in split' : 'Tap to include'}
               avatarLabel={member.displayName}
               selected={selected}
@@ -290,7 +301,10 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         {summary.members.map(member => (
           <SelectableRow
             key={member.id}
-            label={member.displayName}
+            label={formatSelfDisplayName(
+              member.displayName,
+              member.userId === currentUser?.id,
+            )}
             detail="Paid for this expense"
             avatarLabel={member.displayName}
             selected={payerId === member.id}

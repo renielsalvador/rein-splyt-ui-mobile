@@ -44,6 +44,7 @@ import {
 import {styles} from './EventScreenStyles';
 import {
   buildSettlementInstructions,
+  formatSelfDisplayName,
   isEmailAddress,
   normalizeEmail,
   type SelectedMemberDraft,
@@ -371,7 +372,7 @@ export function NotificationDetailScreen({
 }
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
-  const {contacts, createEvent, error} = useApp();
+  const {contacts, createEvent, currentUser, error} = useApp();
   const defaultStartDate = useMemo(() => getTodayDateString(), []);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -419,7 +420,10 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             {
               id: draftId,
               kind: 'contact',
-              label: contact.displayName,
+              label: formatSelfDisplayName(
+                contact.displayName,
+                contact.userId === currentUser?.id,
+              ),
               contactId: contact.id,
               userId: contact.userId,
             },
@@ -644,7 +648,10 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             {filteredContacts.map(contact => (
               <SelectableRow
                 key={contact.id}
-                label={contact.displayName}
+                label={formatSelfDisplayName(
+                  contact.displayName,
+                  contact.userId === currentUser?.id,
+                )}
                 detail="Registered contact"
                 avatarLabel={contact.displayName}
                 selected={selectedMembers.some(member => member.id === `contact:${contact.id}`)}
@@ -1124,7 +1131,10 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
     }
     return summary.members.map(member => ({
       id: member.id,
-      displayName: member.displayName,
+      displayName: formatSelfDisplayName(
+        member.displayName,
+        member.userId === currentUser?.id,
+      ),
       email:
         currentUser && member.userId === currentUser.id ? currentUser.email : undefined,
       joinedLabel:

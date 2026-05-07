@@ -12,12 +12,14 @@ import {
 import {formatCurrency} from '../../lib/utils/format';
 import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
+import {formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, balances} = useApp();
+  const {hydrateEvent, summaries, balances, currentUser} = useApp();
   const summary = summaries[eventId];
   const eventBalances = balances[eventId] ?? [];
+  const currentMemberId = summary?.members.find(member => member.userId === currentUser?.id)?.id;
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -45,7 +47,9 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
         <AppCard key={balance.memberId}>
           <View style={styles.row}>
             <View style={styles.copy}>
-              <Text style={styles.memberName}>{balance.displayName}</Text>
+              <Text style={styles.memberName}>
+                {formatSelfDisplayName(balance.displayName, balance.memberId === currentMemberId)}
+              </Text>
               <Text style={styles.meta}>
                 Paid {formatCurrency(balance.paid, summary.event.currency)} · Owes{' '}
                 {formatCurrency(balance.owed, summary.event.currency)}
@@ -64,9 +68,10 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
 
 export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>) {
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, settlements} = useApp();
+  const {hydrateEvent, summaries, settlements, currentUser} = useApp();
   const summary = summaries[eventId];
   const instructions = settlements[eventId] ?? [];
+  const currentMemberId = summary?.members.find(member => member.userId === currentUser?.id)?.id;
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -99,7 +104,15 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
           <View style={styles.row}>
             <View style={styles.copy}>
               <Text style={styles.memberName}>
-                {instruction.fromDisplayName} pays {instruction.toDisplayName}
+                {formatSelfDisplayName(
+                  instruction.fromDisplayName,
+                  instruction.fromMemberId === currentMemberId,
+                )}{' '}
+                pays{' '}
+                {formatSelfDisplayName(
+                  instruction.toDisplayName,
+                  instruction.toMemberId === currentMemberId,
+                )}
               </Text>
               <Text style={styles.meta}>Suggested transfer</Text>
             </View>

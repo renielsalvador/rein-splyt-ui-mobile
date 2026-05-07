@@ -17,10 +17,11 @@ import {contributionSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
+import {formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'>) {
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, addContribution, error} = useApp();
+  const {hydrateEvent, summaries, addContribution, currentUser, error} = useApp();
   const summary = summaries[eventId];
   const [memberId, setMemberId] = useState<string>();
   const [amount, setAmount] = useState('');
@@ -118,7 +119,10 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
         {summary.members.map(member => (
           <SelectableRow
             key={member.id}
-            label={member.displayName}
+            label={formatSelfDisplayName(
+              member.displayName,
+              member.userId === currentUser?.id,
+            )}
             detail="Contributor"
             avatarLabel={member.displayName}
             selected={memberId === member.id}
@@ -142,7 +146,14 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
           <AppCard key={contribution.id}>
             <View style={styles.row}>
               <View style={{gap: 2}}>
-                <Text style={styles.memberName}>{member?.displayName || 'Unknown member'}</Text>
+                <Text style={styles.memberName}>
+                  {member
+                    ? formatSelfDisplayName(
+                        member.displayName,
+                        member.userId === currentUser?.id,
+                      )
+                    : 'Unknown member'}
+                </Text>
                 <Text style={styles.contributionLabel}>Contribution</Text>
               </View>
               <DataPill

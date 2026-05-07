@@ -47,6 +47,13 @@ export type MemberRosterRow = {
   statusLabel: 'Joined' | 'Pending';
 };
 
+export function formatSelfDisplayName(
+  displayName: string,
+  isCurrentUser: boolean | undefined,
+) {
+  return isCurrentUser ? `${displayName} (me)` : displayName;
+}
+
 export function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }

@@ -720,16 +720,14 @@ export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
           <View style={styles.memberRowBody}>
             <View style={styles.memberRowNameRow}>
               <Text style={styles.memberRowName}>{member.displayName}</Text>
-              {member.statusLabel === 'Joined' && (
-                <DataPill label="Joined" tone="success" />
-              )}
             </View>
             <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
           </View>
           <View style={styles.memberRowTrailing}>
-            {member.statusLabel === 'Pending' ? (
-              <DataPill label="Invited" tone="info" />
-            ) : null}
+            <DataPill
+              label={member.statusLabel === 'Joined' ? 'Joined' : 'Invited'}
+              tone={member.statusLabel === 'Joined' ? 'success' : 'info'}
+            />
           </View>
         </View>
       ))}
