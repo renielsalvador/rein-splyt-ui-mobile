@@ -246,19 +246,6 @@ export function AccountUpdateScreen({
             />
           </View>
         </View>
-        {previewAvatarUrl ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              setAvatar(undefined);
-              setPreviewAvatarUrl(undefined);
-              setRemoveAvatar(true);
-            }}
-            style={({pressed}) => [styles.removeAvatarButton, pressed ? styles.rowPressed : null]}>
-            <AppIcon name="delete" size={14} tone="danger" />
-            <Text style={styles.removeAvatarButtonText}>Remove avatar</Text>
-          </Pressable>
-        ) : null}
       </AppCard>
 
       <AppCard>
@@ -413,18 +400,6 @@ const styles = StyleSheet.create({
   },
   avatarActionItem: {
     flex: 1,
-  },
-  removeAvatarButton: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  removeAvatarButtonText: {
-    ...typography.caption,
-    color: palette.danger,
-    fontWeight: '600',
   },
   accountHeroCopy: {
     flex: 1,
