@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0;padding:0;background-color:#F4F5F6;">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="background-color:#F4F5F6;margin:0;padding:32px 16px;"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            width="100%"
+            style="max-width:600px;"
+          >
+            <tr>
+              <td
+                style="padding:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;color:#6B6B6F;text-align:center;"
+              >
+                Splyt invitation
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="background:linear-gradient(180deg,#2F6F57 0%,#3E8C6A 100%);border-radius:24px 24px 0 0;padding:40px 32px 32px;text-align:left;"
+              >
+                <p
+                  style="margin:0 0 12px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:13px;font-weight:500;line-height:1.4;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.76);"
+                >
+                  You’re invited
+                </p>
+                <h1
+                  style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:32px;font-weight:700;line-height:1.2;color:#FFFFFF;"
+                >
+                  Join Splyt
+                </h1>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="background-color:#FFFFFF;border:1px solid #E5E7EB;border-top:0;border-radius:0 0 24px 24px;padding:32px;"
+              >
+                <p
+                  style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:15px;font-weight:400;line-height:1.6;color:#1C1C1E;"
+                >
+                  A Splyt account has been prepared for you.
+                </p>
+                <p
+                  style="margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:15px;font-weight:400;line-height:1.6;color:#6B6B6F;"
+                >
+                  Accept the invitation below to create your password and start sharing expenses with your group.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+                  <tr>
+                    <td align="center" style="background-color:#2F6F57;border-radius:999px;">
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        style="display:inline-block;padding:16px 28px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:16px;font-weight:600;line-height:1;color:#FFFFFF;text-decoration:none;"
+                      >
+                        Accept invitation
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;background-color:#F1F7F3;border-radius:16px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <p
+                        style="margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:13px;font-weight:600;line-height:1.4;color:#1C1C1E;"
+                      >
+                        Invitation note
+                      </p>
+                      <p
+                        style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:13px;font-weight:400;line-height:1.5;color:#6B6B6F;"
+                      >
+                        If you were not expecting this invite, you can ignore this email and no account changes will be made.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <p
+                  style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:12px;font-weight:500;line-height:1.5;color:#6B6B6F;"
+                >
+                  If the button above doesn’t work, copy and paste this link into your browser:
+                </p>
+                <p style="margin:0;word-break:break-word;">
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',Inter,system-ui,sans-serif;font-size:12px;font-weight:500;line-height:1.5;color:#2F6F57;text-decoration:underline;"
+                  >
+                    {{ .ConfirmationURL }}
+                  </a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
