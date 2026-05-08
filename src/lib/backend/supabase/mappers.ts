@@ -92,6 +92,11 @@ export function mapExpense(row: ExpenseRow) {
     currency: row.currency,
     title: row.title,
     note: row.note ?? undefined,
+    receipts: row.receipts?.map(receipt => ({
+      url: receipt.url,
+      fileName: receipt.fileName,
+      type: receipt.type,
+    })),
     paidByMemberId: row.paid_by_member_id,
     paymentSource: row.payment_source,
     createdBy: row.created_by,

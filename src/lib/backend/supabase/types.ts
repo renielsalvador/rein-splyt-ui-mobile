@@ -86,6 +86,12 @@ export type PendingInviteRow = InviteRow & {
   invited_by_email: string;
 };
 
+export type ExpenseReceiptRow = {
+  url: string;
+  fileName?: string;
+  type?: string;
+};
+
 export type ExpenseRow = {
   id: string;
   event_id: string;
@@ -93,6 +99,7 @@ export type ExpenseRow = {
   currency: 'USD' | 'PHP';
   title: string;
   note: string | null;
+  receipts: ExpenseReceiptRow[] | null;
   paid_by_member_id: string;
   payment_source: 'personal' | 'central_fund';
   created_by: string;

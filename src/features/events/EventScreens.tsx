@@ -927,6 +927,7 @@ export function EventDashboardScreen({
                   expense.createdAt,
                 )}${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
                 amountLabel={formatCurrency(expense.amount, event.currency)}
+                receiptAttached={(expense.receipts?.length ?? 0) > 0}
                 onPress={() =>
                   navigation.navigate('AddExpense', {eventId, expenseId: expense.id})
                 }

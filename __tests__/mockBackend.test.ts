@@ -204,6 +204,80 @@ describe('MockBackend invited members', () => {
     expect(undatedEvent.endDate).toBeUndefined();
   });
 
+  test('expenses can store, replace, and remove up to three optional receipts', async () => {
+    const {backend, event, ownerSession} = await createOwnerAndEvent();
+    const summary = await backend.getEventSummary(event.id);
+    const ownerMember = summary.members.find(member => member.userId === ownerSession.user.id);
+
+    await backend.createExpense(ownerSession.user.id, {
+      eventId: event.id,
+      title: 'Groceries',
+      amount: 90,
+      currency: 'USD',
+      paidByMemberId: ownerMember?.id ?? '',
+      paymentSource: 'personal',
+      participantMemberIds: [ownerMember?.id ?? ''],
+      receipts: [
+        {
+          uri: 'file:///tmp/receipt-1.jpg',
+          fileName: 'receipt-1.jpg',
+          type: 'image/jpeg',
+        },
+        {
+          uri: 'file:///tmp/receipt-2.jpg',
+          fileName: 'receipt-2.jpg',
+          type: 'image/jpeg',
+        },
+      ],
+    });
+
+    const createdSummary = await backend.getEventSummary(event.id);
+    const expense = createdSummary.expenses[0];
+
+    expect(expense?.receipts).toHaveLength(2);
+    expect(expense?.receipts?.[0]).toMatchObject({
+      url: 'file:///tmp/receipt-1.jpg',
+      fileName: 'receipt-1.jpg',
+      type: 'image/jpeg',
+    });
+
+    await backend.updateExpense(ownerSession.user.id, {
+      expenseId: expense.id,
+      eventId: event.id,
+      title: expense.title,
+      amount: expense.amount,
+      currency: expense.currency,
+      paidByMemberId: expense.paidByMemberId,
+      paymentSource: expense.paymentSource,
+      participantMemberIds: [ownerMember?.id ?? ''],
+      receipts: [
+        {
+          uri: 'file:///tmp/receipt-3.jpg',
+          fileName: 'receipt-3.jpg',
+          type: 'image/jpeg',
+        },
+      ],
+    });
+
+    const replacedSummary = await backend.getEventSummary(event.id);
+    expect(replacedSummary.expenses[0]?.receipts?.[0]?.url).toBe('file:///tmp/receipt-3.jpg');
+
+    await backend.updateExpense(ownerSession.user.id, {
+      expenseId: expense.id,
+      eventId: event.id,
+      title: expense.title,
+      amount: expense.amount,
+      currency: expense.currency,
+      paidByMemberId: expense.paidByMemberId,
+      paymentSource: expense.paymentSource,
+      participantMemberIds: [ownerMember?.id ?? ''],
+      clearReceipts: true,
+    });
+
+    const clearedSummary = await backend.getEventSummary(event.id);
+    expect(clearedSummary.expenses[0]?.receipts).toBeUndefined();
+  });
+
   test('deleting an event removes dependent splits and fund contributions', async () => {
     const {backend, event, ownerSession} = await createOwnerAndEvent();
     const summary = await backend.getEventSummary(event.id);

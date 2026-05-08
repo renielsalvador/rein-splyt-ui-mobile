@@ -624,6 +624,11 @@ export class MockBackend implements AppBackend {
       currency: input.currency,
       title: input.title.trim(),
       note: input.note?.trim(),
+      receipts: input.receipts?.map(item => ({
+        url: 'uri' in item ? item.uri : item.url,
+        fileName: item.fileName,
+        type: item.type,
+      })),
       paidByMemberId: input.paidByMemberId,
       paymentSource: input.paymentSource,
       createdBy: userId,
@@ -659,6 +664,15 @@ export class MockBackend implements AppBackend {
     expense.title = input.title.trim();
     expense.amount = roundCurrency(input.amount);
     expense.note = input.note?.trim();
+    if (input.receipts) {
+      expense.receipts = input.receipts.map(item => ({
+        url: 'uri' in item ? item.uri : item.url,
+        fileName: item.fileName,
+        type: item.type,
+      }));
+    } else if (input.clearReceipts) {
+      expense.receipts = undefined;
+    }
     expense.paidByMemberId = input.paidByMemberId;
     expense.paymentSource = input.paymentSource;
     expense.updatedAt = now;

@@ -35,6 +35,20 @@ export type ProfileAvatarAsset = {
   type?: string;
 };
 
+export type ExpenseReceiptAsset = {
+  uri: string;
+  fileName?: string;
+  type?: string;
+};
+
+export type ExpenseReceipt = {
+  url: string;
+  fileName?: string;
+  type?: string;
+};
+
+export type ExpenseReceiptInput = ExpenseReceiptAsset | ExpenseReceipt;
+
 export type Contact = {
   id: string;
   ownerUserId: string;
@@ -96,6 +110,7 @@ export type Expense = {
   currency: CurrencyCode;
   title: string;
   note?: string;
+  receipts?: ExpenseReceipt[];
   paidByMemberId: string;
   paymentSource: PaymentSource;
   createdBy: string;
@@ -213,10 +228,12 @@ export type CreateExpenseInput = {
   paymentSource: PaymentSource;
   participantMemberIds: string[];
   note?: string;
+  receipts?: ExpenseReceiptInput[];
 };
 
 export type UpdateExpenseInput = CreateExpenseInput & {
   expenseId: string;
+  clearReceipts?: boolean;
 };
 
 export type CreateContributionInput = {

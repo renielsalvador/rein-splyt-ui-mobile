@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {useApp} from '../../app/AppProvider';
 import {
   AppAvatar,
@@ -20,7 +21,10 @@ import {expenseSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {palette, spacing, typography} from '../../theme/tokens';
 import type {ScreenProps} from '../../app/navigation';
+import type {ExpenseReceipt, ExpenseReceiptAsset} from '../../types/domain';
 import {formatSelfDisplayName} from '../events/EventScreenShared';
+
+const MAX_RECEIPTS = 3;
 
 export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>) {
   const {eventId, expenseId} = route.params;
@@ -34,6 +38,9 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   );
   const [payerId, setPayerId] = useState<string>();
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [receipts, setReceipts] = useState<ExpenseReceiptAsset[]>([]);
+  const [existingReceipts, setExistingReceipts] = useState<ExpenseReceipt[]>([]);
+  const [clearReceipts, setClearReceipts] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     title?: string;
     amount?: string;
@@ -66,6 +73,9 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       setTitle(existingExpense.title);
       setAmount(String(existingExpense.amount));
       setNote(existingExpense.note ?? '');
+      setExistingReceipts(existingExpense.receipts ?? []);
+      setReceipts([]);
+      setClearReceipts(false);
       setPaymentSource(existingExpense.paymentSource);
       setPayerId(existingExpense.paidByMemberId);
       setSelectedMemberIds(
@@ -84,6 +94,71 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       );
     }
   }, [didPrefill, existingExpense, summary]);
+
+  const displayedReceipts = [
+    ...existingReceipts,
+    ...receipts.map(item => ({
+      url: item.uri,
+      fileName: item.fileName,
+      type: item.type,
+    })),
+  ].slice(0, MAX_RECEIPTS);
+  const submittedReceipts = [...existingReceipts, ...receipts].slice(0, MAX_RECEIPTS);
+  const canAddMoreReceipts = displayedReceipts.length < MAX_RECEIPTS;
+
+  async function handleReceiptPick(source: 'camera' | 'library') {
+    if (!canAddMoreReceipts) {
+      return;
+    }
+
+    const result =
+      source === 'camera'
+        ? await launchCamera({
+            mediaType: 'photo',
+            quality: 0.8,
+          })
+        : await launchImageLibrary({
+            mediaType: 'photo',
+            selectionLimit: Math.max(1, MAX_RECEIPTS - displayedReceipts.length),
+            quality: 0.8,
+          });
+
+    const nextAssets = (result.assets ?? [])
+      .filter(asset => !!asset.uri)
+      .map(asset => ({
+        uri: asset.uri as string,
+        fileName: asset.fileName,
+        type: asset.type,
+      }));
+
+    if (nextAssets.length === 0) {
+      return;
+    }
+
+    setReceipts(current => [
+      ...current,
+      ...nextAssets.slice(0, MAX_RECEIPTS - displayedReceipts.length),
+    ]);
+    setClearReceipts(false);
+  }
+
+  function handleReceiptRemove(index: number) {
+    if (index < existingReceipts.length) {
+      const nextExistingReceipts = existingReceipts.filter((_, itemIndex) => itemIndex !== index);
+      setExistingReceipts(nextExistingReceipts);
+      if (nextExistingReceipts.length === 0 && receipts.length === 0) {
+        setClearReceipts(true);
+      }
+      return;
+    }
+
+    const draftIndex = index - existingReceipts.length;
+    const nextReceipts = receipts.filter((_, itemIndex) => itemIndex !== draftIndex);
+    setReceipts(nextReceipts);
+    if (existingReceipts.length === 0 && nextReceipts.length === 0) {
+      setClearReceipts(true);
+    }
+  }
 
   if (!summary || !payerId) {
     return (
@@ -145,6 +220,8 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         paymentSource,
         participantMemberIds: selectedMemberIds,
         note: parsed.data.note,
+        receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
+        clearReceipts,
       });
     } else {
       await addExpense({
@@ -156,6 +233,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         paymentSource,
         participantMemberIds: selectedMemberIds,
         note: parsed.data.note,
+        receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
       });
     }
 
@@ -270,6 +348,90 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         <InlineError message={fieldErrors.participantMemberIds} />
       </AppCard>
 
+      <AppCard>
+        <SectionHeading title="Receipt" detail={`Optional · ${displayedReceipts.length}/${MAX_RECEIPTS}`} />
+        {displayedReceipts.length > 0 ? (
+          <View style={styles.receiptPreview}>
+            <View style={styles.receiptGrid}>
+              {displayedReceipts.map((item, index) => (
+                <View key={`${item.url}-${index}`} style={styles.receiptTile}>
+                  <Image source={{uri: item.url}} style={styles.receiptImage} />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove receipt ${index + 1}`}
+                    onPress={() => handleReceiptRemove(index)}
+                    style={({pressed}) => [
+                      styles.receiptRemoveButton,
+                      pressed ? styles.payerDropdownPressed : null,
+                    ]}>
+                    <AppIcon name="close" tone="white" size={14} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+            <View style={styles.receiptCopy}>
+              <Text style={styles.receiptTitle}>
+                {displayedReceipts.length === 1
+                  ? '1 receipt attached'
+                  : `${displayedReceipts.length} receipts attached`}
+              </Text>
+              <Text style={styles.receiptMeta}>
+                Add up to three receipt photos for the same expense.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.receiptEmpty}>
+            <View style={styles.receiptEmptyIcon}>
+              <AppIcon name="expense" tone="accent" size={18} />
+            </View>
+            <View style={styles.receiptCopy}>
+              <Text style={styles.receiptTitle}>No receipt attached</Text>
+              <Text style={styles.receiptMeta}>
+                Upload up to three receipt photos now or leave this expense without one.
+              </Text>
+            </View>
+          </View>
+        )}
+        <View style={styles.receiptActions}>
+          {canAddMoreReceipts ? (
+            <AppButton
+              label="Take photo"
+              icon="camera"
+              variant="secondary"
+              size="sm"
+              onPress={() => {
+                handleReceiptPick('camera').catch(() => undefined);
+              }}
+            />
+          ) : null}
+          {canAddMoreReceipts ? (
+            <AppButton
+              label={displayedReceipts.length > 0 ? 'Add photos' : 'Upload photos'}
+              icon="edit"
+              variant="secondary"
+              size="sm"
+              onPress={() => {
+                handleReceiptPick('library').catch(() => undefined);
+              }}
+            />
+          ) : null}
+          {displayedReceipts.length > 0 ? (
+            <AppButton
+              label="Clear all"
+              icon="delete"
+              variant="destructive"
+              size="sm"
+              onPress={() => {
+                setReceipts([]);
+                setExistingReceipts([]);
+                setClearReceipts(true);
+              }}
+            />
+          ) : null}
+        </View>
+      </AppCard>
+
       <InlineError message={error ?? undefined} />
       <AppButton
         label={expenseId ? 'Update expense' : 'Save expense'}
@@ -324,6 +486,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     flexWrap: 'wrap',
+  },
+  receiptPreview: {
+    gap: spacing.md,
+  },
+  receiptGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  receiptTile: {
+    flex: 1,
+    position: 'relative',
+  },
+  receiptImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    backgroundColor: palette.bgApp,
+  },
+  receiptRemoveButton: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(34, 34, 34, 0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  receiptEmpty: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    backgroundColor: palette.bgApp,
+    borderRadius: 20,
+    padding: spacing.md,
+  },
+  receiptEmptyIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: palette.greenTintSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  receiptCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  receiptTitle: {
+    ...typography.bodyStrong,
+  },
+  receiptMeta: {
+    ...typography.caption,
+    color: palette.inkMuted,
+  },
+  receiptActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   previewTitle: {
     ...typography.bodyStrong,

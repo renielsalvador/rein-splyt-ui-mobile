@@ -644,11 +644,13 @@ export function RecentExpenseListItem({
   title,
   meta,
   amountLabel,
+  receiptAttached = false,
   onPress,
 }: {
   title: string;
   meta: string;
   amountLabel: string;
+  receiptAttached?: boolean;
   onPress: () => void;
 }) {
   return (
@@ -660,6 +662,7 @@ export function RecentExpenseListItem({
         <View style={styles.expenseBody}>
           <Text style={styles.expenseTitle}>{title}</Text>
           <Text style={styles.expenseMeta}>{meta}</Text>
+          {receiptAttached ? <Text style={styles.expenseMeta}>Receipt attached</Text> : null}
         </View>
         <Text style={styles.expenseAmount}>{amountLabel}</Text>
       </View>
