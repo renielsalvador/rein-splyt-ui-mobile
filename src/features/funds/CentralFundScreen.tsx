@@ -26,6 +26,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
   const [memberId, setMemberId] = useState<string>();
   const [amount, setAmount] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{amount?: string; memberId?: string}>({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -81,8 +82,13 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
       return;
     }
     setFieldErrors({});
-    await addContribution({eventId, memberId: nextMemberId, amount: parsed.data.amount});
-    setAmount('');
+    setSubmitting(true);
+    try {
+      await addContribution({eventId, memberId: nextMemberId, amount: parsed.data.amount});
+      setAmount('');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -136,6 +142,7 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
         <AppButton
           label="Add contribution"
           icon="fund"
+          loading={submitting}
           onPress={() => handleSubmit().catch(() => undefined)}
         />
       </AppCard>

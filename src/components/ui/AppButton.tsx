@@ -1,7 +1,8 @@
 import React from 'react';
-import {Pressable, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, Text, View} from 'react-native';
 import {AppIcon, type AppIconName} from './AppIcon';
 import {styles} from './styles';
+import {palette} from '../../theme/tokens';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'black' | 'destructive';
 
@@ -10,6 +11,7 @@ export function AppButton({
   onPress,
   variant = 'primary',
   disabled = false,
+  loading = false,
   icon,
   size = 'default',
 }: {
@@ -17,6 +19,7 @@ export function AppButton({
   onPress: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
+  loading?: boolean;
   icon?: AppIconName;
   size?: 'default' | 'sm' | 'compact';
 }) {
@@ -47,20 +50,27 @@ export function AppButton({
 
   const iconTone =
     variant === 'secondary' ? 'accent' : 'inverted';
+  const spinnerColor = variant === 'secondary' ? palette.primary : palette.surface;
+  const isDisabled = disabled || loading;
 
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled}
+      accessibilityState={{disabled: isDisabled, busy: loading}}
+      disabled={isDisabled}
       onPress={onPress}
       style={({pressed}) => [
         baseStyle,
         variantStyle,
-        disabled ? styles.buttonDisabled : null,
+        isDisabled ? styles.buttonDisabled : null,
         pressed ? styles.buttonPressed : null,
       ]}>
       <View style={styles.buttonContent}>
-        {icon ? <AppIcon name={icon} tone={iconTone} size={16} /> : null}
+        {loading ? (
+          <ActivityIndicator color={spinnerColor} size="small" />
+        ) : icon ? (
+          <AppIcon name={icon} tone={iconTone} size={16} />
+        ) : null}
         <Text style={[styles.buttonText, textStyle]}>{label}</Text>
       </View>
     </Pressable>

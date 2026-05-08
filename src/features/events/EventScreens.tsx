@@ -76,6 +76,7 @@ export function HomeScreen({
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joinFieldError, setJoinFieldError] = useState<string>();
+  const [joining, setJoining] = useState(false);
   const sortedEvents = useMemo(() => sortEventsByStartDate(events), [events]);
   const includedEvents = useMemo(
     () => sortedEvents.filter(event => isEventIncludedInDashboard(event)),
@@ -115,10 +116,15 @@ export function HomeScreen({
       return;
     }
     setJoinFieldError(undefined);
-    const event = await joinEvent(parsed.data);
-    setInviteCode('');
-    setJoinModalVisible(false);
-    navigation.navigate('EventDashboard', {eventId: event.id});
+    setJoining(true);
+    try {
+      const event = await joinEvent(parsed.data);
+      setInviteCode('');
+      setJoinModalVisible(false);
+      navigation.navigate('EventDashboard', {eventId: event.id});
+    } finally {
+      setJoining(false);
+    }
   }
 
   const firstName = currentUser?.displayName?.split(' ')[0] ?? 'traveler';
@@ -304,6 +310,7 @@ export function HomeScreen({
         <AppButton
           label="Join event"
           icon="join"
+          loading={joining}
           onPress={() => handleJoin().catch(() => undefined)}
         />
       </AppModal>
@@ -317,6 +324,7 @@ export function NotificationDetailScreen({
 }: ScreenProps<'NotificationDetail'>) {
   const {inviteId} = route.params;
   const {pendingInvites, refreshPendingInvites, respondToInvite, error} = useApp();
+  const [inviteAction, setInviteAction] = useState<'accept' | 'decline' | null>(null);
 
   const pendingInvite = useMemo(
     () => pendingInvites.find(item => item.invite.id === inviteId),
@@ -341,7 +349,10 @@ export function NotificationDetailScreen({
       ) : (
         <PendingInviteDetailCard
           pendingInvite={pendingInvite}
+          accepting={inviteAction === 'accept'}
+          declining={inviteAction === 'decline'}
           onAccept={() => {
+            setInviteAction('accept');
             respondToInvite({inviteId: pendingInvite.invite.id, action: 'accept'})
               .then(event => {
                 if (event) {
@@ -350,12 +361,15 @@ export function NotificationDetailScreen({
                   navigation.goBack();
                 }
               })
-              .catch(() => undefined);
+              .catch(() => undefined)
+              .finally(() => setInviteAction(null));
           }}
           onDecline={() => {
+            setInviteAction('decline');
             respondToInvite({inviteId: pendingInvite.invite.id, action: 'decline'})
               .then(() => navigation.goBack())
-              .catch(() => undefined);
+              .catch(() => undefined)
+              .finally(() => setInviteAction(null));
           }}
         />
       )}
@@ -382,6 +396,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const [memberModalVisible, setMemberModalVisible] = useState(false);
   const [memberSearch, setMemberSearch] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<SelectedMemberDraft[]>([]);
+  const [creating, setCreating] = useState(false);
 
   const filteredContacts = useMemo(() => {
     const query = memberSearch.trim().toLowerCase();
@@ -459,16 +474,21 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       return;
     }
     setFieldErrors({});
-    const event = await createEvent({
-      ...parsed.data,
-      icon,
-      members: selectedMembers.map(member =>
-        member.kind === 'contact'
-          ? {kind: 'contact' as const, displayName: member.label, userId: member.userId}
-          : {kind: 'email_invite' as const, email: member.email},
-      ),
-    });
-    navigation.replace('EventDashboard', {eventId: event.id});
+    setCreating(true);
+    try {
+      const event = await createEvent({
+        ...parsed.data,
+        icon,
+        members: selectedMembers.map(member =>
+          member.kind === 'contact'
+            ? {kind: 'contact' as const, displayName: member.label, userId: member.userId}
+            : {kind: 'email_invite' as const, email: member.email},
+        ),
+      });
+      navigation.replace('EventDashboard', {eventId: event.id});
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -555,6 +575,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
             <AppButton
               label="Create event"
               icon="create"
+              loading={creating}
               onPress={() => handleCreate().catch(() => undefined)}
             />
           </View>
@@ -689,6 +710,9 @@ export function EventDashboardScreen({
     dates?: string;
   }>({});
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const summary = summaries[eventId];
   const eventBalances = useMemo(() => balances[eventId] ?? [], [balances, eventId]);
   const event = summary?.event;
@@ -793,6 +817,7 @@ export function EventDashboardScreen({
             <Switch
               value={event.isActive}
               onValueChange={value => {
+                setUpdatingStatus(true);
                 updateEvent({
                   eventId,
                   name: event.name,
@@ -801,8 +826,11 @@ export function EventDashboardScreen({
                   isActive: value,
                   startDate: event.startDate,
                   endDate: event.endDate,
-                }).catch(() => undefined);
+                })
+                  .catch(() => undefined)
+                  .finally(() => setUpdatingStatus(false));
               }}
+              disabled={updatingStatus}
               trackColor={{false: '#CBD5E1', true: '#86EFAC'}}
               thumbColor="#FFFFFF"
             />
@@ -1015,6 +1043,7 @@ export function EventDashboardScreen({
             <AppButton
               label="Save changes"
               icon="edit"
+              loading={savingDetails}
               onPress={() => {
                 const parsed = eventSchema.safeParse({
                   name: editName,
@@ -1036,6 +1065,7 @@ export function EventDashboardScreen({
                   return;
                 }
                 setEditFieldErrors({});
+                setSavingDetails(true);
                 updateEvent({
                   eventId,
                   name: parsed.data.name,
@@ -1046,7 +1076,8 @@ export function EventDashboardScreen({
                   endDate: parsed.data.endDate,
                 })
                   .then(() => setEditModalStep(null))
-                  .catch(() => undefined);
+                  .catch(() => undefined)
+                  .finally(() => setSavingDetails(false));
               }}
             />
             <InlineError message={error ?? undefined} />
@@ -1071,21 +1102,23 @@ export function EventDashboardScreen({
             />
           </View>
           <View style={styles.actionRowItem}>
-            <Pressable
-              accessibilityRole="button"
+            <AppButton
+              label="Delete event"
+              icon="delete"
+              variant="destructive"
+              loading={deleting}
               onPress={() => {
+                setDeleting(true);
                 deleteEvent(eventId)
                   .then(() => {
                     setDeleteConfirmVisible(false);
                     setEditModalStep(null);
                     navigation.replace('Home');
                   })
-                  .catch(() => undefined);
+                  .catch(() => undefined)
+                  .finally(() => setDeleting(false));
               }}
-              style={({pressed}) => [styles.deleteConfirmButton, pressed && styles.pressed]}>
-              <AppIcon name="delete" tone="inverted" size={15} />
-              <Text style={styles.deleteConfirmButtonText}>Delete event</Text>
-            </Pressable>
+            />
           </View>
         </View>
         <InlineError message={error ?? undefined} />
@@ -1117,6 +1150,9 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const [memberFieldError, setMemberFieldError] = useState<string>();
   const [inviteFieldError, setInviteFieldError] = useState<string>();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const latestInvite = useMemo(
     () =>
@@ -1186,11 +1222,18 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               accessibilityRole="button"
               accessibilityLabel="Generate new event code"
               onPress={() => {
+                setGeneratingCode(true);
                 createInvite(eventId)
                   .then(() => setToastMessage('New event code generated'))
-                  .catch(() => undefined);
+                  .catch(() => undefined)
+                  .finally(() => setGeneratingCode(false));
               }}
-              style={({pressed}) => [styles.refreshButtonLight, pressed && styles.pressed]}>
+              disabled={generatingCode}
+              style={({pressed}) => [
+                styles.refreshButtonLight,
+                generatingCode ? {opacity: 0.55} : null,
+                pressed && styles.pressed,
+              ]}>
               <AppIcon name="refresh" tone="accent" size={15} />
             </Pressable>
           ) : null}
@@ -1213,10 +1256,13 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           <AppButton
             label="Generate event code"
             icon="invite"
+            loading={generatingCode}
             onPress={() => {
+              setGeneratingCode(true);
               createInvite(eventId)
                 .then(() => setToastMessage('Event code generated'))
-                .catch(() => undefined);
+                .catch(() => undefined)
+                .finally(() => setGeneratingCode(false));
             }}
           />
         )}
@@ -1238,17 +1284,20 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Add placeholder member"
           icon="members"
+          loading={addingMember}
           onPress={() => {
             if (displayName.trim().length < 2) {
               setMemberFieldError('Enter a display name.');
               return;
             }
+            setAddingMember(true);
             addManualMember(eventId, displayName)
               .then(() => {
                 setDisplayName('');
                 setMemberFieldError(undefined);
               })
-              .catch(() => undefined);
+              .catch(() => undefined)
+              .finally(() => setAddingMember(false));
           }}
         />
       </AppCard>
@@ -1269,19 +1318,22 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Send invite"
           icon="invite"
+          loading={sendingInvite}
           onPress={() => {
             const normalizedEmail = normalizeEmail(inviteEmail);
             if (!isEmailAddress(normalizedEmail)) {
               setInviteFieldError('Enter a valid email.');
               return;
             }
+            setSendingInvite(true);
             createInvite(eventId, {email: normalizedEmail})
               .then(() => {
                 setInviteEmail('');
                 setInviteFieldError(undefined);
                 setToastMessage('Invite sent');
               })
-              .catch(() => undefined);
+              .catch(() => undefined)
+              .finally(() => setSendingInvite(false));
           }}
         />
       </AppCard>

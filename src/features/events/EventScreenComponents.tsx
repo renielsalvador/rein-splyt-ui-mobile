@@ -183,10 +183,14 @@ export function PendingInviteDetailCard({
   pendingInvite,
   onAccept,
   onDecline,
+  accepting = false,
+  declining = false,
 }: {
   pendingInvite: PendingInvite;
   onAccept: () => void;
   onDecline: () => void;
+  accepting?: boolean;
+  declining?: boolean;
 }) {
   return (
     <AppCard>
@@ -209,10 +213,16 @@ export function PendingInviteDetailCard({
       </Text>
       <View style={styles.actionRow}>
         <View style={styles.actionRowItem}>
-          <AppButton label="Accept invite" icon="check" onPress={onAccept} />
+          <AppButton label="Accept invite" icon="check" loading={accepting} onPress={onAccept} />
         </View>
         <View style={styles.actionRowItem}>
-          <AppButton label="Decline" icon="close" variant="secondary" onPress={onDecline} />
+          <AppButton
+            label="Decline"
+            icon="close"
+            variant="secondary"
+            loading={declining}
+            onPress={onDecline}
+          />
         </View>
       </View>
     </AppCard>

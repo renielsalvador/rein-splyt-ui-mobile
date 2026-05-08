@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Image,
   Keyboard,
   Platform,
@@ -70,6 +71,9 @@ export function AuthScreen() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -141,20 +145,25 @@ export function AuthScreen() {
     }
 
     setFieldErrors({});
+    setSubmitting(true);
 
-    if (mode === 'signup') {
-      await signUp({
+    try {
+      if (mode === 'signup') {
+        await signUp({
+          email: parsed.data.email,
+          password: parsed.data.password,
+          displayName: parsed.data.displayName ?? '',
+        });
+        return;
+      }
+
+      await signIn({
         email: parsed.data.email,
         password: parsed.data.password,
-        displayName: parsed.data.displayName ?? '',
       });
-      return;
+    } finally {
+      setSubmitting(false);
     }
-
-    await signIn({
-      email: parsed.data.email,
-      password: parsed.data.password,
-    });
   }
 
   async function handlePasswordReset() {
@@ -167,9 +176,15 @@ export function AuthScreen() {
     }
 
     setFieldErrors({});
-    await requestPasswordReset(forgotEmail.trim().toLowerCase());
-    setForgotEmail('');
-    showToast('Reset email sent.');
+    setResetSubmitting(true);
+
+    try {
+      await requestPasswordReset(forgotEmail.trim().toLowerCase());
+      setForgotEmail('');
+      showToast('Reset email sent.');
+    } finally {
+      setResetSubmitting(false);
+    }
   }
 
   if (mode === 'forgot') {
@@ -202,6 +217,7 @@ export function AuthScreen() {
 
             <AppButton
               label="Send reset link"
+              loading={resetSubmitting}
               onPress={() => {
                 handlePasswordReset().catch(() => undefined);
               }}
@@ -303,6 +319,7 @@ export function AuthScreen() {
 
           <AppButton
             label={mode === 'login' ? 'Sign in' : 'Create account'}
+            loading={submitting}
             onPress={() => {
               handleSubmit().catch(() => undefined);
             }}
@@ -316,19 +333,38 @@ export function AuthScreen() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{disabled: googleSubmitting, busy: googleSubmitting}}
+            disabled={googleSubmitting}
             onPress={() => {
               clearError();
-              signInWithGoogle().catch(() => undefined);
+              setGoogleSubmitting(true);
+              signInWithGoogle()
+                .catch(() => undefined)
+                .finally(() => setGoogleSubmitting(false));
             }}
-            style={({pressed}) => [styles.oauthButton, pressed ? styles.oauthButtonPressed : null]}>
+            style={({pressed}) => [
+              styles.oauthButton,
+              googleSubmitting ? styles.oauthButtonDisabled : null,
+              pressed ? styles.oauthButtonPressed : null,
+            ]}>
             <View style={styles.oauthButtonContent}>
-              <Image
-                source={require('../../../assets/branding/icon-google.png')}
-                style={styles.oauthLogo}
-                resizeMode="contain"
-              />
+              {googleSubmitting ? (
+                <ActivityIndicator color={palette.ink} size="small" />
+              ) : (
+                <Image
+                  source={require('../../../assets/branding/icon-google.png')}
+                  style={styles.oauthLogo}
+                  resizeMode="contain"
+                />
+              )}
               <Text style={styles.oauthButtonText}>
-                {mode === 'login' ? 'Continue with Google' : 'Sign up with Google'}
+                {googleSubmitting
+                  ? mode === 'login'
+                    ? 'Signing in with Google...'
+                    : 'Signing up with Google...'
+                  : mode === 'login'
+                    ? 'Continue with Google'
+                    : 'Sign up with Google'}
               </Text>
             </View>
           </Pressable>
@@ -441,8 +477,8 @@ export function ResetPasswordScreen() {
           <InlineError message={error ?? undefined} />
 
           <AppButton
-            label={saving ? 'Updating password...' : 'Update password'}
-            disabled={saving}
+            label="Update password"
+            loading={saving}
             onPress={() => {
               handleSubmit().catch(() => undefined);
             }}
@@ -523,6 +559,9 @@ const styles = StyleSheet.create({
   },
   oauthButtonPressed: {
     opacity: 0.82,
+  },
+  oauthButtonDisabled: {
+    opacity: 0.55,
   },
   oauthButtonContent: {
     flexDirection: 'row',

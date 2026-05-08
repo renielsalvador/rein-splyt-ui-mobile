@@ -49,6 +49,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   }>({});
   const [didPrefill, setDidPrefill] = useState(false);
   const [payerModalVisible, setPayerModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const existingExpense = useMemo(
     () => summary?.expenses.find(expense => expense.id === expenseId),
@@ -209,35 +210,40 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       return;
     }
     setFieldErrors({});
-    if (expenseId) {
-      await updateExpense({
-        expenseId,
-        eventId,
-        title: parsed.data.title,
-        amount: parsed.data.amount,
-        currency: summary.event.currency,
-        paidByMemberId: nextPayerId,
-        paymentSource,
-        participantMemberIds: selectedMemberIds,
-        note: parsed.data.note,
-        receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
-        clearReceipts,
-      });
-    } else {
-      await addExpense({
-        eventId,
-        title: parsed.data.title,
-        amount: parsed.data.amount,
-        currency: summary.event.currency,
-        paidByMemberId: nextPayerId,
-        paymentSource,
-        participantMemberIds: selectedMemberIds,
-        note: parsed.data.note,
-        receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
-      });
-    }
+    setSubmitting(true);
+    try {
+      if (expenseId) {
+        await updateExpense({
+          expenseId,
+          eventId,
+          title: parsed.data.title,
+          amount: parsed.data.amount,
+          currency: summary.event.currency,
+          paidByMemberId: nextPayerId,
+          paymentSource,
+          participantMemberIds: selectedMemberIds,
+          note: parsed.data.note,
+          receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
+          clearReceipts,
+        });
+      } else {
+        await addExpense({
+          eventId,
+          title: parsed.data.title,
+          amount: parsed.data.amount,
+          currency: summary.event.currency,
+          paidByMemberId: nextPayerId,
+          paymentSource,
+          participantMemberIds: selectedMemberIds,
+          note: parsed.data.note,
+          receipts: submittedReceipts.length > 0 ? submittedReceipts : undefined,
+        });
+      }
 
-    navigation.goBack();
+      navigation.goBack();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -436,6 +442,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       <AppButton
         label={expenseId ? 'Update expense' : 'Save expense'}
         icon="expense"
+        loading={submitting}
         onPress={() => handleSubmit().catch(() => undefined)}
       />
 

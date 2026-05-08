@@ -275,8 +275,9 @@ export function AccountUpdateScreen({
       </AppCard>
 
       <AppButton
-        label={saving ? 'Saving...' : 'Save changes'}
+        label="Save changes"
         disabled={saving || displayName.trim().length < 2}
+        loading={saving}
         onPress={() => {
           if (displayName.trim().length < 2) {
             setDisplayNameError('Display name must be at least 2 characters.');
