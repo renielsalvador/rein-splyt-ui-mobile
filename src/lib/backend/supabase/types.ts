@@ -43,8 +43,8 @@ export type EventRow = {
     | 'game'
     | 'study';
   is_active: boolean;
-  start_date: string;
-  end_date: string;
+  start_date: string | null;
+  end_date: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -77,8 +77,8 @@ export type PendingInviteRow = InviteRow & {
   event_currency: 'USD' | 'PHP';
   event_icon: EventRow['icon'];
   event_is_active: boolean;
-  event_start_date: string;
-  event_end_date: string;
+  event_start_date: string | null;
+  event_end_date: string | null;
   event_created_by: string;
   event_created_at: string;
   event_updated_at: string;

@@ -1,6 +1,6 @@
 import type {CurrencyCode} from '../../types/domain';
 
-function parseDateValue(value: string) {
+function parseDateValue(value?: string) {
   if (!value) {
     return new Date(NaN);
   }
@@ -21,19 +21,23 @@ export function formatCurrency(value: number, currency: CurrencyCode) {
   }).format(value);
 }
 
-export function formatDateLabel(value: string) {
+export function formatDateLabel(value?: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
   }).format(parseDateValue(value));
 }
 
-export function formatDateRangeLabel(startDate: string, endDate: string) {
+export function formatDateRangeLabel(startDate?: string, endDate?: string) {
+  if (!startDate && !endDate) {
+    return 'No dates';
+  }
+
   const start = parseDateValue(startDate);
   const end = parseDateValue(endDate);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return 'Select dates';
+    return 'No dates';
   }
 
   const sameYear = start.getFullYear() === end.getFullYear();

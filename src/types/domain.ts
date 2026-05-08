@@ -51,8 +51,8 @@ export type Event = {
   currency: CurrencyCode;
   icon: EventIconName;
   isActive: boolean;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -170,8 +170,8 @@ export type CreateEventInput = {
   description?: string;
   currency: CurrencyCode;
   icon?: EventIconName;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   members?: Array<
     | {
         kind: 'contact';
@@ -191,8 +191,8 @@ export type UpdateEventInput = {
   description?: string;
   icon?: EventIconName;
   isActive?: boolean;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type JoinEventInput = {

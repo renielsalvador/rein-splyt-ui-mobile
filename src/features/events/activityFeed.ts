@@ -38,7 +38,10 @@ export function buildActivityFeed(
       timestamp: event.createdAt,
       icon: event.icon,
       title: event.name,
-      body: `Event created for ${formatDateRangeLabel(event.startDate, event.endDate)}.`,
+      body:
+        event.startDate && event.endDate
+          ? `Event created for ${formatDateRangeLabel(event.startDate, event.endDate)}.`
+          : 'Event created for ongoing sharing.',
       meta: formatDateLabel(event.createdAt),
     });
 

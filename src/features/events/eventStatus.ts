@@ -17,6 +17,10 @@ export function getEventLifecycle(
   event: Pick<Event, 'startDate' | 'endDate'>,
   today = getTodayDateString(),
 ): EventLifecycle {
+  if (!event.startDate || !event.endDate) {
+    return 'ongoing';
+  }
+
   if (event.endDate < today) {
     return 'ended';
   }
@@ -32,7 +36,7 @@ export function isEventIncludedInDashboard(
   event: Pick<Event, 'isActive' | 'endDate'>,
   today = getTodayDateString(),
 ) {
-  return event.isActive && event.endDate >= today;
+  return event.isActive && (!event.endDate || event.endDate >= today);
 }
 
 export function getEventStatusBadge(
@@ -88,6 +92,10 @@ export function sortEventsByStartDate(events: Event[], today = getTodayDateStrin
       if (rightLifecycle === 'ongoing') {
         return 1;
       }
+    }
+
+    if (!left.startDate || !right.startDate) {
+      return right.updatedAt.localeCompare(left.updatedAt);
     }
 
     if (left.startDate !== right.startDate) {

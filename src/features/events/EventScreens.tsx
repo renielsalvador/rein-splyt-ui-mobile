@@ -52,16 +52,9 @@ import {
 import {
   getEventLifecycle,
   getEventStatusBadge,
-  getTodayDateString,
   isEventIncludedInDashboard,
   sortEventsByStartDate,
 } from './eventStatus';
-
-function shiftDate(value: string, days: number) {
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day + days));
-  return date.toISOString().slice(0, 10);
-}
 
 export function HomeScreen({
   navigation,
@@ -373,13 +366,12 @@ export function NotificationDetailScreen({
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const {contacts, createEvent, currentUser, error} = useApp();
-  const defaultStartDate = useMemo(() => getTodayDateString(), []);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('PHP');
   const [icon, setIcon] = useState<EventIconName>('event');
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(() => shiftDate(defaultStartDate, 2));
+  const [startDate, setStartDate] = useState<string>();
+  const [endDate, setEndDate] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     description?: string;
@@ -520,7 +512,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           label="Event dates"
           startDate={startDate}
           endDate={endDate}
-          helperText="Tap to select the start and end dates."
+          helperText="Optional. Leave empty for ongoing household or family sharing."
           onPress={() => setDateModalVisible(true)}
         />
         <InlineError message={fieldErrors.dates} />
@@ -588,7 +580,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       <AppModal
         visible={dateModalVisible}
         title="Select event dates"
-        subtitle="Choose the range this event will cover."
+        subtitle="Choose a range or clear dates to keep this share ongoing."
         scrollable
         onClose={() => setDateModalVisible(false)}>
         <EventDateRangePicker
@@ -597,6 +589,11 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           onChange={next => {
             setStartDate(next.startDate);
             setEndDate(next.endDate);
+            setFieldErrors(current => ({...current, dates: undefined}));
+          }}
+          onClear={() => {
+            setStartDate(undefined);
+            setEndDate(undefined);
             setFieldErrors(current => ({...current, dates: undefined}));
           }}
           onClose={() => setDateModalVisible(false)}
@@ -685,8 +682,8 @@ export function EventDashboardScreen({
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
-  const [editStartDate, setEditStartDate] = useState(getTodayDateString());
-  const [editEndDate, setEditEndDate] = useState(getTodayDateString());
+  const [editStartDate, setEditStartDate] = useState<string>();
+  const [editEndDate, setEditEndDate] = useState<string>();
   const [editFieldErrors, setEditFieldErrors] = useState<{
     name?: string;
     dates?: string;
@@ -952,7 +949,7 @@ export function EventDashboardScreen({
         title={editModalStep === 'dates' ? 'Update event dates' : 'Edit event'}
         subtitle={
           editModalStep === 'dates'
-            ? 'Adjust the date range for this event.'
+            ? 'Set or clear dates for this event.'
             : 'Update the name, description, or icon.'
         }
         scrollable
@@ -971,6 +968,11 @@ export function EventDashboardScreen({
             onChange={next => {
               setEditStartDate(next.startDate);
               setEditEndDate(next.endDate);
+              setEditFieldErrors(current => ({...current, dates: undefined}));
+            }}
+            onClear={() => {
+              setEditStartDate(undefined);
+              setEditEndDate(undefined);
               setEditFieldErrors(current => ({...current, dates: undefined}));
             }}
             onClose={() => setEditModalStep('details')}
@@ -1005,7 +1007,7 @@ export function EventDashboardScreen({
               label="Event dates"
               startDate={editStartDate}
               endDate={editEndDate}
-              helperText="Tap to update the event date range."
+              helperText="Optional. Clear dates to keep this share ongoing."
               onPress={() => setEditModalStep('dates')}
             />
             <InlineError message={editFieldErrors.dates} />

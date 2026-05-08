@@ -27,7 +27,7 @@ import type {
   SettlementInstruction,
 } from '../../types/domain';
 import {styles} from './EventScreenStyles';
-import {getEventStatusBadge} from './eventStatus';
+import {getEventStatusBadge, getTodayDateString} from './eventStatus';
 import {
   EVENT_ICON_OPTIONS,
   type MemberRosterRow,
@@ -42,7 +42,7 @@ function shiftDate(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function buildMarkedDateRange(startDate: string, endDate: string) {
+function buildMarkedDateRange(startDate?: string, endDate?: string) {
   const markedDates: Record<
     string,
     {
@@ -52,6 +52,10 @@ function buildMarkedDateRange(startDate: string, endDate: string) {
       endingDay?: boolean;
     }
   > = {};
+
+  if (!startDate || !endDate) {
+    return markedDates;
+  }
 
   let cursor = startDate;
   while (cursor <= endDate) {
@@ -223,8 +227,8 @@ export function EventDateRangeField({
   onPress,
 }: {
   label: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   helperText?: string;
   onPress: () => void;
 }) {
@@ -259,22 +263,28 @@ export function EventDateRangePicker({
   startDate,
   endDate,
   onChange,
+  onClear,
   onClose,
 }: {
-  startDate: string;
-  endDate: string;
-  onChange: (next: {startDate: string; endDate: string}) => void;
+  startDate?: string;
+  endDate?: string;
+  onChange: (next: {startDate?: string; endDate?: string}) => void;
+  onClear: () => void;
   onClose: () => void;
 }) {
-  const [draftStartDate, setDraftStartDate] = useState(startDate);
-  const [draftEndDate, setDraftEndDate] = useState(endDate);
+  const today = useMemo(() => getTodayDateString(), []);
+  const [draftStartDate, setDraftStartDate] = useState(startDate ?? today);
+  const [draftEndDate, setDraftEndDate] = useState(endDate ?? today);
+  const [hasDates, setHasDates] = useState(Boolean(startDate && endDate));
   const [activeField, setActiveField] = useState<'start' | 'end'>('start');
   const markedDates = useMemo(
-    () => buildMarkedDateRange(draftStartDate, draftEndDate),
-    [draftEndDate, draftStartDate],
+    () => (hasDates ? buildMarkedDateRange(draftStartDate, draftEndDate) : {}),
+    [draftEndDate, draftStartDate, hasDates],
   );
 
   function handleDayPress(dateString: string) {
+    setHasDates(true);
+
     if (activeField === 'start') {
       setDraftStartDate(dateString);
       if (dateString > draftEndDate) {
@@ -295,7 +305,7 @@ export function EventDateRangePicker({
       <View style={componentStyles.datePickerSummaryCard}>
         <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
         <Text style={componentStyles.datePickerSummaryValue}>
-          {formatDateRangeLabel(draftStartDate, draftEndDate)}
+          {hasDates ? formatDateRangeLabel(draftStartDate, draftEndDate) : 'No dates'}
         </Text>
         <View style={componentStyles.dateRangeFieldRow}>
           <Pressable
@@ -318,7 +328,7 @@ export function EventDateRangePicker({
                 componentStyles.dateAnchorValue,
                 activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
               ]}>
-              {formatDateLabel(draftStartDate)}
+              {hasDates ? formatDateLabel(draftStartDate) : 'Not set'}
             </Text>
           </Pressable>
           <Pressable
@@ -341,12 +351,14 @@ export function EventDateRangePicker({
                 componentStyles.dateAnchorValue,
                 activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
               ]}>
-              {formatDateLabel(draftEndDate)}
+              {hasDates ? formatDateLabel(draftEndDate) : 'Not set'}
             </Text>
           </Pressable>
         </View>
         <Text style={componentStyles.datePickerSummaryHint}>
-          Select {activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.
+          {hasDates
+            ? `Select ${activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.`
+            : 'Choose dates to add a range, or clear them to keep this share ongoing.'}
         </Text>
       </View>
       <Calendar
@@ -371,6 +383,17 @@ export function EventDateRangePicker({
         style={componentStyles.calendar}
       />
       <View style={styles.actionRow}>
+        <View style={styles.actionRowItem}>
+          <AppButton
+            label="Clear dates"
+            variant="secondary"
+            onPress={() => {
+              setHasDates(false);
+              onClear();
+              onClose();
+            }}
+          />
+        </View>
         <View style={styles.actionRowItem}>
           <AppButton
             label="Apply dates"

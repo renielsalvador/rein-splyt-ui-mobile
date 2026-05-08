@@ -42,6 +42,12 @@ describe('eventStatus helpers', () => {
         '2026-05-07',
       ),
     ).toBe(true);
+    expect(
+      isEventIncludedInDashboard(
+        buildEvent({isActive: true, startDate: undefined, endDate: undefined}),
+        '2026-05-07',
+      ),
+    ).toBe(true);
   });
 
   test('returns lifecycle and badge state', () => {
@@ -50,6 +56,9 @@ describe('eventStatus helpers', () => {
         buildEvent({startDate: '2026-05-01', endDate: '2026-05-10'}),
         '2026-05-07',
       ),
+    ).toBe('ongoing');
+    expect(
+      getEventLifecycle(buildEvent({startDate: undefined, endDate: undefined}), '2026-05-07'),
     ).toBe('ongoing');
     expect(getEventStatusBadge(buildEvent({isActive: false}), '2026-05-07')).toEqual({
       label: 'Inactive',
@@ -73,6 +82,12 @@ describe('eventStatus helpers', () => {
         buildEvent({id: 'ended', startDate: '2026-04-01', endDate: '2026-04-03'}),
         buildEvent({id: 'upcoming', startDate: '2026-05-20', endDate: '2026-05-22'}),
         buildEvent({
+          id: 'undated',
+          startDate: undefined,
+          endDate: undefined,
+          updatedAt: '2026-05-08T00:00:00.000Z',
+        }),
+        buildEvent({
           id: 'inactive',
           isActive: false,
           startDate: '2026-05-03',
@@ -83,6 +98,12 @@ describe('eventStatus helpers', () => {
       '2026-05-07',
     );
 
-    expect(events.map(event => event.id)).toEqual(['ongoing', 'upcoming', 'inactive', 'ended']);
+    expect(events.map(event => event.id)).toEqual([
+      'undated',
+      'ongoing',
+      'upcoming',
+      'inactive',
+      'ended',
+    ]);
   });
 });
