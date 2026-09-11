@@ -1,15 +1,17 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {createClient} from '@supabase/supabase-js';
-import {appConfig} from '../../config/appConfig';
+import type {BackendConfig} from '../../config/appConfig';
 
 let supabaseClient:
   | ReturnType<typeof createClient>
   | undefined;
 
-export function getSupabaseClient() {
+export function getSupabaseClient(
+  config: Extract<BackendConfig, {mode: 'supabase'}>,
+) {
   if (!supabaseClient) {
-    supabaseClient = createClient(appConfig.supabaseUrl, appConfig.supabaseAnonKey, {
+    supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,

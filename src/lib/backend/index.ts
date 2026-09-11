@@ -1,4 +1,4 @@
-import {hasSupabaseConfig} from '../../config/appConfig';
+import {resolveBackendConfig} from '../../config/appConfig';
 import {MockBackend} from './mockBackend';
 import {getSupabaseClient} from './supabaseClient';
 import {SupabaseBackend} from './supabaseBackend';
@@ -7,8 +7,10 @@ import type {AppBackend} from './types';
 let backendPromise: Promise<AppBackend> | undefined;
 
 async function createBackend() {
-  if (hasSupabaseConfig()) {
-    const backend = new SupabaseBackend(getSupabaseClient());
+  const config = resolveBackendConfig();
+
+  if (config.mode === 'supabase') {
+    const backend = new SupabaseBackend(getSupabaseClient(config));
     await backend.initialize();
     return backend;
   }

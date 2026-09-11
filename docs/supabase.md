@@ -1,32 +1,58 @@
-# Supabase Setup
+# Supabase Backend
 
-The app now supports a live `SupabaseBackend` when `SUPABASE_URL` and `SUPABASE_ANON_KEY` are defined in a root `.env` file. If those values are missing, the app continues to use the in-memory mock backend.
+The canonical Supabase backend lives in the sibling **`splyt-api`** repository.
+It owns the database schema, RLS policies, RPCs, Storage policies, Auth email
+templates, local fixtures, and the generated TypeScript database types.
 
-## What To Apply
+Do not add or edit migrations in this repository. See `splyt-api/README.md` for
+local stack commands and `splyt-api/docs/production-reconciliation.md` for the
+mandatory gate that must be completed before any cloud deployment.
 
-Apply the schema in [supabase/migrations/202605040001_initial_schema.sql](/Users/rensalvador/projects/rein-splyt-ui-mobile/supabase/migrations/202605040001_initial_schema.sql:1). It creates:
+## Backend selection
 
-- Auth-linked `users`
-- Events, members, invites, expenses, splits, central funds, and contributions
-- RLS policies for member-scoped access
-- RPC functions for multi-step writes
-- SQL functions for balances and settlement instructions
+Backend selection is explicit. `BACKEND_MODE` is required and must be `mock` or
+`supabase`; there is no implicit fallback. In `supabase` mode both
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` (the publishable key) are required, and
+the app fails fast with a clear message when either is missing.
 
-## Supabase Project Settings
+| Environment file | Purpose |
+| --- | --- |
+| `.env.example` | Default `BACKEND_MODE=mock` development setup |
+| `.env.local.example` | Local `splyt-api` Supabase stack |
+| `.env.staging.example` | Staging Supabase project |
+| `.env.production.example` | Production Supabase project |
 
-For the current mobile auth flow, disable email confirmation in the Supabase Auth settings for MVP testing. The app expects `signUp()` to return an active session immediately.
+Copy the file you need to `.env`, `.env.local`, `.env.staging`, or
+`.env.production` and fill in the values. Never commit a real key.
 
-Google OAuth should also allow the mobile redirect URL `splytuimobile://auth/callback`.
-
-## Runtime Config
-
-Copy [.env.example](/Users/rensalvador/projects/rein-splyt-ui-mobile/.env.example:1) to `.env` at the repo root and set:
-
-```dotenv
-SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```sh
+npm run ios:local        # or npm run android:local
+npm run ios:staging      # or npm run android:staging
+npm run ios:production   # or npm run android:production
 ```
 
-## Current Limitation
+`npm run ios` and `npm run android` use the default `.env`.
 
-The app now uses `AsyncStorage` for Supabase auth session persistence in React Native. The remaining setup gap is environment and project readiness: migrations must still be applied to a real Supabase project, and production rules such as role-aware restrictions and invite delivery are still pending.
+## Supabase URLs per target
+
+| Target | `SUPABASE_URL` |
+| --- | --- |
+| iOS Simulator (local stack) | `http://127.0.0.1:54321` |
+| Android Emulator (local stack) | `http://10.0.2.2:54321` |
+| Physical device (local stack) | `http://<your-lan-ip>:54321` |
+| Staging / production | The hosted project URL |
+
+Read the local publishable key from `npm run status` in `splyt-api`. Never copy
+a hosted key into a local environment file, and never expose the local stack to
+the public internet.
+
+## Auth project settings
+
+Google OAuth must allow the mobile redirect URL `splytuimobile://auth/callback`,
+and the Google provider must be enabled in the target Supabase project.
+
+## Legacy directory
+
+The `supabase/` directory in this repository is **legacy and read-only**. It is
+retained only as the extraction source until production reconciliation is signed
+off in `splyt-api`. See [supabase/README.md](../supabase/README.md).

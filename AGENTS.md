@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The app is a React Native CLI project. Main app entry points are `App.tsx` and `index.js`. Feature screens live under `src/features/*` (`auth`, `events`, `expenses`, `funds`, `balances`, `settings`). Shared app wiring is in `src/app`, reusable UI in `src/components`, theme tokens in `src/theme`, and backend adapters in `src/lib/backend`. Tests currently live in `__tests__/`, and Supabase SQL migrations are stored in `supabase/migrations/`. Use `docs/` for longer-form technical notes.
+The app is a React Native CLI project. Main app entry points are `App.tsx` and `index.js`. Feature screens live under `src/features/*` (`auth`, `events`, `expenses`, `funds`, `balances`, `settings`). Shared app wiring is in `src/app`, reusable UI in `src/components`, theme tokens in `src/theme`, and backend adapters in `src/lib/backend`. Tests currently live in `__tests__/`. Supabase SQL migrations are owned by the sibling `splyt-api` repository; `supabase/` here is legacy and read-only. Use `docs/` for longer-form technical notes.
 
 ## Build, Test, and Development Commands
 Use Node `22.x` as noted in `package.json` and `README.md`.
@@ -24,4 +24,4 @@ Jest uses `@react-native/jest-preset` with `jest.setup.js`, and React Native UI 
 Recent history mixes short imperative messages (`update UI`) with `chore:` prefixes. Prefer concise, imperative commits and use a scope when helpful, for example `feat: add event invite flow` or `fix: prevent duplicate fund entries`. PRs should include a clear summary, test notes (`npm run lint`, `npm test`, `npx tsc --noEmit`), linked issues when applicable, and screenshots or recordings for UI changes.
 
 ## Configuration Notes
-Local development defaults to the mock backend in `src/lib/backend/mockBackend.ts`. Copy `.env.example` to `.env` only when wiring Supabase, and never commit real credentials.
+Backend selection is explicit through `BACKEND_MODE=mock|supabase` in the environment file; there is no implicit fallback, and `supabase` mode requires `SUPABASE_URL` and `SUPABASE_ANON_KEY`. Copy `.env.example` (mock) or one of `.env.local.example`, `.env.staging.example`, `.env.production.example`, and never commit real credentials. The Supabase schema is owned by the sibling `splyt-api` repository; the `supabase/` directory here is legacy and read-only.
