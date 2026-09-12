@@ -9,6 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('react-native-config', () => ({
   __esModule: true,
   default: {
+    BACKEND_MODE: 'mock',
     SUPABASE_URL: '',
     SUPABASE_ANON_KEY: '',
   },
