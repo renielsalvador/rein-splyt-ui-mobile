@@ -21,6 +21,15 @@ export function formatCurrency(value: number, currency: CurrencyCode) {
   }).format(value);
 }
 
+/** Whole-currency variant for summary lines where cents are noise. */
+export function formatCurrencyCompact(value: number, currency: CurrencyCode) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export function formatDateLabel(value?: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',

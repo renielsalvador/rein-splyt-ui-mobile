@@ -15,11 +15,14 @@ import {
 } from '../../components/ui';
 import {contributionSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
-import {palette, spacing, typography} from '../../theme/tokens';
+import {createTypography, spacing} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import {formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'>) {
+  const styles = useStyles(createStyles);
   const {eventId} = route.params;
   const {hydrateEvent, summaries, addContribution, currentUser, error} = useApp();
   const summary = summaries[eventId];
@@ -175,31 +178,35 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
   );
 }
 
-const styles = StyleSheet.create({
-  heroAmount: {
-    ...typography.amount,
-    color: palette.primary,
-  },
-  heroLabel: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  pillRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  memberName: {
-    ...typography.cardTitle,
-  },
-  contributionLabel: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-});
+const createStyles = (c: Colors) => {
+  const t = createTypography(c);
+
+  return StyleSheet.create({
+    heroAmount: {
+      ...t.amount,
+      color: c.brand,
+    },
+    heroLabel: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    pillRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    memberName: {
+      ...t.cardTitle,
+    },
+    contributionLabel: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+  });
+};

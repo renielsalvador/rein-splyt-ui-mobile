@@ -1,6 +1,6 @@
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function SectionHeading({
   title,
@@ -11,6 +11,7 @@ export function SectionHeading({
   detail?: string;
   onDetailPress?: () => void;
 }) {
+  const styles = useAppStyles();
   return (
     <View style={styles.sectionHeading}>
       <Text style={styles.sectionHeadingTitle}>{title}</Text>

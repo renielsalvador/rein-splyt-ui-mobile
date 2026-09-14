@@ -16,7 +16,9 @@ import {
   formatDateLabel,
   formatDateRangeLabel,
 } from '../../lib/utils/format';
-import {palette, radii, spacing, surfaces, typography} from '../../theme/tokens';
+import {cardSurface, createTypography, radii, spacing} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles, useTheme} from '../../theme/ThemeProvider';
 import type {
   CurrencyCode,
   Event,
@@ -26,7 +28,7 @@ import type {
   PendingInvite,
   SettlementInstruction,
 } from '../../types/domain';
-import {styles} from './EventScreenStyles';
+import {useEventStyles} from './EventScreenStyles';
 import {getEventStatusBadge, getTodayDateString} from './eventStatus';
 import {
   EVENT_ICON_OPTIONS,
@@ -42,7 +44,7 @@ function shiftDate(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function buildMarkedDateRange(startDate?: string, endDate?: string) {
+function buildMarkedDateRange(c: Colors, startDate?: string, endDate?: string) {
   const markedDates: Record<
     string,
     {
@@ -63,8 +65,8 @@ function buildMarkedDateRange(startDate?: string, endDate?: string) {
     const isEnd = cursor === endDate;
 
     markedDates[cursor] = {
-      color: isStart || isEnd ? palette.primary : palette.greenTint,
-      textColor: isStart || isEnd ? palette.surface : palette.ink,
+      color: isStart || isEnd ? c.brand : c.brandSoft,
+      textColor: isStart || isEnd ? c.surface : c.ink,
       startingDay: isStart,
       endingDay: isEnd,
     };
@@ -88,6 +90,7 @@ export function HomeEventCard({
   currentBalance?: number;
   onPress: () => void;
 }) {
+  const styles = useEventStyles();
   const memberNames = members.map(m => m.displayName);
   const badge = getEventStatusBadge(event);
 
@@ -160,9 +163,12 @@ export function PendingInviteListItem({
   pendingInvite: PendingInvite;
   onPress: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const {colors: c} = useTheme();
+  const styles = useEventStyles();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
-      <View style={[surfaces.card, componentStyles.notifCard]}>
+      <View style={[cardSurface(c), componentStyles.notifCard]}>
         <View style={componentStyles.notifRow}>
           <View style={componentStyles.notifIconBadge}>
             <AppIcon name={pendingInvite.event.icon} tone="accent" size={18} />
@@ -194,6 +200,8 @@ export function PendingInviteDetailCard({
   accepting?: boolean;
   declining?: boolean;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
   return (
     <AppCard>
       <View style={componentStyles.notifRow}>
@@ -244,6 +252,7 @@ export function EventDateRangeField({
   helperText?: string;
   onPress: () => void;
 }) {
+  const styles = useEventStyles();
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -284,14 +293,17 @@ export function EventDateRangePicker({
   onClear: () => void;
   onClose: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const {colors: c} = useTheme();
+  const styles = useEventStyles();
   const today = useMemo(() => getTodayDateString(), []);
   const [draftStartDate, setDraftStartDate] = useState(startDate ?? today);
   const [draftEndDate, setDraftEndDate] = useState(endDate ?? today);
   const [hasDates, setHasDates] = useState(Boolean(startDate && endDate));
   const [activeField, setActiveField] = useState<'start' | 'end'>('start');
   const markedDates = useMemo(
-    () => (hasDates ? buildMarkedDateRange(draftStartDate, draftEndDate) : {}),
-    [draftEndDate, draftStartDate, hasDates],
+    () => (hasDates ? buildMarkedDateRange(c, draftStartDate, draftEndDate) : {}),
+    [c, draftEndDate, draftStartDate, hasDates],
   );
 
   function handleDayPress(dateString: string) {
@@ -378,16 +390,16 @@ export function EventDateRangePicker({
         markedDates={markedDates}
         onDayPress={({dateString}) => handleDayPress(dateString)}
         theme={{
-          backgroundColor: palette.surface,
-          calendarBackground: palette.surface,
-          textSectionTitleColor: palette.inkMuted,
-          selectedDayBackgroundColor: palette.primary,
-          selectedDayTextColor: palette.surface,
-          todayTextColor: palette.primary,
-          dayTextColor: palette.ink,
-          monthTextColor: palette.ink,
-          arrowColor: palette.primary,
-          textDisabledColor: palette.divider,
+          backgroundColor: c.surface,
+          calendarBackground: c.surface,
+          textSectionTitleColor: c.inkMuted,
+          selectedDayBackgroundColor: c.brand,
+          selectedDayTextColor: c.surface,
+          todayTextColor: c.brand,
+          dayTextColor: c.ink,
+          monthTextColor: c.ink,
+          arrowColor: c.brand,
+          textDisabledColor: c.hairline,
           textDayFontWeight: '500',
           textMonthFontWeight: '700',
           textDayHeaderFontWeight: '600',
@@ -428,6 +440,7 @@ export function EventIconPicker({
   selectedIcon: EventIconName;
   onSelect: (icon: EventIconName) => void;
 }) {
+  const styles = useEventStyles();
   return (
     <View style={styles.iconGrid}>
       {EVENT_ICON_OPTIONS.map(option => (
@@ -465,6 +478,7 @@ export function SelectedMembersPreview({
   selectedMembers: SelectedMemberDraft[];
   onRemoveMember: (memberId: string) => void;
 }) {
+  const styles = useEventStyles();
   if (selectedMembers.length === 0) {
     return null;
   }
@@ -492,6 +506,8 @@ export function DashboardMembersMetricCard({
   members: EventMember[];
   onPress: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -515,6 +531,8 @@ export function DashboardBalanceSummaryCard({
   balanceLabel: string;
   onPress: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
   const isPositive = currentBalance.net > 0;
   const isNegative = currentBalance.net < 0;
 
@@ -570,6 +588,8 @@ export function DashboardFundOverviewCard({
   progressRatio: number;
   onPress: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
   const clampedRatio = Math.min(Math.max(progressRatio, 0), 1);
 
   return (
@@ -635,6 +655,8 @@ export function DashboardShortcutCard({
   variant?: 'balances' | 'settlement';
   onPress: () => void;
 }) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <AppCard>
@@ -666,6 +688,7 @@ export function RecentExpenseListItem({
   receiptAttached?: boolean;
   onPress: () => void;
 }) {
+  const styles = useEventStyles();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <View style={styles.expenseRow}>
@@ -694,6 +717,7 @@ export function BalanceDetailsContent({
   owesYou: SettlementInstruction[];
   youOwe: SettlementInstruction[];
 }) {
+  const styles = useEventStyles();
   return (
     <>
       <View style={styles.balanceSheetSummary}>
@@ -751,6 +775,7 @@ export function BalanceDetailsContent({
 }
 
 export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
+  const styles = useEventStyles();
   return (
     <View style={styles.memberRosterList}>
       {members.map(member => (
@@ -774,233 +799,237 @@ export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
   );
 }
 
-const componentStyles = StyleSheet.create({
-  datePickerBlock: {
-    gap: spacing.md,
-  },
-  datePickerSummaryCard: {
-    backgroundColor: palette.greenTintSoft,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  datePickerSummaryLabel: {
-    ...typography.label,
-    color: palette.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  datePickerSummaryValue: {
-    ...typography.cardTitle,
-  },
-  datePickerSummaryHint: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  dateRangeFieldRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  dateAnchorChip: {
-    flex: 1,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: palette.divider,
-    backgroundColor: palette.surface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    gap: 2,
-  },
-  dateAnchorChipActive: {
-    borderColor: palette.primary,
-    backgroundColor: palette.primary,
-  },
-  dateAnchorLabel: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  dateAnchorLabelActive: {
-    color: 'rgba(255,255,255,0.82)',
-  },
-  dateAnchorValue: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  dateAnchorValueActive: {
-    color: palette.surface,
-  },
-  calendar: {
-    borderRadius: radii.lg,
-    overflow: 'hidden',
-  },
-  notifCard: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  notifRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  notifIconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.sm,
-    backgroundColor: palette.greenTintSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  notifBody: {
-    flex: 1,
-    gap: 2,
-  },
-  notifTitle: {
-    ...typography.bodyStrong,
-  },
-  notifMeta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  notifType: {
-    ...typography.caption,
-    color: palette.primary,
-    fontWeight: '600',
-  },
-  dashboardMetricCard: {
-    ...surfaces.card,
-    flex: 1,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  dashboardMetricLabel: {
-    ...typography.label,
-    color: palette.inkMuted,
-  },
-  dashboardMetricValue: {
-    ...typography.sectionTitle,
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  balanceLead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  balanceIconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  balanceIconPositive: {
-    backgroundColor: '#E7F5EB',
-  },
-  balanceIconNegative: {
-    backgroundColor: '#FCE8E5',
-  },
-  balanceIconNeutral: {
-    backgroundColor: palette.bgApp,
-  },
-  balanceTitle: {
-    ...typography.bodyStrong,
-  },
-  balanceMeta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  balanceAmount: {
-    ...typography.sectionTitle,
-    fontWeight: '700',
-  },
-  balanceHint: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  fundOverviewBlock: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  fundOverviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  fundOverviewTitleBlock: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  fundOverviewLabel: {
-    ...typography.label,
-    color: palette.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  fundOverviewAmount: {
-    ...typography.display,
-    fontSize: 34,
-    lineHeight: 40,
-    color: palette.ink,
-  },
-  fundOverviewMeta: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  fundOverviewAction: {
-    paddingTop: spacing.xs,
-  },
-  fundProgressTrack: {
-    flexDirection: 'row',
-    height: 10,
-    borderRadius: radii.pill,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(47,111,87,0.12)',
-  },
-  fundProgressSpent: {
-    backgroundColor: palette.primary,
-  },
-  fundProgressSpentHidden: {
-    opacity: 0,
-  },
-  fundProgressAvailable: {
-    backgroundColor: palette.greenAccent,
-  },
-  fundProgressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  fundProgressLabel: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  shortcutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  shortcutIconBubble: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.greenTintSoft,
-  },
-  shortcutTitle: {
-    ...typography.bodyStrong,
-  },
-  shortcutMeta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-});
+const createComponentStyles = (c: Colors) => {
+  const t = createTypography(c);
+
+  return StyleSheet.create({
+    datePickerBlock: {
+      gap: spacing.md,
+    },
+    datePickerSummaryCard: {
+      backgroundColor: c.brandSofter,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      gap: spacing.xs,
+    },
+    datePickerSummaryLabel: {
+      ...t.label,
+      color: c.brand,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    datePickerSummaryValue: {
+      ...t.cardTitle,
+    },
+    datePickerSummaryHint: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    dateRangeFieldRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    dateAnchorChip: {
+      flex: 1,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: c.hairline,
+      backgroundColor: c.surface,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      gap: 2,
+    },
+    dateAnchorChipActive: {
+      borderColor: c.brand,
+      backgroundColor: c.brand,
+    },
+    dateAnchorLabel: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    dateAnchorLabelActive: {
+      color: c.onBrand,
+    },
+    dateAnchorValue: {
+      ...t.bodyStrong,
+      color: c.ink,
+    },
+    dateAnchorValueActive: {
+      color: c.surface,
+    },
+    calendar: {
+      borderRadius: radii.lg,
+      overflow: 'hidden',
+    },
+    notifCard: {
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    notifRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+    },
+    notifIconBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: radii.sm,
+      backgroundColor: c.brandSofter,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    notifBody: {
+      flex: 1,
+      gap: 2,
+    },
+    notifTitle: {
+      ...t.bodyStrong,
+    },
+    notifMeta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    notifType: {
+      ...t.caption,
+      color: c.brand,
+      fontWeight: '600',
+    },
+    dashboardMetricCard: {
+      ...cardSurface(c),
+      flex: 1,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    dashboardMetricLabel: {
+      ...t.label,
+      color: c.inkMuted,
+    },
+    dashboardMetricValue: {
+      ...t.sectionTitle,
+      fontSize: 28,
+      fontWeight: '700',
+    },
+    balanceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    balanceLead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      flex: 1,
+    },
+    balanceIconBubble: {
+      width: 40,
+      height: 40,
+      borderRadius: radii.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    balanceIconPositive: {
+      backgroundColor: c.successSoft,
+    },
+    balanceIconNegative: {
+      backgroundColor: c.dangerSoft,
+    },
+    balanceIconNeutral: {
+      backgroundColor: c.panel,
+    },
+    balanceTitle: {
+      ...t.bodyStrong,
+    },
+    balanceMeta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    balanceAmount: {
+      ...t.sectionTitle,
+      fontWeight: '700',
+    },
+    balanceHint: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    fundOverviewBlock: {
+      marginTop: spacing.sm,
+      gap: spacing.sm,
+    },
+    fundOverviewHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    fundOverviewTitleBlock: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    fundOverviewLabel: {
+      ...t.label,
+      color: c.brand,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    fundOverviewAmount: {
+      ...t.display,
+      fontSize: 34,
+      lineHeight: 40,
+      color: c.ink,
+    },
+    fundOverviewMeta: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    fundOverviewAction: {
+      paddingTop: spacing.xs,
+    },
+    fundProgressTrack: {
+      flexDirection: 'row',
+      height: 10,
+      borderRadius: radii.pill,
+      overflow: 'hidden',
+      backgroundColor: c.brandGhost,
+    },
+    fundProgressSpent: {
+      backgroundColor: c.brand,
+    },
+    fundProgressSpentHidden: {
+      opacity: 0,
+    },
+    fundProgressAvailable: {
+      backgroundColor: c.signal,
+    },
+    fundProgressLabels: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    fundProgressLabel: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    shortcutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    shortcutIconBubble: {
+      width: 40,
+      height: 40,
+      borderRadius: radii.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.brandSofter,
+    },
+    shortcutTitle: {
+      ...t.bodyStrong,
+    },
+    shortcutMeta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+  });
+};

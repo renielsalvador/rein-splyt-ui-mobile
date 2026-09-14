@@ -20,7 +20,9 @@ import {
 } from '../../components/ui';
 import {expenseSchema} from '../../lib/validation/forms';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
-import {palette, radii, spacing, typography} from '../../theme/tokens';
+import {createTypography, radii, spacing} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles, useTheme} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import type {CurrencyCode, ExpenseReceipt, ExpenseReceiptAsset} from '../../types/domain';
 import {formatSelfDisplayName} from '../events/EventScreenShared';
@@ -32,6 +34,8 @@ function currencySymbol(currency: CurrencyCode) {
 }
 
 export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>) {
+  const styles = useStyles(createStyles);
+  const {colors: c} = useTheme();
   const {eventId, expenseId} = route.params;
   const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error} = useApp();
   const summary = summaries[eventId];
@@ -344,7 +348,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
               setFieldErrors(current => ({...current, amount: undefined}));
             }}
             placeholder="0.00"
-            placeholderTextColor={palette.inkMuted}
+            placeholderTextColor={c.inkMuted}
             keyboardType="decimal-pad"
             accessibilityLabel="Expense amount"
             maxFontSizeMultiplier={1.4}
@@ -667,188 +671,192 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   );
 }
 
-const styles = StyleSheet.create({
-  amountLabel: {
-    ...typography.label,
-  },
-  amountField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: 64,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    backgroundColor: palette.bgApp,
-  },
-  amountFieldError: {
-    borderColor: palette.dangerText,
-  },
-  amountPrefix: {
-    ...typography.amount,
-    fontSize: 26,
-    lineHeight: 32,
-    color: palette.inkMuted,
-  },
-  amountInput: {
-    flex: 1,
-    ...typography.amount,
-    fontSize: 30,
-    lineHeight: 36,
-    padding: 0,
-    color: palette.ink,
-  },
-  perHead: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  fundPanel: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: palette.greenTint,
-  },
-  fundRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  fundLabel: {
-    ...typography.label,
-    color: palette.ink,
-  },
-  fundMeta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  splitRow: {
-    minHeight: 60,
-    borderRadius: radii.lg,
-    backgroundColor: palette.bgApp,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  splitTitle: {
-    ...typography.cardTitle,
-  },
-  splitActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  toggleItem: {
-    flex: 1,
-  },
-  receiptPreview: {
-    gap: spacing.md,
-  },
-  receiptGrid: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  receiptTile: {
-    flex: 1,
-    position: 'relative',
-  },
-  receiptImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 16,
-    backgroundColor: palette.bgApp,
-  },
-  receiptRemoveButton: {
-    position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: 32,
-    height: 32,
-    borderRadius: radii.pill,
-    backgroundColor: 'rgba(28, 28, 30, 0.72)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  receiptEmpty: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    backgroundColor: palette.bgApp,
-    borderRadius: 20,
-    padding: spacing.md,
-  },
-  receiptEmptyIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: palette.greenTintSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  receiptCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  receiptTitle: {
-    ...typography.bodyStrong,
-  },
-  receiptMeta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  receiptActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  previewTitle: {
-    ...typography.bodyStrong,
-    color: palette.primary,
-  },
-  previewBody: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  payerDropdown: {
-    minHeight: 72,
-    borderRadius: 20,
-    backgroundColor: palette.bgApp,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  payerDropdownPressed: {
-    opacity: 0.82,
-  },
-  payerDropdownLead: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  payerDropdownCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  payerDropdownLabel: {
-    ...typography.cardTitle,
-    fontSize: 18,
-  },
-  payerDropdownDetail: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-});
+const createStyles = (c: Colors) => {
+  const t = createTypography(c);
+
+  return StyleSheet.create({
+    amountLabel: {
+      ...t.label,
+    },
+    amountField: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: 64,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.md,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+      backgroundColor: c.panel,
+    },
+    amountFieldError: {
+      borderColor: c.dangerText,
+    },
+    amountPrefix: {
+      ...t.amount,
+      fontSize: 26,
+      lineHeight: 32,
+      color: c.inkMuted,
+    },
+    amountInput: {
+      flex: 1,
+      ...t.amount,
+      fontSize: 30,
+      lineHeight: 36,
+      padding: 0,
+      color: c.ink,
+    },
+    perHead: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    fundPanel: {
+      gap: spacing.sm,
+      padding: spacing.md,
+      borderRadius: radii.lg,
+      backgroundColor: c.brandSoft,
+    },
+    fundRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    fundLabel: {
+      ...t.label,
+      color: c.ink,
+    },
+    fundMeta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    splitRow: {
+      minHeight: 60,
+      borderRadius: radii.lg,
+      backgroundColor: c.panel,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    splitTitle: {
+      ...t.cardTitle,
+    },
+    splitActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    toggleItem: {
+      flex: 1,
+    },
+    receiptPreview: {
+      gap: spacing.md,
+    },
+    receiptGrid: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    receiptTile: {
+      flex: 1,
+      position: 'relative',
+    },
+    receiptImage: {
+      width: '100%',
+      aspectRatio: 1,
+      borderRadius: 16,
+      backgroundColor: c.panel,
+    },
+    receiptRemoveButton: {
+      position: 'absolute',
+      top: spacing.xs,
+      right: spacing.xs,
+      width: 32,
+      height: 32,
+      borderRadius: radii.pill,
+      backgroundColor: c.scrim,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    receiptEmpty: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+      backgroundColor: c.panel,
+      borderRadius: 20,
+      padding: spacing.md,
+    },
+    receiptEmptyIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: c.brandSofter,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    receiptCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+    },
+    receiptTitle: {
+      ...t.bodyStrong,
+    },
+    receiptMeta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    receiptActions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    previewTitle: {
+      ...t.bodyStrong,
+      color: c.brand,
+    },
+    previewBody: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    payerDropdown: {
+      minHeight: 72,
+      borderRadius: 20,
+      backgroundColor: c.panel,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+    },
+    payerDropdownPressed: {
+      opacity: 0.82,
+    },
+    payerDropdownLead: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    payerDropdownCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    payerDropdownLabel: {
+      ...t.cardTitle,
+      fontSize: 18,
+    },
+    payerDropdownDetail: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+  });
+};

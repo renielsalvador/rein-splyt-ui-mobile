@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text, View} from 'react-native';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export type PillTone = 'default' | 'accent' | 'danger' | 'info' | 'success' | 'outline';
 
@@ -11,6 +11,7 @@ export function DataPill({
   label: string;
   tone?: PillTone;
 }) {
+  const styles = useAppStyles();
   const containerStyle =
     tone === 'accent'
       ? styles.pillAccent

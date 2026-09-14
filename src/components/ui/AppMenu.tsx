@@ -1,8 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Dimensions, Modal, Pressable, Text, View} from 'react-native';
-import {spacing, surfaces} from '../../theme/tokens';
+import {cardSurface, spacing} from '../../theme/tokens';
+import {useTheme} from '../../theme/ThemeProvider';
 import {AppIcon, IconButton, type AppIconName} from './AppIcon';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function AppMenu({
   items,
@@ -16,6 +17,8 @@ export function AppMenu({
   }>;
   renderTrigger?: (props: {open: boolean; toggle: () => void}) => React.ReactNode;
 }) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({top: 52, left: 0});
   const triggerRef = useRef<View>(null);
@@ -62,7 +65,7 @@ export function AppMenu({
             <View
               accessibilityViewIsModal
               style={[
-                surfaces.card,
+                cardSurface(c),
                 styles.menuCard,
                 {top: menuPosition.top, left: menuPosition.left},
               ]}>

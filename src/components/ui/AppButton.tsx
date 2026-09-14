@@ -1,8 +1,8 @@
 import React, {useRef} from 'react';
 import {ActivityIndicator, Animated, Pressable, Text, View} from 'react-native';
 import {AppIcon, type AppIconName} from './AppIcon';
-import {styles} from './styles';
-import {palette} from '../../theme/tokens';
+import {useAppStyles} from './styles';
+import {useTheme} from '../../theme/ThemeProvider';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'black' | 'destructive';
 
@@ -23,6 +23,8 @@ export function AppButton({
   icon?: AppIconName;
   size?: 'default' | 'sm' | 'compact';
 }) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   const baseStyle =
     size === 'sm'
       ? styles.buttonSm
@@ -50,7 +52,7 @@ export function AppButton({
 
   const iconTone =
     variant === 'secondary' ? 'accent' : 'inverted';
-  const spinnerColor = variant === 'secondary' ? palette.primary : palette.surface;
+  const spinnerColor = variant === 'secondary' ? c.brand : c.surface;
   const isDisabled = disabled || loading;
   const scale = useRef(new Animated.Value(1)).current;
 

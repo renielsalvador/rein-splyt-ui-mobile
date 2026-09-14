@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Text, TextInput, View} from 'react-native';
-import {palette} from '../../theme/tokens';
-import {styles} from './styles';
+import {useTheme} from '../../theme/ThemeProvider';
+import {useAppStyles} from './styles';
 import {AppIcon, type AppIconName} from './AppIcon';
 
 export function AppInput({
@@ -29,6 +29,8 @@ export function AppInput({
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'decimal-pad';
   errorMessage?: string;
 }) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -52,7 +54,7 @@ export function AppInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={palette.inkMuted}
+          placeholderTextColor={c.inkMuted}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           autoCapitalize={autoCapitalize}

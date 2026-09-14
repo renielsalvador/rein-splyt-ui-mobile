@@ -1,8 +1,9 @@
 import React from 'react';
 import {Pressable, Text, View} from 'react-native';
-import {surfaces} from '../../theme/tokens';
+import {cardSurface} from '../../theme/tokens';
+import {useTheme} from '../../theme/ThemeProvider';
 import {AppIcon, type AppIconName} from './AppIcon';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function ActionTile({
   title,
@@ -15,12 +16,14 @@ export function ActionTile({
   icon: AppIconName;
   onPress: () => void;
 }) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       style={({pressed}) => [
-        surfaces.card,
+        cardSurface(c),
         styles.actionTile,
         pressed ? styles.buttonPressed : null,
       ]}>

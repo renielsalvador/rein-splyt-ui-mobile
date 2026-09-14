@@ -2,7 +2,7 @@ import React from 'react';
 import {Pressable, Text, View} from 'react-native';
 import {AppAvatar} from './AppAvatar';
 import {AppIcon, type AppIconName} from './AppIcon';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function SelectableRow({
   label,
@@ -19,6 +19,7 @@ export function SelectableRow({
   selected?: boolean;
   onPress: () => void;
 }) {
+  const styles = useAppStyles();
   return (
     <Pressable
       accessibilityRole="checkbox"

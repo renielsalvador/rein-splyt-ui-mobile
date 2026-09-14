@@ -14,11 +14,14 @@ import {
   balanceTone,
 } from '../../components/ui';
 import {formatCurrency} from '../../lib/utils/format';
-import {palette, radii, spacing, typography} from '../../theme/tokens';
+import {createTypography, radii, spacing} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import {formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
+  const styles = useStyles(createStyles);
   const {eventId} = route.params;
   const {hydrateEvent, summaries, balances, currentUser} = useApp();
   const summary = summaries[eventId];
@@ -96,6 +99,7 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
 }
 
 export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>) {
+  const styles = useStyles(createStyles);
   const {eventId} = route.params;
   const {hydrateEvent, summaries, settlements, currentUser} = useApp();
   const summary = summaries[eventId];
@@ -247,62 +251,66 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  rowDivided: {
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.divider,
-  },
-  copy: {
-    flex: 1,
-    gap: 2,
-  },
-  value: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  valueLabel: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  memberName: {
-    ...typography.bodyStrong,
-  },
-  meta: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  heroLabel: {
-    ...typography.label,
-    color: palette.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  heroMeta: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  settledTitle: {
-    ...typography.pageTitle,
-  },
-  fundNote: {
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: palette.greenTintSoft,
-    gap: spacing.xs,
-  },
-  fundNoteLabel: {
-    ...typography.label,
-    color: palette.primary,
-  },
-  fundNoteBody: {
-    ...typography.body,
-    color: palette.ink,
-  },
-});
+const createStyles = (c: Colors) => {
+  const t = createTypography(c);
+
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    rowDivided: {
+      paddingTop: spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
+    },
+    copy: {
+      flex: 1,
+      gap: 2,
+    },
+    value: {
+      alignItems: 'flex-end',
+      gap: 2,
+    },
+    valueLabel: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    memberName: {
+      ...t.bodyStrong,
+    },
+    meta: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    heroLabel: {
+      ...t.label,
+      color: c.brand,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    heroMeta: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    settledTitle: {
+      ...t.pageTitle,
+    },
+    fundNote: {
+      padding: spacing.md,
+      borderRadius: radii.lg,
+      backgroundColor: c.brandSofter,
+      gap: spacing.xs,
+    },
+    fundNoteLabel: {
+      ...t.label,
+      color: c.brand,
+    },
+    fundNoteBody: {
+      ...t.body,
+      color: c.ink,
+    },
+  });
+};

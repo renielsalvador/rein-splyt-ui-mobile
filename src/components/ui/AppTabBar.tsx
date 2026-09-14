@@ -1,59 +1,41 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {AppIcon} from './AppIcon';
-import {styles} from './styles';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {radii, spacing, typeScale} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles, useTheme} from '../../theme/ThemeProvider';
 
-export type TabName = 'Home' | 'Events' | 'Activity' | 'Settings';
+export type TabName = 'Home' | 'Balances' | 'Activity';
 
-function HomeIcon({active}: {active: boolean}) {
-  return (
-    <View style={localStyles.iconWrap}>
-      <AppIcon name="home" size={20} tone={active ? 'default' : 'muted'} />
-    </View>
-  );
-}
+export const TAB_BAR_HEIGHT = 64;
 
-function EventsIcon({active}: {active: boolean}) {
-  return (
-    <View style={localStyles.iconWrap}>
-      <AppIcon name="calendar" size={20} tone={active ? 'default' : 'muted'} />
-    </View>
-  );
-}
-
-function ActivityIcon({active}: {active: boolean}) {
-  return (
-    <View style={localStyles.iconWrap}>
-      <AppIcon name="activity" size={20} tone={active ? 'default' : 'muted'} />
-    </View>
-  );
-}
-
-function SettingsIcon({active}: {active: boolean}) {
-  return (
-    <View style={localStyles.iconWrap}>
-      <AppIcon name="settings" size={20} tone={active ? 'default' : 'muted'} />
-    </View>
-  );
-}
-
-const TABS: {name: TabName; label: string; Icon: React.ComponentType<{active: boolean}>}[] = [
-  {name: 'Home', label: 'Home', Icon: HomeIcon},
-  {name: 'Events', label: 'Events', Icon: EventsIcon},
-  {name: 'Activity', label: 'Activity', Icon: ActivityIcon},
-  {name: 'Settings', label: 'Settings', Icon: SettingsIcon},
+/** Outline at rest, filled when selected — the fill is what carries the state. */
+const TABS: {name: TabName; label: string; icon: string; activeIcon: string}[] = [
+  {name: 'Home', label: 'Home', icon: 'home-outline', activeIcon: 'home'},
+  {name: 'Balances', label: 'Balances', icon: 'scale-balance', activeIcon: 'scale-balance'},
+  {
+    name: 'Activity',
+    label: 'Activity',
+    icon: 'chart-timeline-variant',
+    activeIcon: 'chart-timeline-variant',
+  },
 ];
 
 export function AppTabBar({
   currentTab,
   onTabPress,
+  bottomInset = 0,
 }: {
   currentTab: TabName;
   onTabPress: (tab: TabName) => void;
+  bottomInset?: number;
 }) {
+  const {colors} = useTheme();
+  const styles = useStyles(createStyles);
+
   return (
-    <View style={styles.tabBar}>
-      {TABS.map(({name, label, Icon}) => {
+    <View style={[styles.bar, {paddingBottom: bottomInset}]}>
+      {TABS.map(({name, label, icon, activeIcon}) => {
         const active = currentTab === name;
         return (
           <Pressable
@@ -62,10 +44,14 @@ export function AppTabBar({
             accessibilityState={{selected: active}}
             accessibilityLabel={label}
             onPress={() => onTabPress(name)}
-            style={styles.tabItem}>
-            <Icon active={active} />
+            style={styles.item}>
+            <MaterialCommunityIcons
+              name={active ? activeIcon : icon}
+              size={24}
+              color={active ? colors.ink : colors.inkMuted}
+            />
             <Text
-              style={[styles.tabLabel, active && styles.tabLabelActive]}
+              style={[styles.label, active && styles.labelActive]}
               maxFontSizeMultiplier={1.3}
               numberOfLines={1}>
               {label}
@@ -77,11 +63,39 @@ export function AppTabBar({
   );
 }
 
-const localStyles = StyleSheet.create({
-  iconWrap: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const createStyles = (colors: Colors) =>
+  StyleSheet.create({
+    bar: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: radii.sheet,
+      borderTopRightRadius: radii.sheet,
+      paddingTop: 10,
+      paddingHorizontal: spacing.sm,
+      // Replaces the hairline top border; the lift is the whole separation.
+      shadowColor: colors.shadow,
+      shadowOpacity: colors.shadowOpacity * 1.8,
+      shadowRadius: 28,
+      shadowOffset: {width: 0, height: -8},
+      elevation: 16,
+    },
+    item: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 5,
+      height: TAB_BAR_HEIGHT - 10,
+      paddingTop: 6,
+    },
+    label: {
+      ...typeScale.caption,
+      fontSize: 12,
+      fontWeight: '500',
+      letterSpacing: -0.1,
+      color: colors.inkMuted,
+    },
+    labelActive: {
+      fontWeight: '600',
+      color: colors.ink,
+    },
+  });
