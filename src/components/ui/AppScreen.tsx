@@ -18,12 +18,13 @@ export type TitleAction = {
   label: string;
   icon?: string;
   onPress: () => void;
+  variant?: 'black' | 'tint';
 };
 
 export function AppScreen({
   title,
   subtitle,
-  titleAction,
+  titleActions,
   children,
   leading,
   actions,
@@ -37,7 +38,7 @@ export function AppScreen({
 }: React.PropsWithChildren<{
   title?: string;
   subtitle?: string;
-  titleAction?: TitleAction;
+  titleActions?: TitleAction[];
   leading?: React.ReactNode;
   actions?: React.ReactNode;
   headerLeft?: React.ReactNode;
@@ -83,7 +84,9 @@ export function AppScreen({
     );
   }
 
-  const hasTitleRow = Boolean(title || titleAction);
+  // Two is the ceiling: a third action makes the title row a toolbar and the title an afterthought.
+  const actionsInTitle = (titleActions ?? []).slice(0, 2);
+  const hasTitleRow = Boolean(title || actionsInTitle.length > 0);
 
   return (
     <KeyboardAvoidingView
@@ -112,23 +115,41 @@ export function AppScreen({
                 {title ? <Text style={styles.title}>{title}</Text> : null}
                 {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
               </View>
-              {titleAction ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={titleAction.label}
-                  onPress={titleAction.onPress}
-                  style={({pressed}) => [styles.titlePill, pressed ? styles.pressed : null]}>
-                  {titleAction.icon ? (
-                    <MaterialCommunityIcons
-                      name={titleAction.icon}
-                      size={17}
-                      color={colors.onActionInk}
-                    />
-                  ) : null}
-                  <Text style={styles.titlePillLabel} maxFontSizeMultiplier={1.2}>
-                    {titleAction.label}
-                  </Text>
-                </Pressable>
+              {actionsInTitle.length > 0 ? (
+                <View style={styles.titleActions}>
+                  {actionsInTitle.map(action => {
+                    const tinted = action.variant === 'tint';
+                    return (
+                      <Pressable
+                        key={action.label}
+                        accessibilityRole="button"
+                        accessibilityLabel={action.label}
+                        onPress={action.onPress}
+                        hitSlop={{top: 6, bottom: 6}}
+                        style={({pressed}) => [
+                          styles.titlePill,
+                          tinted ? styles.titlePillTint : styles.titlePillInk,
+                          pressed ? styles.pressed : null,
+                        ]}>
+                        {action.icon ? (
+                          <MaterialCommunityIcons
+                            name={action.icon}
+                            size={16}
+                            color={tinted ? colors.brandIcon : colors.onActionInk}
+                          />
+                        ) : null}
+                        <Text
+                          style={[
+                            styles.titlePillLabel,
+                            tinted ? styles.titlePillLabelTint : styles.titlePillLabelInk,
+                          ]}
+                          maxFontSizeMultiplier={1.2}>
+                          {action.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               ) : null}
             </View>
           ) : null}
@@ -207,19 +228,34 @@ const createStyles = (colors: Colors) =>
       color: colors.inkMuted,
       marginTop: 2,
     },
-    titlePill: {
-      height: 40,
-      borderRadius: radii.pill,
-      backgroundColor: colors.actionInk,
+    titleActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
-      paddingHorizontal: spacing.md,
+      gap: spacing.sm,
+    },
+    titlePill: {
+      height: 40,
+      borderRadius: radii.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: 14,
+    },
+    titlePillInk: {
+      backgroundColor: colors.actionInk,
+    },
+    titlePillTint: {
+      backgroundColor: colors.brandSoft,
     },
     titlePillLabel: {
       ...typeScale.button,
-      fontSize: 14.5,
+      fontSize: 15,
+    },
+    titlePillLabelInk: {
       color: colors.onActionInk,
+    },
+    titlePillLabelTint: {
+      color: colors.onBrandSoft,
     },
     pressed: {opacity: 0.82, transform: [{scale: 0.97}]},
     footerOverlay: {

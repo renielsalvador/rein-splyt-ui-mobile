@@ -4,7 +4,7 @@ import {AppIcon, type AppIconName} from './AppIcon';
 import {useAppStyles} from './styles';
 import {useTheme} from '../../theme/ThemeProvider';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'black' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'tint' | 'black' | 'destructive';
 
 export function AppButton({
   label,
@@ -14,6 +14,7 @@ export function AppButton({
   loading = false,
   icon,
   size = 'default',
+  onTint = false,
 }: {
   label: string;
   onPress: () => void;
@@ -22,6 +23,8 @@ export function AppButton({
   loading?: boolean;
   icon?: AppIconName;
   size?: 'default' | 'sm' | 'compact';
+  /** Set when the button sits on a Sage Wash surface, where the tint fill would disappear. */
+  onTint?: boolean;
 }) {
   const {colors: c} = useTheme();
   const styles = useAppStyles();
@@ -37,22 +40,39 @@ export function AppButton({
       ? styles.buttonPrimary
       : variant === 'secondary'
         ? styles.buttonSecondary
-        : variant === 'black'
-          ? styles.buttonBlack
-          : styles.buttonDestructive;
+        : variant === 'tint'
+          ? onTint
+            ? styles.buttonTintOnAccent
+            : styles.buttonTint
+          : variant === 'black'
+            ? styles.buttonBlack
+            : styles.buttonDestructive;
 
   const textStyle =
     variant === 'primary'
       ? styles.buttonTextPrimary
       : variant === 'secondary'
         ? styles.buttonTextSecondary
-        : variant === 'black'
-          ? styles.buttonTextBlack
-          : styles.buttonTextDestructive;
+        : variant === 'tint'
+          ? styles.buttonTextTint
+          : variant === 'black'
+            ? styles.buttonTextBlack
+            : styles.buttonTextDestructive;
 
   const iconTone =
-    variant === 'secondary' ? 'accent' : 'inverted';
-  const spinnerColor = variant === 'secondary' ? c.brand : c.surface;
+    variant === 'secondary' || variant === 'tint'
+      ? 'accent'
+      : variant === 'black'
+        ? 'inverted'
+        : 'white';
+  const spinnerColor =
+    variant === 'secondary'
+      ? c.brand
+      : variant === 'tint'
+        ? c.onBrandSoft
+        : variant === 'black'
+          ? c.onActionInk
+          : c.onBrand;
   const isDisabled = disabled || loading;
   const scale = useRef(new Animated.Value(1)).current;
 

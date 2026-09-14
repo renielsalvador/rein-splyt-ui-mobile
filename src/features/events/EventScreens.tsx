@@ -287,7 +287,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
                 : 'Add members'
             }
             icon="members"
-            variant="secondary"
+            variant="tint"
             onPress={() => setMemberModalVisible(true)}
           />
           <SelectedMembersPreview
@@ -299,7 +299,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           <View style={styles.actionRowItem}>
             <AppButton
               label={`Currency: ${currency}`}
-              variant="secondary"
+              variant="tint"
               onPress={() => setCurrency(currency === 'USD' ? 'PHP' : 'USD')}
             />
           </View>
@@ -606,7 +606,7 @@ export function EventDashboardScreen({
                   setEditModalStep('details');
                 }}
               style={({pressed}) => [styles.dashboardEditButton, pressed && styles.pressed]}>
-              <AppIcon name="edit" tone="accent" size={12} />
+              <AppIcon name="edit" tone="accent" size={16} />
               <Text style={styles.dashboardEditText}>Edit</Text>
             </Pressable>
           </View>
@@ -634,36 +634,28 @@ export function EventDashboardScreen({
             accessibilityRole="button"
             onPress={() => navigation.navigate('AddExpense', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="expense" tone="accent" size={22} />
-            </View>
+            <AppIcon name="expense" size={24} />
             <Text style={styles.shortcutLabel}>Expense</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Balances', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="balances" tone="accent" size={22} />
-            </View>
+            <AppIcon name="balances" size={24} />
             <Text style={styles.shortcutLabel}>Balances</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Settlement', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="settlement" tone="accent" size={22} />
-            </View>
+            <AppIcon name="settlement" size={24} />
             <Text style={styles.shortcutLabel}>Settle</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Members', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="members" tone="accent" size={22} />
-            </View>
+            <AppIcon name="members" size={24} />
             <Text style={styles.shortcutLabel}>Members</Text>
           </Pressable>
         </View>
@@ -991,6 +983,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           <AppButton
             label="Generate event code"
             icon="invite"
+            variant="tint"
+            onTint
             loading={generatingCode}
             onPress={() => {
               setGeneratingCode(true);
@@ -1019,6 +1013,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Add placeholder member"
           icon="members"
+          variant="tint"
           loading={addingMember}
           onPress={() => {
             if (displayName.trim().length < 2) {
@@ -1053,6 +1048,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Send invite"
           icon="invite"
+          variant="tint"
           loading={sendingInvite}
           onPress={() => {
             const normalizedEmail = normalizeEmail(inviteEmail);

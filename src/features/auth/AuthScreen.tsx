@@ -575,8 +575,8 @@ const createStyles = (c: Colors) => {
     },
     dividerLine: {
       flex: 1,
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: c.hairline,
+      height: 1,
+      backgroundColor: c.rule,
     },
     dividerText: {
       ...t.caption,

@@ -370,7 +370,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
             <AppButton
               label="Personal"
               icon="person"
-              variant={usingFund ? 'secondary' : 'primary'}
+              variant={usingFund ? 'tint' : 'primary'}
               onPress={() => setPaymentSource('personal')}
             />
           </View>
@@ -378,7 +378,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
             <AppButton
               label="Central fund"
               icon="fund"
-              variant={usingFund ? 'primary' : 'secondary'}
+              variant={usingFund ? 'primary' : 'tint'}
               onPress={() => setPaymentSource('central_fund')}
             />
           </View>
@@ -542,7 +542,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
             <AppButton
               label="Take photo"
               icon="camera"
-              variant="secondary"
+              variant="tint"
               size="sm"
               onPress={() => {
                 handleReceiptPick('camera').catch(() => undefined);
@@ -553,7 +553,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
             <AppButton
               label={displayedReceipts.length > 0 ? 'Add photos' : 'Upload photos'}
               icon="edit"
-              variant="secondary"
+              variant="tint"
               size="sm"
               onPress={() => {
                 handleReceiptPick('library').catch(() => undefined);
@@ -587,7 +587,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         <View style={styles.splitActions}>
           <AppButton
             label="Select everyone"
-            variant="secondary"
+            variant="tint"
             size="sm"
             onPress={() => {
               setFieldErrors(current => ({...current, participantMemberIds: undefined}));
@@ -596,7 +596,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
           />
           <AppButton
             label="Clear all"
-            variant="secondary"
+            variant="tint"
             size="sm"
             onPress={() => setSelectedMemberIds([])}
           />

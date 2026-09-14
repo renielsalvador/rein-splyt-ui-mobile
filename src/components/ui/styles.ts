@@ -104,7 +104,13 @@ export const createAppStyles = (c: Colors) => {
       borderColor: c.hairline,
     },
     buttonBlack: {
-      backgroundColor: c.ink,
+      backgroundColor: c.actionInk,
+    },
+    buttonTint: {
+      backgroundColor: c.brandSoft,
+    },
+    buttonTintOnAccent: {
+      backgroundColor: c.onTintScrim,
     },
     buttonDestructive: {
       backgroundColor: c.dangerText,
@@ -125,16 +131,19 @@ export const createAppStyles = (c: Colors) => {
       ...t.button,
     },
     buttonTextPrimary: {
-      color: c.surface,
+      color: c.onBrand,
     },
     buttonTextSecondary: {
       color: c.brand,
     },
     buttonTextBlack: {
-      color: c.surface,
+      color: c.onActionInk,
+    },
+    buttonTextTint: {
+      color: c.onBrandSoft,
     },
     buttonTextDestructive: {
-      color: c.surface,
+      color: c.onBrand,
     },
 
     // ─── inputs ─────────────────────────────────────────────────────────────────
@@ -282,7 +291,7 @@ export const createAppStyles = (c: Colors) => {
       width: 36,
       height: 4,
       borderRadius: radii.pill,
-      backgroundColor: c.hairline,
+      backgroundColor: c.rule,
       marginBottom: spacing.xs,
     },
     modalCard: {

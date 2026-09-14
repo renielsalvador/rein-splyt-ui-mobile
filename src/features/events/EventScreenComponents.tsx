@@ -410,7 +410,7 @@ export function EventDateRangePicker({
         <View style={styles.actionRowItem}>
           <AppButton
             label="Clear dates"
-            variant="secondary"
+            variant="tint"
             onPress={() => {
               setHasDates(false);
               onClear();
@@ -610,7 +610,10 @@ export function DashboardFundOverviewCard({
             </Text>
           </View>
           <View style={componentStyles.fundOverviewAction}>
-            <DataPill label="Manage fund" tone="outline" />
+            <View style={componentStyles.manageFundChip}>
+              <Text style={componentStyles.manageFundChipLabel}>Manage fund</Text>
+              <AppIcon name="chevron" tone="accent" size={16} />
+            </View>
           </View>
         </View>
 
@@ -985,6 +988,21 @@ const createComponentStyles = (c: Colors) => {
     },
     fundOverviewAction: {
       paddingTop: spacing.xs,
+    },
+    manageFundChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      minHeight: 36,
+      paddingLeft: spacing.md,
+      paddingRight: spacing.sm + 2,
+      borderRadius: radii.md,
+      backgroundColor: c.onTintChip,
+    },
+    manageFundChipLabel: {
+      ...t.button,
+      fontSize: 15,
+      color: c.onBrandSoft,
     },
     fundProgressTrack: {
       flexDirection: 'row',

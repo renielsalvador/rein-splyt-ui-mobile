@@ -60,8 +60,8 @@ const createStyles = (colors: Colors) =>
     },
     line: {
       flex: 1,
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: colors.hairline,
+      height: 1,
+      backgroundColor: colors.rule,
     },
     detail: {
       ...typeScale.caption,

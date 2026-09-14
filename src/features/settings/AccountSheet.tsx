@@ -172,8 +172,8 @@ const createStyles = (colors: Colors) =>
       gap: 13,
       padding: 14,
       minHeight: 54,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colors.hairline,
+      borderTopWidth: 1,
+      borderTopColor: colors.rule,
     },
     rowIcon: {
       width: 32,

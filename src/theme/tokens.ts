@@ -29,6 +29,8 @@ const lightColors = {
   ink: '#1C1C1E',
   inkMuted: '#6B6B6F',
   hairline: '#E5E7EB',
+  // Separators need more weight than control borders: they sit on white and on the gray panel.
+  rule: '#CDD3DA',
 
   brand: '#2F6F57',
   brandLift: '#3E8C6A',
@@ -90,6 +92,7 @@ const darkColors: Colors = {
   ink: '#F2F3F5',
   inkMuted: '#8E8E96',
   hairline: '#2A2C31',
+  rule: '#3C4047',
 
   brand: '#2F6F57',
   brandLift: '#4E9C7A',

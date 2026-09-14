@@ -174,6 +174,11 @@ export function HomeScreen({
 
   const hasAnyEvent = events.length > 0;
 
+  function openJoin() {
+    setJoinFieldError(undefined);
+    setJoinOpen(true);
+  }
+
   return (
     <>
       <AppScreen
@@ -181,11 +186,15 @@ export function HomeScreen({
         hasTabBar={hasTabBar}
         tabBarBottomInset={tabBarBottomInset}
         title="Your trips"
-        titleAction={{
-          label: 'New',
-          icon: 'plus',
-          onPress: () => navigation.navigate('CreateEvent'),
-        }}
+        titleActions={[
+          {label: 'Join', icon: 'account-plus-outline', variant: 'tint', onPress: openJoin},
+          {
+            label: 'New',
+            icon: 'plus',
+            variant: 'black',
+            onPress: () => navigation.navigate('CreateEvent'),
+          },
+        ]}
         headerLeft={
           <View style={styles.brandRow}>
             <BrandLogo />
@@ -216,6 +225,7 @@ export function HomeScreen({
                 <AppButton
                   label="New event"
                   icon="create"
+                  variant="black"
                   size="compact"
                   onPress={() => navigation.navigate('CreateEvent')}
                 />
@@ -224,12 +234,10 @@ export function HomeScreen({
                 <AppButton
                   label="Join code"
                   icon="join"
-                  variant="secondary"
+                  variant="tint"
+                  onTint
                   size="compact"
-                  onPress={() => {
-                    setJoinFieldError(undefined);
-                    setJoinOpen(true);
-                  }}
+                  onPress={openJoin}
                 />
               </View>
             </View>
@@ -316,20 +324,6 @@ export function HomeScreen({
               );
             })}
           </>
-        ) : null}
-
-        {hasAnyEvent ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Join an event with an invite code"
-            onPress={() => {
-              setJoinFieldError(undefined);
-              setJoinOpen(true);
-            }}
-            style={({pressed}) => [styles.joinRow, pressed ? styles.pressed : null]}>
-            <AppIcon name="join" tone="accent" size={18} />
-            <Text style={styles.joinLabel}>Join with a code</Text>
-          </Pressable>
         ) : null}
       </AppScreen>
 
@@ -473,14 +467,15 @@ function OpenTripCard({
       ) : null}
 
       <View style={styles.openActions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Add an expense to ${event.name}`}
-          onPress={onAddExpense}
-          style={({pressed}) => [styles.primaryAction, pressed ? styles.pressed : null]}>
-          <AppIcon name="create" tone="inverted" size={18} />
-          <Text style={styles.primaryActionLabel}>Add expense</Text>
-        </Pressable>
+        <View style={styles.flex}>
+          <AppButton
+            label="Add expense"
+            icon="create"
+            variant="black"
+            size="sm"
+            onPress={onAddExpense}
+          />
+        </View>
         {members.length > 0 ? (
           <AppAvatarStack names={members.map(member => member.displayName)} size="xs" />
         ) : null}
@@ -587,21 +582,10 @@ const createStyles = (colors: Colors) =>
     tripMeta: {...typeScale.caption, fontSize: 12.5, color: colors.inkMuted, marginTop: 2},
     label: {...typeScale.caption, fontSize: 12.5, color: colors.inkMuted},
     balanceLine: {...typeScale.body, fontSize: 14, fontWeight: '600', marginTop: 5},
-    divider: {height: StyleSheet.hairlineWidth, backgroundColor: colors.hairline, marginHorizontal: -18},
+    divider: {height: 1, backgroundColor: colors.rule, marginHorizontal: -18},
     lastRow: {flexDirection: 'row', alignItems: 'center', gap: 11},
     lastTitle: {...typeScale.bodyStrong, fontSize: 14.5, color: colors.ink},
     openActions: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2},
-    primaryAction: {
-      flex: 1,
-      height: 46,
-      borderRadius: radii.pill,
-      backgroundColor: colors.actionInk,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.sm,
-    },
-    primaryActionLabel: {...typeScale.button, fontSize: 15, color: colors.onActionInk},
 
     tripRow: {
       backgroundColor: colors.surface,
@@ -621,18 +605,6 @@ const createStyles = (colors: Colors) =>
     rowName: {...typeScale.bodyStrong, fontSize: 15.5, color: colors.ink},
     dimText: {color: colors.inkMuted},
     settledLabel: {...typeScale.caption, fontSize: 12.5, color: colors.inkMuted},
-
-    joinRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.sm,
-      minHeight: 46,
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      borderColor: colors.hairline,
-    },
-    joinLabel: {...typeScale.button, fontSize: 15, color: colors.brandIcon},
 
     notificationList: {gap: spacing.sm},
   });

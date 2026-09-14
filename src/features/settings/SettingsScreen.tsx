@@ -81,7 +81,7 @@ export function AccountUpdateScreen({
             <AppButton
               label="Take photo"
               icon="camera"
-              variant="secondary"
+              variant="tint"
               onPress={() => {
                 handleAvatarPick('camera').catch(() => undefined);
               }}
@@ -91,7 +91,7 @@ export function AccountUpdateScreen({
             <AppButton
               label="Upload photo"
               icon="edit"
-              variant="secondary"
+              variant="tint"
               onPress={() => {
                 handleAvatarPick('library').catch(() => undefined);
               }}
@@ -224,7 +224,7 @@ const createStyles = (c: Colors) => {
     },
     rowBorder: {
       borderTopWidth: 1,
-      borderTopColor: c.hairline,
+      borderTopColor: c.rule,
     },
     rowPressed: {
       opacity: 0.82,

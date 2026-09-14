@@ -185,7 +185,6 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
         <AppButton
           label="Share summary"
           icon="share"
-          variant={isSettled ? 'primary' : 'black'}
           onPress={shareSummary}
         />
       }>
@@ -263,8 +262,8 @@ const createStyles = (c: Colors) => {
     },
     rowDivided: {
       paddingTop: spacing.md,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: c.hairline,
+      borderTopWidth: 1,
+      borderTopColor: c.rule,
     },
     copy: {
       flex: 1,
