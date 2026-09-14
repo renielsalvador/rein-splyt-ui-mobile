@@ -85,6 +85,20 @@ describe('buildActivityFeed', () => {
           createdAt: '2026-05-05T07:00:00.000Z',
         },
       ],
+      settlements: [
+        {
+          id: 'settlement_1',
+          eventId: event.id,
+          fromMemberId: 'member_guest',
+          fromDisplayName: 'alex@example.com',
+          toMemberId: 'member_owner',
+          toDisplayName: 'Tina',
+          amount: 1200,
+          currency: 'PHP',
+          recordedBy: 'user_owner',
+          createdAt: '2026-05-06T07:00:00.000Z',
+        },
+      ],
     };
 
     const balances: Record<string, MemberBalance[]> = {
@@ -94,7 +108,9 @@ describe('buildActivityFeed', () => {
           displayName: 'Tina',
           paid: 2900,
           owed: 1200,
-          net: 1700,
+          settledOut: 0,
+          settledIn: 1200,
+          net: 500,
         },
       ],
     };
@@ -106,6 +122,7 @@ describe('buildActivityFeed', () => {
     );
 
     expect(feed.map(entry => entry.id)).toEqual([
+      'settlement:settlement_1',
       'contribution:contribution_1',
       'expense:expense_1',
       'member:member_guest:invited',
@@ -113,12 +130,16 @@ describe('buildActivityFeed', () => {
     ]);
 
     expect(feed[0]).toMatchObject({
-      title: 'Tina added to Palawan Trip Fund',
+      title: 'Payment recorded',
+      body: 'alex@example.com paid Tina ₱1,200.00.',
     });
     expect(feed[1]).toMatchObject({
-      title: 'Villa deposit',
+      title: 'Tina added to Palawan Trip Fund',
     });
     expect(feed[2]).toMatchObject({
+      title: 'Villa deposit',
+    });
+    expect(feed[3]).toMatchObject({
       title: 'alex@example.com was added to Palawan Trip',
     });
   });

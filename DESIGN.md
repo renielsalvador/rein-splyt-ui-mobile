@@ -325,6 +325,8 @@ Corners are consistently and generously soft, but the radius is not uniform — 
 
 **Borders are the exception, not the rule.** Only four things carry one: secondary buttons (1pt Hairline), focused inputs (1.5pt Settled Forest), errored inputs (1.5pt Danger Clay), and unselected selection marks (1.5pt Hairline). The tab bar uses a hairline-width top edge. Nothing else is outlined.
 
+**The Separator Weight Rule.** `rule` (`#CDD3DA`) is for section rules only — the `SectionRule` heading divider. Separators *between rows inside a grouped panel* use `StyleSheet.hairlineWidth` with `hairline` (`#E5E7EB`), inset to align with the row's title rather than bleeding to the panel edge, and never above the first row. A 1pt `rule` line between list rows reads as a table border and fights the grouped-panel fill.
+
 **Icons** are Material Community Icons, and the shipped set is almost entirely the `-outline` variants (`account-outline`, `bell-outline`, `wallet-outline`). Filled icons appear only where the glyph has no outline form. Standard sizes are 16pt inside buttons and pills, 18pt default, 20pt in the tab bar.
 
 ### Named Rules

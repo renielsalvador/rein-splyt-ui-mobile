@@ -1,5 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import type {StyleProp, TextStyle} from 'react-native';
 import {Calendar} from 'react-native-calendars';
 import {
   AppAvatar,
@@ -714,11 +715,13 @@ export function BalanceDetailsContent({
   currency,
   owesYou,
   youOwe,
+  onSettle,
 }: {
   currentBalanceNet: number;
   currency: CurrencyCode;
   owesYou: SettlementInstruction[];
   youOwe: SettlementInstruction[];
+  onSettle?: (instruction: SettlementInstruction) => void;
 }) {
   const styles = useEventStyles();
   return (
@@ -744,15 +747,14 @@ export function BalanceDetailsContent({
           <Text style={styles.balanceSheetEmpty}>Nobody owes you right now.</Text>
         ) : null}
         {owesYou.map(item => (
-          <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
-            <View style={styles.balanceSheetRowCopy}>
-              <Text style={styles.balanceSheetRowTitle}>{item.fromDisplayName}</Text>
-              <Text style={styles.balanceSheetRowSubtitle}>Needs to pay you</Text>
-            </View>
-            <Text style={styles.balanceDetailPositive}>
-              {formatCurrency(item.amount, currency)}
-            </Text>
-          </View>
+          <SettleableBalanceRow
+            key={`${item.fromMemberId}-${item.toMemberId}`}
+            title={item.fromDisplayName}
+            subtitle="Needs to pay you"
+            amountStyle={styles.balanceDetailPositive}
+            amountLabel={formatCurrency(item.amount, currency)}
+            onSettle={onSettle ? () => onSettle(item) : undefined}
+          />
         ))}
       </View>
 
@@ -762,18 +764,58 @@ export function BalanceDetailsContent({
           <Text style={styles.balanceSheetEmpty}>You do not owe anyone right now.</Text>
         ) : null}
         {youOwe.map(item => (
-          <View key={`${item.fromMemberId}-${item.toMemberId}`} style={styles.balanceSheetRow}>
-            <View style={styles.balanceSheetRowCopy}>
-              <Text style={styles.balanceSheetRowTitle}>{item.toDisplayName}</Text>
-              <Text style={styles.balanceSheetRowSubtitle}>You need to pay</Text>
-            </View>
-            <Text style={styles.balanceDetailNegative}>
-              {formatCurrency(item.amount, currency)}
-            </Text>
-          </View>
+          <SettleableBalanceRow
+            key={`${item.fromMemberId}-${item.toMemberId}`}
+            title={item.toDisplayName}
+            subtitle="You need to pay"
+            amountStyle={styles.balanceDetailNegative}
+            amountLabel={formatCurrency(item.amount, currency)}
+            onSettle={onSettle ? () => onSettle(item) : undefined}
+          />
         ))}
       </View>
     </>
+  );
+}
+
+function SettleableBalanceRow({
+  title,
+  subtitle,
+  amountLabel,
+  amountStyle,
+  onSettle,
+}: {
+  title: string;
+  subtitle: string;
+  amountLabel: string;
+  amountStyle: StyleProp<TextStyle>;
+  onSettle?: () => void;
+}) {
+  const styles = useEventStyles();
+  const content = (
+    <>
+      <View style={styles.balanceSheetRowCopy}>
+        <Text style={styles.balanceSheetRowTitle}>{title}</Text>
+        <Text style={styles.balanceSheetRowSubtitle}>
+          {onSettle ? `${subtitle} • tap to settle` : subtitle}
+        </Text>
+      </View>
+      <Text style={amountStyle}>{amountLabel}</Text>
+    </>
+  );
+
+  if (!onSettle) {
+    return <View style={styles.balanceSheetRow}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Record payment with ${title}`}
+      onPress={onSettle}
+      style={({pressed}) => [styles.balanceSheetRow, pressed ? styles.pressed : null]}>
+      {content}
+    </Pressable>
   );
 }
 

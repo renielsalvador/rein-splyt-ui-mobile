@@ -142,6 +142,20 @@ export type CentralFundContribution = {
   createdAt: string;
 };
 
+export type Settlement = {
+  id: string;
+  eventId: string;
+  fromMemberId: string;
+  fromDisplayName: string;
+  toMemberId: string;
+  toDisplayName: string;
+  amount: number;
+  currency: CurrencyCode;
+  note?: string;
+  recordedBy: string;
+  createdAt: string;
+};
+
 export type EventSummary = {
   event: Event;
   members: EventMember[];
@@ -150,6 +164,7 @@ export type EventSummary = {
   invites: Invite[];
   fund: CentralFund;
   contributions: CentralFundContribution[];
+  settlements: Settlement[];
 };
 
 export type MemberBalance = {
@@ -157,6 +172,10 @@ export type MemberBalance = {
   displayName: string;
   paid: number;
   owed: number;
+  /** Recorded settlements this member has paid out, which credit their net. */
+  settledOut: number;
+  /** Recorded settlements this member has received, which debit their net. */
+  settledIn: number;
   net: number;
 };
 
@@ -241,3 +260,29 @@ export type CreateContributionInput = {
   memberId: string;
   amount: number;
 };
+
+export type CreateSettlementInput = {
+  eventId: string;
+  fromMemberId: string;
+  toMemberId: string;
+  amount: number;
+  note?: string;
+};
+
+export type UserPreferences = {
+  preferredCurrency: CurrencyCode;
+};
+
+export type UpdateUserPreferencesInput = {
+  preferredCurrency: CurrencyCode;
+};
+
+export type NotificationPreferences = {
+  pushEnabled: boolean;
+  expenses: boolean;
+  settlements: boolean;
+  invites: boolean;
+  eventUpdates: boolean;
+};
+
+export type UpdateNotificationPreferencesInput = Partial<NotificationPreferences>;

@@ -21,6 +21,8 @@ export async function getBalances(
     displayName: item.display_name,
     paid: toNumber(item.paid),
     owed: toNumber(item.owed),
+    settledOut: toNumber(item.settled_out ?? 0),
+    settledIn: toNumber(item.settled_in ?? 0),
     net: toNumber(item.net),
   }));
 }

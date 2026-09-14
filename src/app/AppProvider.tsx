@@ -16,20 +16,35 @@ import type {
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
+  CreateSettlementInput,
   Event,
   EventMember,
   EventSummary,
   Invite,
   JoinEventInput,
   MemberBalance,
+  NotificationPreferences,
   PendingInvite,
   RespondToInviteInput,
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateNotificationPreferencesInput,
+  UpdateUserPreferencesInput,
   UpdateUserProfileInput,
+  UserPreferences,
   UserProfile,
 } from '../types/domain';
+
+const DEFAULT_USER_PREFERENCES: UserPreferences = {preferredCurrency: 'PHP'};
+
+const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  pushEnabled: false,
+  expenses: true,
+  settlements: true,
+  invites: true,
+  eventUpdates: true,
+};
 
 type AppContextValue = {
   backendReady: boolean;
@@ -41,6 +56,8 @@ type AppContextValue = {
   summaries: Record<string, EventSummary>;
   balances: Record<string, MemberBalance[]>;
   settlements: Record<string, SettlementInstruction[]>;
+  preferences: UserPreferences;
+  notificationPreferences: NotificationPreferences;
   error: string | null;
   clearError: () => void;
   signIn: (input: AuthFormValues) => Promise<void>;
@@ -64,6 +81,11 @@ type AppContextValue = {
   addExpense: (input: CreateExpenseInput) => Promise<void>;
   updateExpense: (input: UpdateExpenseInput) => Promise<void>;
   addContribution: (input: CreateContributionInput) => Promise<void>;
+  recordSettlement: (input: CreateSettlementInput) => Promise<void>;
+  updatePreferences: (input: UpdateUserPreferencesInput) => Promise<void>;
+  updateNotificationPreferences: (
+    input: UpdateNotificationPreferencesInput,
+  ) => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -81,19 +103,34 @@ export function AppProvider({children}: React.PropsWithChildren) {
   const [settlements, setSettlements] = useState<
     Record<string, SettlementInstruction[]>
   >({});
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    DEFAULT_USER_PREFERENCES,
+  );
+  const [notificationPreferences, setNotificationPreferences] =
+    useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [error, setError] = useState<string | null>(null);
 
   const applySession = useCallback(async (nextBackend: AppBackend, user: UserProfile) => {
-    const [nextEvents, nextContacts, nextPendingInvites] = await Promise.all([
+    const [
+      nextEvents,
+      nextContacts,
+      nextPendingInvites,
+      nextPreferences,
+      nextNotificationPreferences,
+    ] = await Promise.all([
       nextBackend.listEvents(user.id),
       nextBackend.listContacts(user.id),
       nextBackend.listPendingInvites(user.email),
+      nextBackend.getUserPreferences(user.id),
+      nextBackend.getNotificationPreferences(user.id),
     ]);
 
     setCurrentUser(user);
     setEvents(nextEvents);
     setContacts(nextContacts);
     setPendingInvites(nextPendingInvites);
+    setPreferences(nextPreferences);
+    setNotificationPreferences(nextNotificationPreferences);
   }, []);
 
   useEffect(() => {
@@ -334,6 +371,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       setSummaries({});
       setBalances({});
       setSettlements({});
+      setPreferences(DEFAULT_USER_PREFERENCES);
+      setNotificationPreferences(DEFAULT_NOTIFICATION_PREFERENCES);
     });
   }, [backend, mutate]);
 
@@ -574,6 +613,49 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [backend, currentUser, hydrateEvent, mutate],
   );
 
+  const recordSettlement = useCallback(
+    async (input: CreateSettlementInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        await backend.recordSettlement(currentUser.id, input);
+        await hydrateEvent(input.eventId);
+        await refreshEvents();
+      });
+    },
+    [backend, currentUser, hydrateEvent, mutate, refreshEvents],
+  );
+
+  const updatePreferences = useCallback(
+    async (input: UpdateUserPreferencesInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        const next = await backend.updateUserPreferences(currentUser.id, input);
+        setPreferences(next);
+      });
+    },
+    [backend, currentUser, mutate],
+  );
+
+  const updateNotificationPreferences = useCallback(
+    async (input: UpdateNotificationPreferencesInput) => {
+      if (!backend || !currentUser) {
+        throw new Error('You must be signed in.');
+      }
+
+      await mutate(async () => {
+        const next = await backend.updateNotificationPreferences(currentUser.id, input);
+        setNotificationPreferences(next);
+      });
+    },
+    [backend, currentUser, mutate],
+  );
+
   const value = useMemo(
     () => ({
       backendReady,
@@ -585,6 +667,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       summaries,
       balances,
       settlements,
+      preferences,
+      notificationPreferences,
       error,
       clearError: () => setError(null),
       signIn,
@@ -608,9 +692,17 @@ export function AppProvider({children}: React.PropsWithChildren) {
       addExpense,
       updateExpense,
       addContribution,
+      recordSettlement,
+      updatePreferences,
+      updateNotificationPreferences,
     }),
     [
       addContribution,
+      recordSettlement,
+      updatePreferences,
+      updateNotificationPreferences,
+      preferences,
+      notificationPreferences,
       addExpense,
       updateExpense,
       addManualMember,

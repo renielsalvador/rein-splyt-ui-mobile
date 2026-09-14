@@ -14,7 +14,10 @@ import {BalancesOverviewScreen} from '../features/balances/BalancesOverviewScree
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
+import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
 import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
+import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
+import {NotificationSettingsScreen} from '../features/settings/NotificationSettingsScreen';
 import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT} from '../components/ui';
 import type {TabName} from '../components/ui';
 import {ThemeProvider, useTheme} from '../theme/ThemeProvider';
@@ -31,7 +34,15 @@ export type AppStackParamList = {
   CentralFund: {eventId: string};
   Balances: {eventId: string};
   Settlement: {eventId: string};
+  RecordSettlement: {
+    eventId: string;
+    fromMemberId: string;
+    toMemberId: string;
+    suggestedAmount: number;
+  };
   AccountUpdate: undefined;
+  HelpSupport: undefined;
+  NotificationSettings: undefined;
 };
 
 type ScreenName = keyof AppStackParamList;
@@ -184,8 +195,24 @@ function AppNavigator() {
         return <BalancesScreen navigation={navigation} route={route as Route<'Balances'>} />;
       case 'Settlement':
         return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
+      case 'RecordSettlement':
+        return (
+          <RecordSettlementScreen
+            navigation={navigation}
+            route={route as Route<'RecordSettlement'>}
+          />
+        );
       case 'AccountUpdate':
         return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
+      case 'HelpSupport':
+        return <HelpSupportScreen navigation={navigation} route={route as Route<'HelpSupport'>} />;
+      case 'NotificationSettings':
+        return (
+          <NotificationSettingsScreen
+            navigation={navigation}
+            route={route as Route<'NotificationSettings'>}
+          />
+        );
       default:
         return null;
     }

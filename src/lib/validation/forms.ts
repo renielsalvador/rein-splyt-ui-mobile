@@ -178,3 +178,22 @@ export const contributionSchema: Validator<
     return pass({amount: input.amount});
   },
 };
+
+export const settlementSchema: Validator<
+  {amount: number; maxAmount: number; note?: string},
+  {amount: number; note?: string}
+> = {
+  safeParse(input) {
+    const note = input.note?.trim();
+
+    if (!Number.isFinite(input.amount) || input.amount <= 0) {
+      return fail('Enter an amount greater than zero.');
+    }
+
+    if (input.amount > input.maxAmount) {
+      return fail('Amount is more than what is outstanding.');
+    }
+
+    return pass({amount: input.amount, note});
+  },
+};

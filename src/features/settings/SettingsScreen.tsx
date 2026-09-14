@@ -223,8 +223,8 @@ const createStyles = (c: Colors) => {
       paddingHorizontal: spacing.md,
     },
     rowBorder: {
-      borderTopWidth: 1,
-      borderTopColor: c.rule,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
     },
     rowPressed: {
       opacity: 0.82,

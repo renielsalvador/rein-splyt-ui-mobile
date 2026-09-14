@@ -28,6 +28,7 @@ type Counterparty = {
   net: number;
   entries: number;
   eventNames: string[];
+  eventIds: string[];
   /** Placeholder members have no account, so they can never merge across events. */
   eventScoped: boolean;
 };
@@ -100,6 +101,9 @@ export function BalancesOverviewScreen({
           if (!existing.eventNames.includes(event.name)) {
             existing.eventNames.push(event.name);
           }
+          if (!existing.eventIds.includes(event.id)) {
+            existing.eventIds.push(event.id);
+          }
           return;
         }
 
@@ -110,6 +114,7 @@ export function BalancesOverviewScreen({
           net: delta,
           entries: 1,
           eventNames: [event.name],
+          eventIds: [event.id],
           eventScoped,
         });
       });
@@ -233,7 +238,11 @@ export function BalancesOverviewScreen({
           <>
             <SectionRule title="You owe" detail={formatTotal(owingTotal, owing[0].currency)} />
             {owing.map(person => (
-              <PersonRow key={person.key} person={person} />
+              <PersonRow
+                key={person.key}
+                person={person}
+                onSettle={id => navigation.navigate('Settlement', {eventId: id})}
+              />
             ))}
           </>
         ) : null}
@@ -242,7 +251,11 @@ export function BalancesOverviewScreen({
           <>
             <SectionRule title="You're owed" detail={formatTotal(owedTotal, owed[0].currency)} />
             {owed.map(person => (
-              <PersonRow key={person.key} person={person} />
+              <PersonRow
+                key={person.key}
+                person={person}
+                onSettle={id => navigation.navigate('Settlement', {eventId: id})}
+              />
             ))}
           </>
         ) : null}
@@ -301,17 +314,30 @@ export function BalancesOverviewScreen({
           setAccountOpen(false);
           navigation.navigate('AccountUpdate');
         }}
+        onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
     </>
   );
 }
 
-function PersonRow({person, dimmed = false}: {person: Counterparty; dimmed?: boolean}) {
+function PersonRow({
+  person,
+  dimmed = false,
+  onSettle,
+}: {
+  person: Counterparty;
+  dimmed?: boolean;
+  onSettle?: (eventId: string) => void;
+}) {
   const styles = useStyles(createStyles);
   const settledUp = Math.abs(person.net) <= 0.005;
+  // A counterparty spanning several trips has no single settle-up screen to open.
+  const settleEventId =
+    !settledUp && person.eventIds.length === 1 ? person.eventIds[0] : undefined;
 
-  return (
-    <View style={[styles.row, dimmed ? styles.rowDim : null]}>
+  const content = (
+    <>
       <AppAvatar name={person.displayName} size="md" />
       <View style={styles.flex}>
         <Text style={[styles.rowName, dimmed ? styles.dimText : null]} numberOfLines={1}>
@@ -341,7 +367,25 @@ function PersonRow({person, dimmed = false}: {person: Counterparty; dimmed?: boo
           </>
         )}
       </View>
-    </View>
+    </>
+  );
+
+  if (!onSettle || !settleEventId) {
+    return <View style={[styles.row, dimmed ? styles.rowDim : null]}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Settle up with ${person.displayName}`}
+      onPress={() => onSettle(settleEventId)}
+      style={({pressed}) => [
+        styles.row,
+        dimmed ? styles.rowDim : null,
+        pressed ? styles.pressed : null,
+      ]}>
+      {content}
+    </Pressable>
   );
 }
 

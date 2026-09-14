@@ -1,9 +1,10 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Share, StyleSheet, Text, View} from 'react-native';
+import {Pressable, Share, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
   AppButton,
   AppCard,
+  AppIcon,
   AppScreen,
   AppToast,
   EmptyState,
@@ -13,7 +14,7 @@ import {
   balanceLabel,
   balanceTone,
 } from '../../components/ui';
-import {formatCurrency} from '../../lib/utils/format';
+import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
 import {createTypography, radii, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
@@ -104,6 +105,7 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
   const {hydrateEvent, summaries, settlements, currentUser} = useApp();
   const summary = summaries[eventId];
   const instructions = settlements[eventId] ?? [];
+  const recordedSettlements = summary?.settlements ?? [];
   const currentMemberId = summary?.members.find(member => member.userId === currentUser?.id)?.id;
   const [toast, setToast] = useState<string | null>(null);
 
@@ -206,15 +208,29 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
               {instructions.length} {instructions.length === 1 ? 'payment' : 'payments'}
             </Text>
             <Text style={styles.heroMeta}>
-              The shortest set of transfers that clears every balance.
+              The shortest set of transfers that clears every balance. Tap one to record it.
             </Text>
           </AppCard>
 
           <AppCard>
             {instructions.map((instruction, index) => (
-              <View
+              <Pressable
                 key={`${instruction.fromMemberId}-${instruction.toMemberId}-${index}`}
-                style={[styles.row, index > 0 ? styles.rowDivided : null]}>
+                accessibilityRole="button"
+                accessibilityLabel={`Record payment from ${instruction.fromDisplayName} to ${instruction.toDisplayName}`}
+                onPress={() =>
+                  navigation.navigate('RecordSettlement', {
+                    eventId,
+                    fromMemberId: instruction.fromMemberId,
+                    toMemberId: instruction.toMemberId,
+                    suggestedAmount: instruction.amount,
+                  })
+                }
+                style={({pressed}) => [
+                  styles.row,
+                  index > 0 ? styles.rowDivided : null,
+                  pressed ? styles.rowPressed : null,
+                ]}>
                 <View style={styles.copy}>
                   <Text style={styles.memberName}>
                     {formatSelfDisplayName(
@@ -227,13 +243,46 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
                       instruction.toMemberId === currentMemberId,
                     )}
                   </Text>
+                  <Text style={styles.rowHint}>Tap to mark as paid</Text>
                 </View>
                 <MoneyValue value={instruction.amount} currency={currency} tone="positive" />
-              </View>
+                <AppIcon name="chevron" tone="muted" size={16} />
+              </Pressable>
             ))}
           </AppCard>
         </>
       )}
+
+      {recordedSettlements.length > 0 ? (
+        <AppCard>
+          <SectionHeading title="Settled" />
+          {recordedSettlements.map((settlement, index) => (
+            <View
+              key={settlement.id}
+              style={[styles.row, index > 0 ? styles.rowDivided : null]}>
+              <View style={styles.copy}>
+                <Text style={styles.memberName}>
+                  {formatSelfDisplayName(
+                    settlement.fromDisplayName,
+                    settlement.fromMemberId === currentMemberId,
+                  )}{' '}
+                  paid{' '}
+                  {formatSelfDisplayName(
+                    settlement.toDisplayName,
+                    settlement.toMemberId === currentMemberId,
+                  )}
+                </Text>
+                <Text style={styles.rowHint}>
+                  {settlement.note
+                    ? `${settlement.note} • ${formatDateLabel(settlement.createdAt)}`
+                    : formatDateLabel(settlement.createdAt)}
+                </Text>
+              </View>
+              <MoneyValue value={settlement.amount} currency={currency} />
+            </View>
+          ))}
+        </AppCard>
+      ) : null}
 
       {fundSpend > 0 ? (
         <View style={styles.fundNote}>
@@ -262,8 +311,15 @@ const createStyles = (c: Colors) => {
     },
     rowDivided: {
       paddingTop: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: c.rule,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
+    },
+    rowPressed: {
+      opacity: 0.82,
+    },
+    rowHint: {
+      ...t.caption,
+      color: c.inkMuted,
     },
     copy: {
       flex: 1,

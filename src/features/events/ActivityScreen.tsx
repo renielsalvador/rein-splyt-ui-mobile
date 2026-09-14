@@ -107,6 +107,8 @@ export function ActivityScreen({
           setAccountOpen(false);
           navigation.navigate('AccountUpdate');
         }}
+        onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
     </>
   );

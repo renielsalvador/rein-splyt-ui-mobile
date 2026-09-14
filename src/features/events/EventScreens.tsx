@@ -111,10 +111,10 @@ export function NotificationDetailScreen({
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const styles = useEventStyles();
-  const {contacts, createEvent, currentUser, error} = useApp();
+  const {contacts, createEvent, currentUser, error, preferences} = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [currency, setCurrency] = useState<CurrencyCode>('PHP');
+  const [currency, setCurrency] = useState<CurrencyCode>(preferences.preferredCurrency);
   const [icon, setIcon] = useState<EventIconName>('event');
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
@@ -861,6 +861,15 @@ export function EventDashboardScreen({
           currency={event.currency}
           owesYou={owesYou}
           youOwe={youOwe}
+          onSettle={instruction => {
+            setShowBalanceDetails(false);
+            navigation.navigate('RecordSettlement', {
+              eventId,
+              fromMemberId: instruction.fromMemberId,
+              toMemberId: instruction.toMemberId,
+              suggestedAmount: instruction.amount,
+            });
+          }}
         />
       </AppModal>
     </>
