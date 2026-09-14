@@ -11,7 +11,6 @@ import {
   AppMenu,
   AppScreen,
   BrandLogo,
-  DataPill,
   HeaderMenuButton,
   InlineError,
   NotificationButton,
@@ -42,26 +41,25 @@ function SettingsRow({
   bordered?: boolean;
 }) {
   const textTone = tone === 'danger' ? styles.rowTitleDanger : null;
+  const interactive = !!onPress;
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityLabel={detail ? `${title}, ${detail}` : title}
+      disabled={!interactive}
       onPress={onPress}
       style={({pressed}) => [
         styles.row,
         bordered ? styles.rowBorder : null,
-        pressed ? styles.rowPressed : null,
+        pressed && interactive ? styles.rowPressed : null,
       ]}>
       <View style={[styles.rowIconWrap, tone === 'danger' ? styles.rowIconWrapDanger : null]}>
-        <AppIcon
-          name={icon}
-          size={16}
-          tone={tone === 'danger' ? 'danger' : 'accent'}
-        />
+        <AppIcon name={icon} size={16} tone={tone === 'danger' ? 'danger' : 'accent'} />
       </View>
       <Text style={[styles.rowTitle, textTone]}>{title}</Text>
       {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
-      <AppIcon name="chevron" size={16} tone="muted" />
+      {interactive ? <AppIcon name="chevron" size={16} tone="muted" /> : null}
     </Pressable>
   );
 }
@@ -135,7 +133,6 @@ export function SettingsScreen({
         <View style={styles.profileCopy}>
           <Text style={styles.profileName}>{currentUser?.displayName ?? 'Traveler'}</Text>
           <Text style={styles.profileEmail}>{currentUser?.email ?? 'No email on file'}</Text>
-          <DataPill label="Trusted" tone="accent" />
         </View>
         <View style={styles.profileEdit}>
           <AppIcon name="edit" size={16} tone="muted" />
@@ -146,7 +143,13 @@ export function SettingsScreen({
       <AppCard>
         <View style={styles.rows}>
           <SettingsRow icon="wallet" title="Default currency" detail="PHP · ₱" />
-          <SettingsRow icon="bell" title="Notifications" detail={unreadLabel} bordered />
+          <SettingsRow
+            icon="bell"
+            title="Notifications"
+            detail={unreadLabel}
+            bordered
+            onPress={() => navigation.navigate('Activity')}
+          />
           <SettingsRow icon="sun" title="Appearance" detail="System" bordered />
         </View>
       </AppCard>
@@ -393,7 +396,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rowTitleDanger: {
-    color: palette.danger,
+    color: palette.dangerText,
   },
   rowDetail: {
     ...typography.body,

@@ -5,6 +5,7 @@ import type {ScreenProps} from '../../app/navigation';
 import {
   AppButton,
   AppCard,
+  AppHeroBand,
   AppIcon,
   AppInput,
   AppMenu,
@@ -15,6 +16,7 @@ import {
   EmptyState,
   HeaderMenuButton,
   InlineError,
+  MoneyValue,
   NotificationButton,
   ScreenBackButton,
   SelectableRow,
@@ -66,6 +68,7 @@ export function HomeScreen({
     events,
     signOut,
     summaries,
+    balances,
     hydrateEvent,
     joinEvent,
     pendingInvites,
@@ -108,6 +111,7 @@ export function HomeScreen({
   );
 
   const primaryCurrency = includedEvents[0]?.currency ?? sortedEvents[0]?.currency ?? 'PHP';
+  const hasActivity = sortedEvents.length > 0 || pendingInvites.length > 0;
 
   async function handleJoin() {
     const parsed = joinSchema.safeParse({inviteCode});
@@ -170,19 +174,30 @@ export function HomeScreen({
             />
           </View>
         }>
-        <AppCard tone="accent">
-          <View style={styles.heroTopRow}>
-            <Text style={styles.heroLabel}>Total tracked spend</Text>
-            {includedEvents.length > 0 && (
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>
-                  {includedEvents.length} event{includedEvents.length === 1 ? '' : 's'}
-                </Text>
+        <AppHeroBand>
+          {hasActivity ? (
+            <>
+              <View style={styles.heroTopRow}>
+                <Text style={styles.heroLabel}>Total tracked spend</Text>
+                {includedEvents.length > 0 && (
+                  <View style={styles.heroBadge}>
+                    <Text style={styles.heroBadgeText}>
+                      {includedEvents.length} event{includedEvents.length === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
-          <Text style={styles.heroAmount}>{formatCurrency(totalSpend, primaryCurrency)}</Text>
-          <Text style={styles.heroMeta}>Across all your active events</Text>
+              <MoneyValue value={totalSpend} currency={primaryCurrency} size="hero" />
+              <Text style={styles.heroMeta}>Across all your active events</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.heroWelcome}>Start your first trip</Text>
+              <Text style={styles.heroMeta}>
+                Create an event for the group, or join one with a code someone shared with you.
+              </Text>
+            </>
+          )}
           <View style={styles.actionRow}>
             <View style={styles.actionRowItem}>
               <AppButton
@@ -205,14 +220,14 @@ export function HomeScreen({
               />
             </View>
           </View>
-        </AppCard>
+        </AppHeroBand>
 
         <View style={styles.statCardRow}>
           <View style={styles.statCard}>
             <View style={styles.statCardTopRow}>
               <Text style={styles.statCardLabel}>Active events</Text>
-            <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
-                <AppIcon name="event" tone="inverted" size={16} />
+              <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
+                <AppIcon name="event" tone="default" size={16} />
               </View>
             </View>
             <Text style={styles.statCardValue}>{includedEvents.length}</Text>
@@ -221,7 +236,7 @@ export function HomeScreen({
             <View style={styles.statCardTopRow}>
               <Text style={styles.statCardLabel}>Invites</Text>
               <View style={[styles.statCardIconBadge, styles.statCardIconBlue]}>
-                <AppIcon name="invite" tone="inverted" size={16} />
+                <AppIcon name="invite" tone="default" size={16} />
               </View>
             </View>
             <Text style={styles.statCardValue}>{pendingInvites.length}</Text>
@@ -230,25 +245,34 @@ export function HomeScreen({
 
         <SectionHeading
           title="Your events"
-          detail="See all"
-          onDetailPress={() => navigation.navigate('Events')}
+          detail={sortedEvents.length > 0 ? 'See all' : undefined}
+          onDetailPress={
+            sortedEvents.length > 0 ? () => navigation.navigate('Events') : undefined
+          }
         />
         {sortedEvents.length === 0 ? (
           <EmptyState
-            title="No events yet"
-            body="Create a trip or join one with an invite code to start tracking shared spending."
+            title="Nothing here yet"
+            body="Events you create or join will show up here with their running totals."
           />
         ) : null}
         {sortedEvents.slice(0, 3).map(event => {
           const summary = summaries[event.id];
           const totalEventSpend =
             summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
+          const selfMemberId = summary?.members.find(
+            member => member.userId === currentUser?.id,
+          )?.id;
+          const selfBalance = selfMemberId
+            ? balances[event.id]?.find(balance => balance.memberId === selfMemberId)?.net
+            : undefined;
           return (
             <HomeEventCard
               key={event.id}
               event={event}
               members={summary?.members ?? []}
               totalSpend={totalEventSpend}
+              currentBalance={selfBalance}
               onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
             />
           );

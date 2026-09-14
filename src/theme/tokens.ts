@@ -22,6 +22,11 @@ export const palette = {
   info: '#3B82F6',
   success: '#4CAF50',
   warning: '#F59E0B',
+  // Semantic colors darkened to clear 4.5:1 when used as text on light surfaces.
+  dangerText: '#B3261E',
+  infoText: '#1D4ED8',
+  successText: '#15803D',
+  warningText: '#B45309',
   shadow: '#163628',
 } as const;
 

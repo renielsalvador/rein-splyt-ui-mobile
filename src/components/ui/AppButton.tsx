@@ -1,5 +1,5 @@
-import React from 'react';
-import {ActivityIndicator, Pressable, Text, View} from 'react-native';
+import React, {useRef} from 'react';
+import {ActivityIndicator, Animated, Pressable, Text, View} from 'react-native';
 import {AppIcon, type AppIconName} from './AppIcon';
 import {styles} from './styles';
 import {palette} from '../../theme/tokens';
@@ -52,27 +52,43 @@ export function AppButton({
     variant === 'secondary' ? 'accent' : 'inverted';
   const spinnerColor = variant === 'secondary' ? palette.primary : palette.surface;
   const isDisabled = disabled || loading;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  function animateTo(value: number) {
+    Animated.spring(scale, {
+      toValue: value,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 6,
+    }).start();
+  }
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{disabled: isDisabled, busy: loading}}
-      disabled={isDisabled}
-      onPress={onPress}
-      style={({pressed}) => [
-        baseStyle,
-        variantStyle,
-        isDisabled ? styles.buttonDisabled : null,
-        pressed ? styles.buttonPressed : null,
-      ]}>
-      <View style={styles.buttonContent}>
-        {loading ? (
-          <ActivityIndicator color={spinnerColor} size="small" />
-        ) : icon ? (
-          <AppIcon name={icon} tone={iconTone} size={16} />
-        ) : null}
-        <Text style={[styles.buttonText, textStyle]}>{label}</Text>
-      </View>
-    </Pressable>
+    <Animated.View style={{transform: [{scale}]}}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{disabled: isDisabled, busy: loading}}
+        disabled={isDisabled}
+        onPress={onPress}
+        onPressIn={() => animateTo(0.97)}
+        onPressOut={() => animateTo(1)}
+        style={({pressed}) => [
+          baseStyle,
+          variantStyle,
+          isDisabled ? styles.buttonDisabled : null,
+          pressed ? styles.buttonPressed : null,
+        ]}>
+        <View style={styles.buttonContent}>
+          {loading ? (
+            <ActivityIndicator color={spinnerColor} size="small" />
+          ) : icon ? (
+            <AppIcon name={icon} tone={iconTone} size={16} />
+          ) : null}
+          <Text style={[styles.buttonText, textStyle]} maxFontSizeMultiplier={1.6}>
+            {label}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }

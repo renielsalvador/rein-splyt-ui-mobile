@@ -29,11 +29,15 @@ export function DataPill({
       ? styles.pillTextOutline
       : tone === 'default'
         ? styles.pillText
-        : styles.pillTextLight;
+        : tone === 'success' || tone === 'info'
+          ? styles.pillTextOnBright
+          : styles.pillTextLight;
 
   return (
     <View style={[styles.pill, containerStyle]}>
-      <Text style={textStyle}>{label}</Text>
+      <Text style={textStyle} maxFontSizeMultiplier={1.6}>
+        {label}
+      </Text>
     </View>
   );
 }

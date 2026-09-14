@@ -58,12 +58,18 @@ export function AppTabBar({
         return (
           <Pressable
             key={name}
-            accessibilityRole="button"
+            accessibilityRole="tab"
+            accessibilityState={{selected: active}}
             accessibilityLabel={label}
             onPress={() => onTabPress(name)}
             style={styles.tabItem}>
             <Icon active={active} />
-            <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
+            <Text
+              style={[styles.tabLabel, active && styles.tabLabelActive]}
+              maxFontSizeMultiplier={1.3}
+              numberOfLines={1}>
+              {label}
+            </Text>
           </Pressable>
         );
       })}

@@ -99,7 +99,9 @@ export function HomeEventCard({
         </View>
         <View style={styles.eventBody}>
           <View style={styles.eventTitleRow}>
-            <Text style={[styles.eventName, !event.isActive && styles.eventNameInactive]}>
+            <Text
+              style={[styles.eventName, !event.isActive && styles.eventNameInactive]}
+              numberOfLines={1}>
               {event.name}
             </Text>
           </View>
@@ -584,6 +586,7 @@ export function DashboardFundOverviewCard({
             </Text>
             <Text style={componentStyles.fundOverviewMeta}>
               {formatCurrency(contributedAmount, currency)} contributed ·{' '}
+              {formatCurrency(spentAmount, currency)} spent
             </Text>
           </View>
           <View style={componentStyles.fundOverviewAction}>

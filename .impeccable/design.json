@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-12T00:00:00.000Z",
+  "title": "Design System: Splyt",
+  "extensions": {
+    "colorMeta": {
+      "settled-forest": {
+        "role": "primary",
+        "displayName": "Settled Forest",
+        "canonical": "#2F6F57",
+        "tonalRamp": [
+          "oklch(0.15 0.045 160)",
+          "oklch(0.27 0.055 160)",
+          "oklch(0.38 0.065 160)",
+          "oklch(0.45 0.070 160)",
+          "oklch(0.58 0.070 160)",
+          "oklch(0.72 0.055 160)",
+          "oklch(0.85 0.035 160)",
+          "oklch(0.95 0.015 160)"
+        ]
+      },
+      "canopy": {
+        "role": "primary",
+        "displayName": "Canopy",
+        "canonical": "#3E8C6A",
+        "note": "Currently unused. Retained for pressed states on green surfaces.",
+        "tonalRamp": [
+          "oklch(0.15 0.050 160)",
+          "oklch(0.27 0.062 160)",
+          "oklch(0.38 0.072 160)",
+          "oklch(0.50 0.080 160)",
+          "oklch(0.55 0.080 160)",
+          "oklch(0.73 0.060 160)",
+          "oklch(0.84 0.038 160)",
+          "oklch(0.95 0.016 160)"
+        ]
+      },
+      "signal-green": {
+        "role": "secondary",
+        "displayName": "Signal Green",
+        "canonical": "#22C55E",
+        "tonalRamp": [
+          "oklch(0.15 0.060 150)",
+          "oklch(0.27 0.090 150)",
+          "oklch(0.38 0.120 150)",
+          "oklch(0.50 0.150 150)",
+          "oklch(0.62 0.175 150)",
+          "oklch(0.72 0.190 150)",
+          "oklch(0.84 0.120 150)",
+          "oklch(0.95 0.045 150)"
+        ]
+      },
+      "sage-wash": {
+        "role": "secondary",
+        "displayName": "Sage Wash",
+        "canonical": "#E8F2EC",
+        "tonalRamp": [
+          "oklch(0.15 0.012 160)",
+          "oklch(0.27 0.014 160)",
+          "oklch(0.38 0.016 160)",
+          "oklch(0.50 0.018 160)",
+          "oklch(0.62 0.020 160)",
+          "oklch(0.73 0.020 160)",
+          "oklch(0.84 0.020 160)",
+          "oklch(0.95 0.018 160)"
+        ]
+      },
+      "morning-wash": {
+        "role": "secondary",
+        "displayName": "Morning Wash",
+        "canonical": "#F1F7F3",
+        "tonalRamp": [
+          "oklch(0.15 0.006 160)",
+          "oklch(0.27 0.008 160)",
+          "oklch(0.38 0.009 160)",
+          "oklch(0.50 0.010 160)",
+          "oklch(0.62 0.011 160)",
+          "oklch(0.73 0.011 160)",
+          "oklch(0.84 0.011 160)",
+          "oklch(0.97 0.010 160)"
+        ]
+      },
+      "paper-gray": {
+        "role": "neutral",
+        "displayName": "Paper Gray",
+        "canonical": "#F4F5F6",
+        "tonalRamp": [
+          "oklch(0.15 0.002 250)",
+          "oklch(0.27 0.002 250)",
+          "oklch(0.38 0.002 250)",
+          "oklch(0.50 0.003 250)",
+          "oklch(0.62 0.003 250)",
+          "oklch(0.73 0.003 250)",
+          "oklch(0.84 0.003 250)",
+          "oklch(0.96 0.002 250)"
+        ]
+      },
+      "surface-white": {
+        "role": "neutral",
+        "displayName": "Surface White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.50 0 0)",
+          "oklch(0.62 0 0)",
+          "oklch(0.73 0 0)",
+          "oklch(0.86 0 0)",
+          "oklch(1.00 0 0)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E5E7EB",
+        "tonalRamp": [
+          "oklch(0.15 0.004 255)",
+          "oklch(0.27 0.005 255)",
+          "oklch(0.38 0.005 255)",
+          "oklch(0.50 0.006 255)",
+          "oklch(0.62 0.006 255)",
+          "oklch(0.73 0.006 255)",
+          "oklch(0.86 0.006 255)",
+          "oklch(0.95 0.005 255)"
+        ]
+      },
+      "receipt-ink": {
+        "role": "neutral",
+        "displayName": "Receipt Ink",
+        "canonical": "#1C1C1E",
+        "tonalRamp": [
+          "oklch(0.15 0.003 285)",
+          "oklch(0.22 0.003 285)",
+          "oklch(0.34 0.004 285)",
+          "oklch(0.46 0.004 285)",
+          "oklch(0.58 0.005 285)",
+          "oklch(0.70 0.005 285)",
+          "oklch(0.83 0.004 285)",
+          "oklch(0.95 0.003 285)"
+        ]
+      },
+      "faded-ink": {
+        "role": "neutral",
+        "displayName": "Faded Ink",
+        "canonical": "#6B6B6F",
+        "tonalRamp": [
+          "oklch(0.15 0.004 285)",
+          "oklch(0.27 0.004 285)",
+          "oklch(0.38 0.005 285)",
+          "oklch(0.52 0.005 285)",
+          "oklch(0.62 0.005 285)",
+          "oklch(0.73 0.005 285)",
+          "oklch(0.84 0.004 285)",
+          "oklch(0.95 0.003 285)"
+        ]
+      },
+      "danger-clay": {
+        "role": "tertiary",
+        "displayName": "Danger Clay",
+        "canonical": "#E74C3C",
+        "tonalRamp": [
+          "oklch(0.15 0.060 30)",
+          "oklch(0.27 0.095 30)",
+          "oklch(0.38 0.130 30)",
+          "oklch(0.50 0.165 30)",
+          "oklch(0.62 0.190 30)",
+          "oklch(0.73 0.150 30)",
+          "oklch(0.84 0.090 30)",
+          "oklch(0.95 0.035 30)"
+        ]
+      },
+      "info-blue": {
+        "role": "tertiary",
+        "displayName": "Info Blue",
+        "canonical": "#3B82F6",
+        "tonalRamp": [
+          "oklch(0.15 0.060 260)",
+          "oklch(0.27 0.095 260)",
+          "oklch(0.38 0.130 260)",
+          "oklch(0.50 0.165 260)",
+          "oklch(0.62 0.190 260)",
+          "oklch(0.73 0.150 260)",
+          "oklch(0.84 0.090 260)",
+          "oklch(0.95 0.035 260)"
+        ]
+      },
+      "success-green": {
+        "role": "tertiary",
+        "displayName": "Success Green",
+        "canonical": "#4CAF50",
+        "tonalRamp": [
+          "oklch(0.15 0.055 145)",
+          "oklch(0.27 0.080 145)",
+          "oklch(0.38 0.105 145)",
+          "oklch(0.50 0.130 145)",
+          "oklch(0.62 0.150 145)",
+          "oklch(0.68 0.160 145)",
+          "oklch(0.84 0.100 145)",
+          "oklch(0.95 0.040 145)"
+        ]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "#F59E0B",
+        "tonalRamp": [
+          "oklch(0.15 0.050 70)",
+          "oklch(0.27 0.075 70)",
+          "oklch(0.38 0.100 70)",
+          "oklch(0.50 0.125 70)",
+          "oklch(0.62 0.145 70)",
+          "oklch(0.76 0.160 70)",
+          "oklch(0.86 0.100 70)",
+          "oklch(0.95 0.045 70)"
+        ]
+      },
+      "danger-text": {
+        "role": "tertiary",
+        "displayName": "Danger Text",
+        "canonical": "#B3261E",
+        "contrastOnWhite": 6.54,
+        "tonalRamp": [
+          "oklch(0.15 0.060 28)",
+          "oklch(0.27 0.095 28)",
+          "oklch(0.38 0.130 28)",
+          "oklch(0.45 0.150 28)",
+          "oklch(0.62 0.160 28)",
+          "oklch(0.73 0.130 28)",
+          "oklch(0.84 0.080 28)",
+          "oklch(0.95 0.030 28)"
+        ]
+      },
+      "info-text": {
+        "role": "tertiary",
+        "displayName": "Info Text",
+        "canonical": "#1D4ED8",
+        "contrastOnWhite": 6.7,
+        "tonalRamp": [
+          "oklch(0.15 0.060 264)",
+          "oklch(0.27 0.100 264)",
+          "oklch(0.38 0.150 264)",
+          "oklch(0.45 0.190 264)",
+          "oklch(0.62 0.190 264)",
+          "oklch(0.73 0.150 264)",
+          "oklch(0.84 0.090 264)",
+          "oklch(0.95 0.035 264)"
+        ]
+      },
+      "success-text": {
+        "role": "tertiary",
+        "displayName": "Success Text",
+        "canonical": "#15803D",
+        "contrastOnWhite": 5.02,
+        "tonalRamp": [
+          "oklch(0.15 0.055 150)",
+          "oklch(0.27 0.085 150)",
+          "oklch(0.38 0.115 150)",
+          "oklch(0.50 0.140 150)",
+          "oklch(0.62 0.150 150)",
+          "oklch(0.73 0.130 150)",
+          "oklch(0.84 0.085 150)",
+          "oklch(0.95 0.035 150)"
+        ]
+      },
+      "warning-text": {
+        "role": "tertiary",
+        "displayName": "Warning Text",
+        "canonical": "#B45309",
+        "contrastOnWhite": 5.02,
+        "tonalRamp": [
+          "oklch(0.15 0.050 62)",
+          "oklch(0.27 0.075 62)",
+          "oklch(0.38 0.100 62)",
+          "oklch(0.50 0.125 62)",
+          "oklch(0.55 0.130 62)",
+          "oklch(0.73 0.120 62)",
+          "oklch(0.86 0.080 62)",
+          "oklch(0.95 0.035 62)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The Splyt wordmark on the auth screens. Nothing else."
+      },
+      "amount": {
+        "displayName": "Amount",
+        "purpose": "Currency values that answer the screen's question. Scales to 36pt on hero cards."
+      },
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "The screen name, placed inside the body container, never in the header."
+      },
+      "section-title": {
+        "displayName": "Section Title",
+        "purpose": "Group headings within a screen; also the stat-card value at 24pt/700."
+      },
+      "card-title": {
+        "displayName": "Card Title",
+        "purpose": "The title of a single card; modal titles use it at 22pt/700."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "All button labels, sentence case."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptions, input text, list copy."
+      },
+      "body-strong": {
+        "displayName": "Body Strong",
+        "purpose": "Inline values inside rows: member names, row amounts, menu labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form field and stat labels in Faded Ink. Uppercase only on the hero eyebrow."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Timestamps, helper text, pill text at 600, tab labels at 11pt."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-ambient",
+        "value": "0 4px 16px rgba(22, 54, 40, 0.06)",
+        "purpose": "Every white card, stat card, event card, and menu surface. Android elevation 3. Deliberately near-subliminal."
+      },
+      {
+        "name": "floating",
+        "value": "0 8px 16px rgba(22, 54, 40, 0.16)",
+        "purpose": "The toast only. Android elevation 6. The one element genuinely above the page."
+      },
+      {
+        "name": "edge",
+        "value": "0 -2px 12px rgba(22, 54, 40, 0.04)",
+        "purpose": "The tab bar's upward shadow, paired with a hairline top border. Android elevation 8."
+      },
+      {
+        "name": "control",
+        "value": "0 2px 8px rgba(22, 54, 40, 0.08)",
+        "purpose": "The white circular back button on the green header, where tone alone cannot separate it. Android elevation 2."
+      },
+      {
+        "name": "scrim",
+        "value": "rgba(28, 28, 30, 0.4)",
+        "purpose": "The modal backdrop tint behind bottom sheets."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-scale",
+        "value": "spring to scale(0.97) on pressIn, spring to 1 on pressOut (speed 40, bounciness 6)",
+        "purpose": "The tactile press response on AppButton. Paired with opacity 0.82."
+      },
+      {
+        "name": "press-opacity",
+        "value": "opacity 0.82",
+        "purpose": "Press feedback on rows, tiles, and icon buttons."
+      },
+      {
+        "name": "disabled-opacity",
+        "value": "opacity 0.4",
+        "purpose": "Disabled and loading buttons."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "single column, 16px screen margin"
+      },
+      {
+        "name": "two-up",
+        "value": "stat cards and action tiles only, 8px gap"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single affirmative action on a screen: Sign in, Create event, Add expense.",
+      "html": "<button class=\"ds-btn-primary\"><svg class=\"ds-btn-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Add expense</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 16px; border: none; border-radius: 14px; background: #2F6F57; color: #FFFFFF; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 16px; cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease; } .ds-btn-primary .ds-btn-icon { width: 16px; height: 16px; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { opacity: 0.82; transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #2F6F57; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Alternative paths that sit beside the primary action: Join by code, Cancel.",
+      "html": "<button class=\"ds-btn-secondary\">Join by code</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 16px; border: 1px solid #E5E7EB; border-radius: 14px; background: #FFFFFF; color: #2F6F57; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 16px; cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease; } .ds-btn-secondary:active { opacity: 0.82; transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 2px solid #2F6F57; outline-offset: 2px; }"
+    },
+    {
+      "name": "Black Utility Button",
+      "kind": "button",
+      "refersTo": "button-black",
+      "description": "Operational actions that are useful but not brand-affirmative: Invite user, Dismiss.",
+      "html": "<button class=\"ds-btn-black\">Invite user</button>",
+      "css": ".ds-btn-black { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 16px; border: none; border-radius: 14px; background: #1C1C1E; color: #FFFFFF; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; font-size: 16px; font-weight: 600; line-height: 16px; cursor: pointer; transition: opacity 0.15s ease, transform 0.15s ease; } .ds-btn-black:active { opacity: 0.82; transform: scale(0.97); } .ds-btn-black:focus-visible { outline: 2px solid #1C1C1E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Filled field with an always-visible label. Focus is signalled by border alone; the fill never changes.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-input-amount\">Amount</label><div class=\"ds-input-wrap\"><svg class=\"ds-input-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12V7H5a2 2 0 0 1 0-4h14v4\"/><path d=\"M3 5v14a2 2 0 0 0 2 2h16v-5\"/><path d=\"M18 12a2 2 0 0 0 0 4h4v-4Z\"/></svg><input id=\"ds-input-amount\" class=\"ds-input\" type=\"text\" placeholder=\"0.00\"/></div></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-field-label { font-size: 13px; font-weight: 500; line-height: 18px; color: #6B6B6F; } .ds-input-wrap { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border: 1.5px solid transparent; border-radius: 14px; background: #F4F5F6; transition: border-color 0.15s ease; } .ds-input-wrap:focus-within { border-color: #2F6F57; } .ds-input-icon { width: 16px; height: 16px; color: #6B6B6F; flex: none; } .ds-input { flex: 1; border: none; background: none; outline: none; font: inherit; font-size: 15px; font-weight: 400; line-height: 22px; color: #1C1C1E; } .ds-input::placeholder { color: #6B6B6F; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The default content unit: white, softly squared, separated from the Paper Gray canvas by tone plus a near-subliminal shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">My balance</div><div class=\"ds-card-body\">You are owed across 3 active events.</div><div class=\"ds-card-amount\">\u20b14,280.00</div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 4px 16px rgba(22, 54, 40, 0.06); font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-card-title { font-size: 17px; font-weight: 600; line-height: 23px; color: #1C1C1E; } .ds-card-body { font-size: 15px; font-weight: 400; line-height: 22px; color: #6B6B6F; } .ds-card-amount { font-size: 30px; font-weight: 700; line-height: 36px; color: #1C1C1E; }"
+    },
+    {
+      "name": "Hero Accent Card",
+      "kind": "card",
+      "refersTo": "card-accent",
+      "description": "The Sage Wash summary card at the top of an event. The only large tinted surface, and the only card with no shadow.",
+      "html": "<div class=\"ds-card-accent\"><div class=\"ds-hero-top\"><span class=\"ds-hero-eyebrow\">Total spend</span><span class=\"ds-hero-badge\">Active</span></div><div class=\"ds-hero-amount\">\u20b112,450.00</div><div class=\"ds-hero-meta\">6 members \u00b7 18 expenses</div></div>",
+      "css": ".ds-card-accent { display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 20px; background: #E8F2EC; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-hero-top { display: flex; align-items: center; justify-content: space-between; } .ds-hero-eyebrow { font-size: 13px; font-weight: 500; line-height: 18px; letter-spacing: 0.5px; text-transform: uppercase; color: #2F6F57; } .ds-hero-badge { padding: 4px 8px; border-radius: 999px; background: #22C55E; color: #FFFFFF; font-size: 12px; font-weight: 700; line-height: 17px; } .ds-hero-amount { font-size: 36px; font-weight: 700; line-height: 42px; color: #1C1C1E; } .ds-hero-meta { font-size: 15px; font-weight: 400; line-height: 22px; color: #6B6B6F; }"
+    },
+    {
+      "name": "Data Pill",
+      "kind": "chip",
+      "refersTo": "pill-default",
+      "description": "States a fact: status, currency, count. Never tappable. Six tones, three shown.",
+      "html": "<div class=\"ds-pill-row\"><span class=\"ds-pill ds-pill-default\">PHP \u00b7 \u20b1</span><span class=\"ds-pill ds-pill-accent\">Owner</span><span class=\"ds-pill ds-pill-outline\">Settled</span></div>",
+      "css": ".ds-pill-row { display: flex; align-items: center; gap: 8px; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-pill { display: inline-flex; align-items: center; padding: 4px 8px; border: none; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 17px; } .ds-pill-default { background: #F1F7F3; color: #2F6F57; } .ds-pill-accent { background: #2F6F57; color: #FFFFFF; } .ds-pill-outline { background: #FFFFFF; border: 1px solid #E5E7EB; color: #1C1C1E; }"
+    },
+    {
+      "name": "App Header",
+      "kind": "nav",
+      "refersTo": "app-header",
+      "description": "Zone one of the three-zone screen: a flat Settled Forest fill carrying identity and navigation. The body container overlaps its bottom edge by 20px.",
+      "html": "<div class=\"ds-header\"><div class=\"ds-header-left\"><div class=\"ds-header-mark\">S</div><span class=\"ds-header-name\">Hi, Ren</span></div><div class=\"ds-header-right\"><button class=\"ds-header-icon\" aria-label=\"Notifications\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9\"/><path d=\"M13.7 21a2 2 0 0 1-3.4 0\"/></svg><span class=\"ds-header-dot\">3</span></button><div class=\"ds-header-avatar\">R</div></div></div><div class=\"ds-body-container\"><div class=\"ds-page-title\">Dashboard</div></div>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 16px 16px 32px; background: #2F6F57; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-header-left { display: flex; align-items: center; gap: 8px; } .ds-header-mark { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,0.2); color: #FFFFFF; font-size: 15px; font-weight: 700; } .ds-header-name { font-size: 18px; font-weight: 600; color: #FFFFFF; } .ds-header-right { display: flex; align-items: center; gap: 8px; } .ds-header-icon { position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; border-radius: 999px; background: rgba(255,255,255,0.18); color: #FFFFFF; cursor: pointer; transition: opacity 0.15s ease; } .ds-header-icon svg { width: 18px; height: 18px; } .ds-header-icon:active { opacity: 0.82; } .ds-header-icon:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; } .ds-header-dot { position: absolute; top: 0; right: 0; display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 2px solid #2F6F57; border-radius: 999px; background: #E74C3C; color: #FFFFFF; font-size: 9px; font-weight: 700; } .ds-header-avatar { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: rgba(255,255,255,0.25); color: #FFFFFF; font-size: 13px; font-weight: 700; } .ds-body-container { margin-top: -20px; padding: 24px 16px 32px; border-radius: 24px 24px 0 0; background: #F4F5F6; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-page-title { font-size: 28px; font-weight: 700; line-height: 35px; color: #1C1C1E; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Four-destination bottom navigation. No green, no indicator pill: ink weight alone carries the active state.",
+      "html": "<nav class=\"ds-tabbar\"><button class=\"ds-tab ds-tab-active\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V21h14V9.5\"/></svg><span>Home</span></button><button class=\"ds-tab\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M8 3v4M16 3v4M3 11h18\"/></svg><span>Events</span></button><button class=\"ds-tab\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 17l5-6 4 4 4-7 5 5\"/></svg><span>Activity</span></button><button class=\"ds-tab\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3.2\"/><path d=\"M19.4 13.5a7.6 7.6 0 0 0 0-3l1.7-1.3-2-3.4-2 .8a7.6 7.6 0 0 0-2.6-1.5L14.2 2h-4l-.3 2.1a7.6 7.6 0 0 0-2.6 1.5l-2-.8-2 3.4 1.7 1.3a7.6 7.6 0 0 0 0 3L3.3 14l2 3.4 2-.8a7.6 7.6 0 0 0 2.6 1.5l.3 2.1h4l.3-2.1a7.6 7.6 0 0 0 2.6-1.5l2 .8 2-3.4Z\"/></svg><span>Settings</span></button></nav>",
+      "css": ".ds-tabbar { display: flex; height: 64px; border-top: 1px solid #E5E7EB; background: #FFFFFF; box-shadow: 0 -2px 12px rgba(22, 54, 40, 0.04); font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding-top: 8px; border: none; background: none; color: #6B6B6F; font-size: 11px; font-weight: 500; line-height: 13px; cursor: pointer; } .ds-tab svg { width: 20px; height: 20px; } .ds-tab:active { opacity: 0.82; } .ds-tab:focus-visible { outline: 2px solid #2F6F57; outline-offset: -2px; } .ds-tab-active { color: #1C1C1E; font-weight: 600; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "The one genuinely floating element: a Receipt Ink capsule centered over the content.",
+      "html": "<div class=\"ds-toast\">Expense added</div>",
+      "css": ".ds-toast { display: inline-flex; align-items: center; align-self: center; padding: 8px 24px; border-radius: 999px; background: #1C1C1E; color: #FFFFFF; box-shadow: 0 8px 16px rgba(22, 54, 40, 0.16); font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; font-size: 15px; font-weight: 600; line-height: 22px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Shared Table",
+    "overview": "Splyt is what the group gathers around when the trip is over and the receipts come out. The system is built to feel like a table, not a bank: a deep forest-green header holds the top of every screen like a placemat, and a large pale panel slides up over it with rounded shoulders, carrying white cards that sit on the surface with almost no shadow. Nothing is dense, nothing is stacked tightly, and nothing shouts. The money is the loudest thing on any screen, and everything else stands back so it can be read at a glance, one-handed, in a hotel lobby at midnight.\n\nThe register is calm, unhurried, trustworthy, and precise. Precision here means legibility, not density: the system spends whitespace freely (8pt grid, 16pt screen margins, 12-16pt between cards) because a group arguing about who paid for dinner does not need a spreadsheet, it needs one clear number. Green is the identity, but it is rationed - the header, primary actions, focus rings, and selected states own it, and everything else is ink on paper. Components are tactile and confident: a press should feel like it landed, surfaces should feel like objects with weight, and state changes should be felt, not just seen.\n\nThe confirmed anti-reference is Splitwise's dense list UI. Splyt never turns into rows of hairline-separated text at the same size and weight. Each meaningful thing gets a card, a tap target, and room to breathe. The second thing it must never become is amateur - the palette is disciplined, the type scale is fixed, and the polish must read as professional and clean rather than decorated.",
+    "keyCharacteristics": [
+      "Three-zone architecture on every authenticated screen: green header -> lifted body container -> white cards",
+      "Deep forest green (#2F6F57) as the only brand voice; everything else is ink, paper, and one signal green",
+      "System fonts on both platforms - no custom typeface, no brand font to load",
+      "Tonal layering over shadows; depth comes from white-on-gray, not from lift",
+      "Money is always the largest, heaviest element in its section",
+      "Icons are a single family (Material Community Icons), always outline variants",
+      "Page titles live inside the body container, never in the header"
+    ],
+    "rules": [
+      {
+        "name": "The Rationed Green Rule",
+        "body": "Settled Forest appears in exactly three places on a screen: the header, the primary action, and the current selection. If a fourth green element appears, one of them is not actually primary.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Greens Are Not Interchangeable Rule",
+        "body": "Settled Forest means Splyt. Signal Green means live right now. Swapping them makes brand chrome look like a status and status look like decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Over Black Rule",
+        "body": "Text and dark fills use Receipt Ink (#1C1C1E), never #000. Pure black next to a soft green field reads as a rendering bug.",
+        "section": "colors"
+      },
+      {
+        "name": "The Bright Is A Fill Rule",
+        "body": "Signal Green, Info Blue, Danger Clay, and Warning Amber are fills only. A colored fill carries Receipt Ink on top; text in a semantic color uses that color's darkened text variant. White on #22C55E measures 2.28:1 and is banned.",
+        "section": "colors"
+      },
+      {
+        "name": "The Money Is The Headline Rule",
+        "body": "Within any card or section, the currency value is the largest and heaviest element present. If a label or title outweighs the number, the hierarchy is inverted.",
+        "section": "typography"
+      },
+      {
+        "name": "The Two Steps Rule",
+        "body": "A value sits one size step and one weight step above its own label - never one or the other. 13pt/500 Faded Ink label over 15pt/600 or larger Receipt Ink value.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Shouting Rule",
+        "body": "No uppercase anywhere except the hero eyebrow label. Currency codes, statuses, and pills stay sentence case. Bold is for titles and money only, never for emphasis inside a sentence.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Header Rule",
+        "body": "The header is a single flat Settled Forest fill. A gradient was tried and reverted: react-native-linear-gradient mis-measures the header on this RN version and clips the header row under the status bar. There are no gradients in this system.",
+        "section": "layout"
+      },
+      {
+        "name": "The Lifted Panel Rule",
+        "body": "The body container always overlaps the header by 20pt with 24pt top corners and square bottom corners. It never gains a shadow, a border, or bottom rounding.",
+        "section": "layout"
+      },
+      {
+        "name": "The One Content Margin Rule",
+        "body": "Every piece of content on a screen starts at the same 16pt margin, whatever container it sits in. A tinted section earns its emphasis by bleeding to the screen edges, never by insetting its text further than the text above and below it.",
+        "section": "layout"
+      },
+      {
+        "name": "The Title Lives Below Rule",
+        "body": "The page title belongs inside the body container, not in the green header. The header carries identity and navigation; the body carries content.",
+        "section": "layout"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "Content is a single scrolling column. Two-up is allowed only for stat cards and action tiles, and never three-up.",
+        "section": "layout"
+      },
+      {
+        "name": "The Green Shadow Rule",
+        "body": "Shadows use #163628, never black. A neutral shadow under a green-tinted UI reads as dirt.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Tone Before Lift Rule",
+        "body": "To separate two surfaces, change their tone first (white on Paper Gray, Morning Wash on white). Reach for a shadow only when tone cannot do it - which in practice means only the back button and the toast.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Radius Scales With Size Rule",
+        "body": "Bigger surface, rounder corner. Icon badge 8pt -> button 14pt -> card 16pt -> hero 20pt -> screen panel 24pt. Never give a small chip a 24pt radius or a full panel an 8pt one.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Outline Icon Rule",
+        "body": "Icons are outline-weight by default. A filled icon in a row of outlined ones reads as a selected state, so never introduce one casually.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do build every authenticated screen with AppScreen, preserving the green header -> -20pt lifted Paper Gray body -> white cards sequence.",
+      "Do put the page title inside the body container at Page Title size (28pt/700), with any subtitle in Body/Faded Ink directly beneath it.",
+      "Do make the currency value the largest and heaviest element in its card, one size and one weight step above its label.",
+      "Do route every currency value through MoneyValue, and state the sign in words with balanceLabel() so meaning survives without color.",
+      "Do hold to the 8pt grid - 16pt screen margins, 16pt card padding and gaps, 24pt for hero padding and between major sections.",
+      "Do use Settled Forest (#2F6F57) as the flat header fill, the single primary action, and the current selection - and stop there.",
+      "Do reserve Signal Green (#22C55E) for live status, and Info Blue (#3B82F6) for neutral/pending status.",
+      "Do give every field a visible Label above it, and signal focus with the 1.5pt Settled Forest border.",
+      "Do separate surfaces by tone (white on Paper Gray) before reaching for a shadow.",
+      "Do use outline-variant Material Community Icons via AppIcon, at 16 / 18 / 20pt.",
+      "Do keep every tap target at or above 44pt.",
+      "Do choose the black button for operational actions and the green button for brand-affirmative ones."
+    ],
+    "donts": [
+      "Don't build dense hairline-separated list rows. Splitwise's list UI is the named anti-reference; give each item a card, a target, and space.",
+      "Don't put the page title in the green header, add a shadow to the body container, or round its bottom corners.",
+      "Don't use pure black (#000) for text, fills, or shadows - Receipt Ink (#1C1C1E) and shadow green (#163628) are the only darks.",
+      "Don't introduce a new accent hue. The palette is one green, two washes, one signal green, one blue, one clay.",
+      "Don't outline a card. Cards separate by tone and a 6% ambient shadow; borders belong to secondary buttons, focused/errored inputs, and selection marks only.",
+      "Don't raise shadow opacity to make a card pop. If it needs emphasis, change its tone (Sage Wash) or its size, not its lift.",
+      "Don't use uppercase anywhere except the hero card's eyebrow label, and don't bold text for emphasis mid-sentence.",
+      "Don't load a custom font. Both platforms use their system face deliberately.",
+      "Don't put green in the tab bar or add an active-tab indicator; ink weight carries the state.",
+      "Don't put white text on Signal Green, Success Green, Warning Amber, or Danger Clay - all four measure below 4.5:1. Use Receipt Ink on the fill, or the darkened text variant on a light surface.",
+      "Don't ship a gradient anywhere in the app, including the header. The system is flat fills and tonal layering.",
+      "Don't inset a tinted section's content past the 16pt screen margin. If a section needs emphasis at the top of a screen, bleed it to the edges with AppHeroBand rather than nesting a padded card inside a padded container.",
+      "Don't stack more than two items side by side."
+    ]
+  }
+}

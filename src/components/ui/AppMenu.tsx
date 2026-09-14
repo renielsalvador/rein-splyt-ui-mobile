@@ -53,8 +53,14 @@ export function AppMenu({
       {open ? (
         <Modal transparent visible onRequestClose={() => setOpen(false)}>
           <View style={styles.menuModalLayer}>
-            <Pressable style={styles.menuBackdrop} onPress={() => setOpen(false)} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close menu"
+              style={styles.menuBackdrop}
+              onPress={() => setOpen(false)}
+            />
             <View
+              accessibilityViewIsModal
               style={[
                 surfaces.card,
                 styles.menuCard,

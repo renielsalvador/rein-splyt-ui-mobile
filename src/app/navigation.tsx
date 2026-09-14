@@ -1,5 +1,5 @@
-import React, {useMemo, useState} from 'react';
-import {Platform, SafeAreaView, Text, View} from 'react-native';
+import React, {useEffect, useMemo, useState} from 'react';
+import {BackHandler, Platform, SafeAreaView, Text, View} from 'react-native';
 import {AppProvider, useApp} from './AppProvider';
 import {AuthScreen, ResetPasswordScreen} from '../features/auth/AuthScreen';
 import {
@@ -116,6 +116,20 @@ function AppNavigator() {
     setCurrentTab(tab);
     setStack([{name: TAB_ROOT[tab]} as AnyRoute]);
   }
+
+  // Screens that guard unsaved work register their own listener; RN runs the most
+  // recently added subscription first, so this only fires when nothing intercepted.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (stack.length <= 1) {
+        return false;
+      }
+      setStack(current => (current.length > 1 ? current.slice(0, -1) : current));
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [stack.length]);
 
   const currentRoute = stack[stack.length - 1];
   const isTopLevel = stack.length === 1 && TAB_SCREENS.has(currentRoute.name);

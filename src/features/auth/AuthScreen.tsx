@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -190,11 +192,17 @@ export function AuthScreen() {
   if (mode === 'forgot') {
     return (
       <SafeAreaView style={styles.root}>
-        <View style={styles.inner}>
-          <AuthHeader
-            title="Forgot password"
-            subtitle="Enter your email and we’ll send a reset link."
-          />
+        <KeyboardAvoidingView
+          style={styles.fill}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <ScrollView
+            contentContainerStyle={styles.inner}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <AuthHeader
+              title="Forgot password"
+              subtitle="Enter your email and we’ll send a reset link."
+            />
 
           <View style={styles.formBlock}>
             <AppInput
@@ -230,7 +238,8 @@ export function AuthScreen() {
               }}
             />
           </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
         {toastMessage ? (
           <View
             style={[
@@ -248,7 +257,13 @@ export function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.inner}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
         <AuthHeader
           title="Splyt"
           subtitle={
@@ -295,7 +310,7 @@ export function AuthScreen() {
               setFieldErrors(current => ({...current, password: undefined}));
               clearError();
             }}
-            placeholder={mode === 'login' ? '••••••••' : 'At least 8 characters'}
+            placeholder={mode === 'login' ? '••••••••' : 'At least 6 characters'}
             secureTextEntry
             autoCapitalize="none"
             prefixIcon="lock"
@@ -382,7 +397,8 @@ export function AuthScreen() {
             </Text>
           </Text>
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       {toastMessage ? (
         <View
           style={[
@@ -434,7 +450,13 @@ export function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.inner}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
         <AuthHeader
           title="Reset password"
           subtitle={
@@ -484,7 +506,8 @@ export function ResetPasswordScreen() {
             }}
           />
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -494,8 +517,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.surface,
   },
-  inner: {
+  fill: {
     flex: 1,
+  },
+  inner: {
+    flexGrow: 1,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,

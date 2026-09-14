@@ -90,8 +90,14 @@ export function AppModal({
           pointerEvents="none"
           style={[styles.modalBackdropTint, {opacity: backdropOpacity}]}
         />
-        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={styles.modalBackdrop}
+          onPress={onClose}
+        />
         <Animated.View
+          accessibilityViewIsModal
           style={[
             styles.modalSheet,
             {

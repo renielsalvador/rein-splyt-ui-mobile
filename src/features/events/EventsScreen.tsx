@@ -48,7 +48,7 @@ export function EventsScreen({
         <View style={styles.headerRight}>
           <NotificationButton
             unreadCount={pendingInvites.length}
-            onPress={() => undefined}
+            onPress={() => navigation.navigate('Activity')}
           />
           <AppMenu
             items={[
@@ -80,6 +80,8 @@ export function EventsScreen({
         return (
           <Pressable
             key={event.id}
+            accessibilityRole="button"
+            accessibilityLabel={`${event.name}, ${badge?.label ?? 'event'}`}
             onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
             style={({pressed}) => [pressed && {opacity: 0.82}]}>
             <View style={[styles.eventCard, !event.isActive && styles.eventCardInactive]}>
@@ -89,7 +91,9 @@ export function EventsScreen({
               </View>
               <View style={styles.eventBody}>
                 <View style={styles.eventTitleRow}>
-                  <Text style={[styles.eventName, !event.isActive && styles.eventNameInactive]}>
+                  <Text
+                    style={[styles.eventName, !event.isActive && styles.eventNameInactive]}
+                    numberOfLines={1}>
                     {event.name}
                   </Text>
                 </View>
@@ -121,7 +125,7 @@ export function EventsScreen({
                     {formatCurrency(totalSpend, event.currency ?? 'PHP')}
                   </Text>
                 ) : (
-                  <Text style={styles.eventSettled}>Settled</Text>
+                  <Text style={styles.eventSettled}>No expenses yet</Text>
                 )}
               </View>
             </View>
@@ -179,8 +183,7 @@ const styles = StyleSheet.create({
   },
   eventNameInactive: {
     color: palette.inkMuted,
-  },
-  eventMeta: {
+  },  eventMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -199,36 +202,36 @@ const styles = StyleSheet.create({
   },
   eventStatusText: {
     ...typography.bodyStrong,
-    color: palette.greenAccent,
+    color: palette.successText,
   },
   eventStatusEnded: {
-    color: palette.danger,
+    color: palette.dangerText,
   },
   eventStatusUpcoming: {
-    color: palette.warning,
+    color: palette.warningText,
   },
   eventStatusInactive: {
-    color: '#8E99A4',
+    color: palette.inkMuted,
   },
   eventBalance: {
     ...typography.bodyStrong,
-    color: palette.success,
+    color: palette.ink,
   },
   eventBalanceInactive: {
     color: palette.inkMuted,
   },
   eventBalanceOwed: {
     ...typography.bodyStrong,
-    color: palette.danger,
+    color: palette.dangerText,
   },
   eventSettled: {
     ...typography.caption,
     color: palette.inkMuted,
   },
   eventCardInactive: {
-    backgroundColor: '#F7F7F8',
+    backgroundColor: palette.bgApp,
   },
   eventIconBadgeInactive: {
-    backgroundColor: '#ECEDEF',
+    backgroundColor: palette.divider,
   },
 });

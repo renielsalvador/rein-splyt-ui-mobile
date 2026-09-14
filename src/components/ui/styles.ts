@@ -28,6 +28,19 @@ export const styles = StyleSheet.create({
     color: palette.inkMuted,
   },
 
+  // ─── hero band (full-bleed top of the body container) ───────────────────────
+  heroBand: {
+    // Negative margins cancel bodyScrollContent's padding, then it is re-applied
+    // inside so content still lands on the 16pt screen margin.
+    marginHorizontal: -spacing.md,
+    marginTop: -spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    backgroundColor: palette.greenTint,
+    gap: spacing.md,
+  },
+
   // ─── card ───────────────────────────────────────────────────────────────────
   card: {
     padding: spacing.md,
@@ -54,25 +67,28 @@ export const styles = StyleSheet.create({
 
   // ─── buttons ────────────────────────────────────────────────────────────────
   button: {
-    height: 48,
+    minHeight: 48,
     borderRadius: radii.md,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   buttonSm: {
-    height: 40,
+    minHeight: 44,
     borderRadius: radii.md,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   buttonCompact: {
-    height: 44,
+    minHeight: 44,
     borderRadius: radii.md,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   buttonPrimary: {
     backgroundColor: palette.primary,
@@ -86,7 +102,7 @@ export const styles = StyleSheet.create({
     backgroundColor: palette.ink,
   },
   buttonDestructive: {
-    backgroundColor: palette.danger,
+    backgroundColor: palette.dangerText,
   },
   buttonDisabled: {
     opacity: 0.4,
@@ -127,7 +143,7 @@ export const styles = StyleSheet.create({
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    minHeight: 48,
     borderRadius: radii.md,
     backgroundColor: palette.bgApp,
     paddingHorizontal: spacing.md,
@@ -139,7 +155,7 @@ export const styles = StyleSheet.create({
   },
   inputWrapperError: {
     borderWidth: 1.5,
-    borderColor: palette.danger,
+    borderColor: palette.dangerText,
   },
   inputWrapperMultiline: {
     height: 'auto' as any,
@@ -162,8 +178,8 @@ export const styles = StyleSheet.create({
     minHeight: 64,
   },
   errorText: {
-    ...typography.caption,
-    color: palette.danger,
+    ...typography.label,
+    color: palette.dangerText,
   },
 
   // ─── section heading ────────────────────────────────────────────────────────
@@ -195,7 +211,7 @@ export const styles = StyleSheet.create({
     backgroundColor: palette.primary,
   },
   pillDanger: {
-    backgroundColor: palette.danger,
+    backgroundColor: palette.dangerText,
   },
   pillInfo: {
     backgroundColor: palette.info,
@@ -217,6 +233,11 @@ export const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '600',
     color: palette.surface,
+  },
+  pillTextOnBright: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: palette.ink,
   },
   pillTextOutline: {
     ...typography.caption,
@@ -344,7 +365,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ─── header (gradient zone) ─────────────────────────────────────────────────
+  // ─── header zone ────────────────────────────────────────────────────────────
   gradientHeader: {
     backgroundColor: palette.primary,
     paddingHorizontal: spacing.md,
@@ -406,17 +427,19 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    width: 16,
-    height: 16,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 3,
     borderRadius: radii.pill,
-    backgroundColor: palette.danger,
+    backgroundColor: palette.dangerText,
     borderWidth: 2,
     borderColor: palette.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerNotificationDotText: {
-    fontSize: 9,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: '700',
     color: palette.surface,
   },

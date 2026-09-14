@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Splyt Design System — The Shared Table</title>
+<style>
+  :root {
+    /* Tokens mirrored from DESIGN.md / src/theme/tokens.ts */
+    --settled-forest: #2F6F57;
+    --canopy: #3E8C6A;
+    --signal-green: #22C55E;
+    --sage-wash: #E8F2EC;
+    --morning-wash: #F1F7F3;
+    --paper-gray: #F4F5F6;
+    --surface-white: #FFFFFF;
+    --hairline: #E5E7EB;
+    --receipt-ink: #1C1C1E;
+    --faded-ink: #6B6B6F;
+    --danger-clay: #E74C3C;
+    --info-blue: #3B82F6;
+    --warning-amber: #F59E0B;
+    --shadow-green: 22, 54, 40;
+
+    --header-gradient: #2F6F57;
+    --card-ambient: 0 4px 16px rgba(var(--shadow-green), 0.06);
+    --floating: 0 8px 16px rgba(var(--shadow-green), 0.16);
+    --edge: 0 -2px 12px rgba(var(--shadow-green), 0.04);
+    --control: 0 2px 8px rgba(var(--shadow-green), 0.08);
+
+    --font: -apple-system, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+
+    /* Preview-chrome only */
+    --canvas: #0D1F18;
+    --canvas-raised: #142C22;
+    --canvas-text: #E9F1EC;
+    --canvas-text-dim: #9CB3A7;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--canvas-text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--signal-green); color: #07130E; }
+
+  a { color: var(--signal-green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  :focus-visible { outline: 2px solid var(--signal-green); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+  /* ─────────────────────────── page masthead ─────────────────────────── */
+
+  .masthead { padding: 72px 0 56px; }
+
+  .masthead h1 {
+    margin: 0;
+    font-size: clamp(38px, 6vw, 60px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .masthead .north-star {
+    margin: 20px 0 0;
+    max-width: 46ch;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--canvas-text-dim);
+  }
+
+  .masthead .north-star strong { color: var(--canvas-text); font-weight: 600; }
+
+  .swatch-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 32px;
+  }
+
+  .swatch-strip span {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+    color: var(--canvas-text-dim);
+  }
+
+  .meta-row b { color: var(--canvas-text); font-weight: 600; }
+
+  /* ─────────────────────────── screens ─────────────────────────── */
+
+  .screens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 48px 40px;
+    padding-bottom: 88px;
+  }
+
+  .screen-slot { width: 390px; max-width: 100%; }
+
+  .screen-caption { margin: 0 0 18px; }
+
+  .screen-caption h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .screen-caption p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--canvas-text-dim);
+  }
+
+  .device {
+    position: relative;
+    width: 390px;
+    max-width: 100%;
+    height: 800px;
+    border-radius: 42px;
+    overflow: hidden;
+    background: var(--paper-gray);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    font-size: 15px;
+    color: var(--receipt-ink);
+  }
+
+  .statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 50px;
+    padding: 14px 26px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--surface-white);
+  }
+
+  .statusbar.on-white { color: var(--receipt-ink); }
+
+  .statusbar-icons { display: flex; align-items: center; gap: 6px; }
+  .statusbar-icons svg { width: 17px; height: 17px; }
+
+  .home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(28, 28, 30, 0.28);
+  }
+
+  /* ── zone 1: header ── */
+
+  .app-header {
+    background: var(--header-gradient);
+    padding: 4px 16px 32px;
+  }
+
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    gap: 8px;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--surface-white);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    flex: none;
+  }
+
+  .header-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--surface-white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .icon-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--surface-white);
+    cursor: pointer;
+    flex: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .icon-btn svg { width: 18px; height: 18px; }
+  .icon-btn:hover { opacity: 0.9; }
+  .icon-btn:active { opacity: 0.82; transform: scale(0.94); }
+
+  .icon-btn.on-white {
+    background: var(--surface-white);
+    color: var(--settled-forest);
+    box-shadow: var(--control);
+  }
+
+  .badge-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--settled-forest);
+    border-radius: 999px;
+    background: var(--danger-clay);
+    color: var(--surface-white);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: var(--surface-white);
+    font-size: 13px;
+    font-weight: 700;
+    flex: none;
+  }
+
+  /* ── zone 2: body container ── */
+
+  .body-container {
+    flex: 1;
+    min-height: 0;
+    margin-top: -20px;
+    border-radius: 24px 24px 0 0;
+    background: var(--paper-gray);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .body-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 24px 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-header { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0; }
+
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 35px;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .page-subtitle { font-size: 15px; line-height: 22px; color: var(--faded-ink); margin: 0; }
+
+  /* ── zone 3: cards ── */
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .card-accent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    border-radius: 20px;
+    background: var(--sage-wash);
+  }
+
+  /* Full-bleed band: cancels .body-scroll padding, re-applies it inside. */
+  .hero-band {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: -24px -16px 0;
+    padding: 24px 16px;
+    background: var(--sage-wash);
+  }
+
+  .hero-actions { display: flex; gap: 8px; }
+  .hero-actions .btn { flex: 1; height: 44px; font-size: 15px; }
+
+  .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+  .hero-label {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--settled-forest);
+  }
+
+  .hero-amount {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 42px;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hero-meta { font-size: 15px; line-height: 22px; color: var(--faded-ink); }
+
+  .stat-row { display: flex; gap: 8px; }
+
+  .stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+  .stat-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--faded-ink); }
+
+  .stat-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    color: var(--surface-white);
+    flex: none;
+  }
+
+  .stat-badge svg { width: 16px; height: 16px; }
+  .stat-badge.green { background: var(--signal-green); color: var(--receipt-ink); }
+  .stat-badge.blue { background: var(--info-blue); color: var(--receipt-ink); }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .section-heading h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 26px;
+    letter-spacing: -0.015em;
+  }
+
+  .section-link {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+    color: var(--settled-forest);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .event-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .event-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--morning-wash);
+    color: var(--settled-forest);
+    flex: none;
+  }
+
+  .event-icon svg { width: 22px; height: 22px; }
+
+  .event-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+  .event-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+  .event-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+  .event-name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .event-meta { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--faded-ink); white-space: nowrap; }
+
+  .event-amount {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    flex: none;
+  }
+
+  .event-owed {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+    color: var(--settled-forest);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    flex: none;
+  }
+
+  /* ── pills ── */
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+    white-space: nowrap;
+  }
+
+  .pill svg { width: 12px; height: 12px; }
+  .pill-default { background: var(--morning-wash); color: var(--settled-forest); }
+  .pill-accent { background: var(--settled-forest); color: var(--surface-white); }
+  .pill-success { background: var(--signal-green); color: var(--receipt-ink); }
+  .pill-info { background: var(--info-blue); color: var(--receipt-ink); }
+  .pill-danger { background: #B3261E; color: var(--surface-white); }
+  .pill-outline { background: var(--surface-white); border: 1px solid var(--hairline); color: var(--receipt-ink); }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ── buttons ── */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 16px;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn svg { width: 16px; height: 16px; }
+  .btn:hover { opacity: 0.92; }
+  .btn:active { opacity: 0.82; transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--settled-forest); color: var(--surface-white); }
+  .btn-secondary { background: var(--surface-white); border: 1px solid var(--hairline); color: var(--settled-forest); }
+  .btn-black { background: var(--receipt-ink); color: var(--surface-white); }
+  .btn-destructive { background: var(--danger-clay); color: var(--surface-white); }
+  .btn-sm { height: 40px; font-size: 15px; }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: var(--surface-white);
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner { animation: none; }
+    * { transition: none !important; }
+  }
+
+  /* ── action tiles ── */
+
+  .tile-row { display: flex; gap: 8px; }
+
+  .tile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 120px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  .tile:active { transform: scale(0.98); opacity: 0.9; }
+
+  .tile-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--morning-wash);
+    color: var(--settled-forest);
+  }
+
+  .tile-icon svg { width: 20px; height: 20px; }
+  .tile-title { font-size: 16px; font-weight: 600; line-height: 22px; margin-top: auto; }
+  .tile-sub { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--faded-ink); }
+
+  /* ── fields ── */
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+
+  .field-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--faded-ink); }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 48px;
+    padding: 0 16px;
+    border: 1.5px solid transparent;
+    border-radius: 14px;
+    background: var(--paper-gray);
+    transition: border-color 0.15s ease;
+  }
+
+  .input-wrap.on-card { background: var(--paper-gray); }
+  .input-wrap:focus-within { border-color: var(--settled-forest); }
+  .input-wrap.is-focused { border-color: var(--settled-forest); }
+  .input-wrap.is-error { border-color: var(--danger-clay); }
+  .input-wrap svg { width: 16px; height: 16px; color: var(--faded-ink); flex: none; }
+
+  .input-wrap input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 22px;
+    color: var(--receipt-ink);
+  }
+
+  .input-wrap input::placeholder { color: var(--faded-ink); }
+
+  .field-error { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--danger-clay); }
+
+  .amount-input input { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .amount-input { height: 60px; }
+  .amount-prefix { font-size: 24px; font-weight: 700; color: var(--faded-ink); }
+
+  /* ── selectable rows ── */
+
+  .select-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 60px;
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: var(--paper-gray);
+    border: none;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .select-row.is-selected { background: var(--sage-wash); }
+
+  .select-lead { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+  .select-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--morning-wash);
+    color: var(--settled-forest);
+    font-size: 13px;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .select-row.is-selected .select-icon { background: var(--settled-forest); color: var(--surface-white); }
+
+  .select-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .select-title { font-size: 15px; font-weight: 600; line-height: 22px; }
+  .select-detail { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--faded-ink); }
+
+  .mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--hairline);
+    border-radius: 999px;
+    background: var(--surface-white);
+    color: transparent;
+    flex: none;
+  }
+
+  .mark svg { width: 12px; height: 12px; }
+  .mark.is-active { background: var(--settled-forest); border-color: var(--settled-forest); color: var(--surface-white); }
+
+  /* ── list rows inside cards ── */
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .row + .row { padding-top: 16px; border-top: 1px solid var(--hairline); }
+
+  .row-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--morning-wash);
+    color: var(--settled-forest);
+    flex: none;
+  }
+
+  .row-icon svg { width: 18px; height: 18px; }
+  .row-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .row-title { font-size: 15px; font-weight: 600; line-height: 22px; }
+  .row-detail { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--faded-ink); }
+  .row-value { font-size: 15px; font-weight: 600; line-height: 22px; font-variant-numeric: tabular-nums; }
+
+  /* ── tab bar ── */
+
+  .tabbar {
+    display: flex;
+    height: 64px;
+    padding-bottom: 0;
+    border-top: 1px solid var(--hairline);
+    background: var(--surface-white);
+    box-shadow: var(--edge);
+    flex: none;
+  }
+
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding-top: 8px;
+    border: none;
+    background: none;
+    color: var(--faded-ink);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 13px;
+    cursor: pointer;
+  }
+
+  .tab svg { width: 20px; height: 20px; }
+  .tab.is-active { color: var(--receipt-ink); font-weight: 600; }
+
+  .tabbar-pad { height: 22px; background: var(--surface-white); flex: none; }
+
+  /* ── footer overlay ── */
+
+  .footer-overlay {
+    padding: 0 16px 16px;
+    background: linear-gradient(180deg, rgba(244, 245, 246, 0) 0%, var(--paper-gray) 40%);
+    flex: none;
+  }
+
+  /* ── toast ── */
+
+  .toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    border-radius: 999px;
+    background: var(--receipt-ink);
+    color: var(--surface-white);
+    box-shadow: var(--floating);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+  }
+
+  .toast svg { width: 16px; height: 16px; color: var(--signal-green); }
+
+  /* ─────────────────────────── spec panel ─────────────────────────── */
+
+  .panel {
+    background: var(--paper-gray);
+    color: var(--receipt-ink);
+    border-radius: 32px 32px 0 0;
+    padding: 72px 0 96px;
+  }
+
+  .panel h2 {
+    margin: 0 0 6px;
+    font-size: clamp(28px, 3.6vw, 38px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .panel .lede {
+    margin: 0 0 40px;
+    max-width: 62ch;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--faded-ink);
+  }
+
+  .panel h3 {
+    margin: 56px 0 18px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .panel h3:first-of-type { margin-top: 40px; }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  }
+
+  .spec-card {
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .spec-card h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+    color: var(--faded-ink);
+  }
+
+  .spec-demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+  }
+
+  .spec-note {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 17px;
+    color: var(--faded-ink);
+  }
+
+  .spec-note code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    color: var(--settled-forest);
+  }
+
+  /* color chips */
+
+  .color-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+  }
+
+  .color-chip {
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .color-chip .fill { height: 76px; }
+
+  .color-chip .meta { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .color-chip .name { font-size: 15px; font-weight: 600; line-height: 22px; }
+  .color-chip .hex {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--faded-ink);
+    text-transform: uppercase;
+  }
+  .color-chip .use { font-size: 12px; font-weight: 500; line-height: 17px; color: var(--faded-ink); margin-top: 4px; }
+
+  /* type scale */
+
+  .type-list { display: flex; flex-direction: column; gap: 0; }
+
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .type-row:last-child { border-bottom: none; }
+
+  .type-key {
+    flex: none;
+    width: 132px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+    color: var(--faded-ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .type-sample { flex: 1; min-width: 0; letter-spacing: -0.02em; }
+
+  /* radius ladder */
+
+  .radius-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+
+  .radius-item { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+  .radius-box {
+    width: 84px;
+    height: 84px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .radius-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--faded-ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* rules */
+
+  .rules { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
+  .rule {
+    padding: 18px 20px;
+    border-radius: 16px;
+    background: var(--surface-white);
+    box-shadow: var(--card-ambient);
+  }
+
+  .rule b { display: block; font-size: 15px; font-weight: 600; line-height: 22px; margin-bottom: 4px; }
+  .rule span { font-size: 13px; line-height: 20px; color: var(--faded-ink); }
+
+  .drift {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--sage-wash);
+  }
+
+  .drift b { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .drift ul { margin: 0; padding-left: 20px; }
+  .drift li { font-size: 14px; line-height: 22px; color: var(--receipt-ink); }
+  .drift li + li { margin-top: 6px; }
+
+  .footnote {
+    margin: 56px 0 0;
+    padding-top: 24px;
+    border-top: 1px solid var(--hairline);
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--faded-ink);
+  }
+
+  @media (max-width: 860px) {
+    .masthead { padding: 48px 0 40px; }
+    .screens { gap: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Splyt Design System</h1>
+    <p class="north-star">
+      <strong>“The Shared Table.”</strong> A green header holds the top of every screen like a
+      placemat; a pale panel slides up over it carrying white cards. The money is the loudest
+      thing on any screen, and everything else stands back so it can be read one-handed.
+    </p>
+    <div class="swatch-strip" aria-hidden="true">
+      <span style="background:#2F6F57"></span>
+      <span style="background:#3E8C6A"></span>
+      <span style="background:#22C55E"></span>
+      <span style="background:#E8F2EC"></span>
+      <span style="background:#F1F7F3"></span>
+      <span style="background:#F4F5F6"></span>
+      <span style="background:#1C1C1E"></span>
+      <span style="background:#6B6B6F"></span>
+      <span style="background:#3B82F6"></span>
+      <span style="background:#E74C3C"></span>
+    </div>
+    <div class="meta-row">
+      <span><b>Platform</b> iOS + Android (React Native)</span>
+      <span><b>Type</b> System face, 32 → 12pt</span>
+      <span><b>Grid</b> 8pt, 16pt margins</span>
+      <span><b>Depth</b> Tonal-first</span>
+      <span><b>Anti-reference</b> Dense list UI</span>
+    </div>
+  </header>
+
+  <section class="screens">
+
+    <!-- ══════════════ SCREEN 1: HOME ══════════════ -->
+    <div class="screen-slot">
+      <div class="screen-caption">
+        <h2>Home</h2>
+        <p>The hero is a full-bleed band, not an inset card: its fill meets the screen edges while its content keeps the 16pt margin, so it aligns with the stat cards below. The stat row is always present, empty or not.</p>
+      </div>
+      <div class="device">
+        <div class="app-header">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="statusbar-icons">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h3v4H2zm5-3h3v7H7zm5-4h3v11h-3zm5-5h3v16h-3z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0-4.2c1.5 0 2.9.6 3.9 1.6l1.7-1.7a8.2 8.2 0 0 0-11.2 0l1.7 1.7a5.5 5.5 0 0 1 3.9-1.6zm0-5.6c2.9 0 5.6 1.1 7.6 3.1l1.7-1.7a13.2 13.2 0 0 0-18.6 0l1.7 1.7a10.6 10.6 0 0 1 7.6-3.1z"/></svg>
+              <svg viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="8" width="18" height="9" rx="2.6"/><path d="M22 11.5v2.4" stroke-linecap="round" stroke-width="2.4"/><rect x="4" y="10" width="13" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg>
+            </span>
+          </div>
+          <div class="header-row">
+            <div class="header-left">
+              <span class="brand-mark">S</span>
+              <span class="header-name">Hi, Ren</span>
+            </div>
+            <div class="header-right">
+              <button class="icon-btn" aria-label="Notifications, 3 unread">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                <span class="badge-dot">3</span>
+              </button>
+              <span class="avatar">R</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="body-container">
+          <div class="body-scroll">
+            <div class="hero-band">
+              <div class="hero-top">
+                <span class="hero-label">Total tracked spend</span>
+                <span class="hero-badge">2 events</span>
+              </div>
+              <div class="hero-amount">₱18,940.00</div>
+              <div class="hero-meta">Across all your active events</div>
+              <div class="hero-actions">
+                <button class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                  New event
+                </button>
+                <button class="btn btn-secondary">Join code</button>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-label">Total spend</span>
+                  <span class="stat-badge green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-6 4 4 6-8"/></svg>
+                  </span>
+                </div>
+                <div class="stat-value">₱18,940</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-top">
+                  <span class="stat-label">In fund</span>
+                  <span class="stat-badge blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="12" cy="12" r="3"/></svg>
+                  </span>
+                </div>
+                <div class="stat-value">₱6,500</div>
+              </div>
+            </div>
+
+            <div class="section-heading">
+              <h3>Your events</h3>
+              <button class="section-link">See all</button>
+            </div>
+
+            <div class="event-card">
+              <span class="event-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 3.5 4.5 6.4 4.5 8.8A4.5 4.5 0 0 1 12 16a4.5 4.5 0 0 1-4.5-4.2C7.5 9.4 9 6.5 12 3Z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg>
+              </span>
+              <div class="event-body">
+                <div class="event-line">
+                  <span class="event-title-row">
+                    <span class="event-name">Bora Weekend</span>
+                    <span class="pill pill-success">Active</span>
+                  </span>
+                  <span class="event-amount">₱12,450</span>
+                </div>
+                <div class="event-line">
+                  <span class="event-meta">6 members · Mar 14–17</span>
+                  <span class="event-owed">You're owed ₱2,110</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="event-card">
+              <span class="event-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg>
+              </span>
+              <div class="event-body">
+                <div class="event-line">
+                  <span class="event-title-row">
+                    <span class="event-name">Sagada Trip</span>
+                    <span class="pill pill-outline">Settling</span>
+                  </span>
+                  <span class="event-amount">₱6,490</span>
+                </div>
+                <div class="event-line">
+                  <span class="event-meta">4 members · Feb 2–5</span>
+                  <span class="event-owed">You're owed ₱2,170</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="tabbar">
+            <button class="tab is-active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+              <span>Home</span>
+            </button>
+            <button class="tab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+              <span>Events</span>
+            </button>
+            <button class="tab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 4-7 5 5"/></svg>
+              <span>Activity</span>
+            </button>
+            <button class="tab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l1.7-1.3-2-3.4-2 .8a7.6 7.6 0 0 0-2.6-1.5L14.2 2h-4l-.3 2.1a7.6 7.6 0 0 0-2.6 1.5l-2-.8-2 3.4 1.7 1.3a7.6 7.6 0 0 0 0 3L3.3 14l2 3.4 2-.8a7.6 7.6 0 0 0 2.6 1.5l.3 2.1h4l.3-2.1a7.6 7.6 0 0 0 2.6-1.5l2 .8 2-3.4Z"/></svg>
+              <span>Settings</span>
+            </button>
+          </nav>
+          <div class="tabbar-pad"></div>
+        </div>
+        <span class="home-indicator"></span>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCREEN 2: EVENT DETAIL ══════════════ -->
+    <div class="screen-slot">
+      <div class="screen-caption">
+        <h2>Event detail</h2>
+        <p>Detail header: the identity block is replaced by a white circular back button, and the title moves into the body.</p>
+      </div>
+      <div class="device">
+        <div class="app-header">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="statusbar-icons">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h3v4H2zm5-3h3v7H7zm5-4h3v11h-3zm5-5h3v16h-3z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0-4.2c1.5 0 2.9.6 3.9 1.6l1.7-1.7a8.2 8.2 0 0 0-11.2 0l1.7 1.7a5.5 5.5 0 0 1 3.9-1.6zm0-5.6c2.9 0 5.6 1.1 7.6 3.1l1.7-1.7a13.2 13.2 0 0 0-18.6 0l1.7 1.7a10.6 10.6 0 0 1 7.6-3.1z"/></svg>
+              <svg viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="8" width="18" height="9" rx="2.6"/><rect x="4" y="10" width="11" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg>
+            </span>
+          </div>
+          <div class="header-row">
+            <div class="header-left">
+              <button class="icon-btn on-white" aria-label="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+            </div>
+            <div class="header-right">
+              <button class="icon-btn" aria-label="Share invite">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8 15.6 6.6M8.4 13.2l7.2 4.2"/></svg>
+              </button>
+              <button class="icon-btn" aria-label="More options">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="body-container">
+          <div class="body-scroll">
+            <div class="page-header">
+              <h1 class="page-title">Bora Weekend</h1>
+              <p class="page-subtitle">Mar 14–17 · 6 members</p>
+            </div>
+
+            <div class="pill-row">
+              <span class="pill pill-success">Active</span>
+              <span class="pill pill-default">PHP · ₱</span>
+              <span class="pill pill-outline">You're owner</span>
+            </div>
+
+            <div class="card-accent">
+              <div class="hero-top">
+                <span class="hero-label">Total spend</span>
+              </div>
+              <div class="hero-amount">₱12,450.00</div>
+              <div class="hero-meta">You're owed ₱2,110.00 · 18 expenses</div>
+            </div>
+
+            <div class="tile-row">
+              <button class="tile">
+                <span class="tile-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+                <span class="tile-title">Add expense</span>
+                <span class="tile-sub">Split it now</span>
+              </button>
+              <button class="tile">
+                <span class="tile-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="12" cy="12" r="3"/><path d="M7 4v16"/></svg>
+                </span>
+                <span class="tile-title">Central fund</span>
+                <span class="tile-sub">₱6,500 pooled</span>
+              </button>
+            </div>
+
+            <div class="section-heading">
+              <h3>Latest expenses</h3>
+              <button class="section-link">See all</button>
+            </div>
+
+            <div class="card">
+              <div class="row">
+                <span class="row-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v8a3 3 0 0 0 6 0V3M8 11v10"/><path d="M17 3c-1.5 2-2 3.5-2 6s.7 3 2 3 2-1 2-3-.5-4-2-6Z"/><path d="M17 12v9"/></svg>
+                </span>
+                <span class="row-copy">
+                  <span class="row-title">Dinner at Cyma</span>
+                  <span class="row-detail">Ren paid · split 6 ways</span>
+                </span>
+                <span class="row-value">₱3,240</span>
+              </div>
+              <div class="row">
+                <span class="row-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9l2-4h14l2 4v8"/><path d="M3 17h18"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>
+                </span>
+                <span class="row-copy">
+                  <span class="row-title">Van rental</span>
+                  <span class="row-detail">Central fund · split 6 ways</span>
+                </span>
+                <span class="row-value">₱4,800</span>
+              </div>
+              <div class="row">
+                <span class="row-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg>
+                </span>
+                <span class="row-copy">
+                  <span class="row-title">Airbnb — 2 nights</span>
+                  <span class="row-detail">Mika paid · split 5 ways</span>
+                </span>
+                <span class="row-value">₱4,410</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-overlay">
+            <button class="btn btn-primary btn-block">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10M7 8 4 12l3 4M17 16H7M17 16l3-4-3-4"/></svg>
+              Settle up
+            </button>
+          </div>
+        </div>
+        <span class="home-indicator"></span>
+      </div>
+    </div>
+
+    <!-- ══════════════ SCREEN 3: ADD EXPENSE ══════════════ -->
+    <div class="screen-slot">
+      <div class="screen-caption">
+        <h2>Add expense</h2>
+        <p>Filled fields with visible labels, focus signalled by border alone, and selection carried by Sage Wash rows.</p>
+      </div>
+      <div class="device">
+        <div class="app-header">
+          <div class="statusbar">
+            <span>9:41</span>
+            <span class="statusbar-icons">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h3v4H2zm5-3h3v7H7zm5-4h3v11h-3zm5-5h3v16h-3z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0-4.2c1.5 0 2.9.6 3.9 1.6l1.7-1.7a8.2 8.2 0 0 0-11.2 0l1.7 1.7a5.5 5.5 0 0 1 3.9-1.6z"/></svg>
+            </span>
+          </div>
+          <div class="header-row">
+            <div class="header-left">
+              <button class="icon-btn on-white" aria-label="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="body-container">
+          <div class="body-scroll">
+            <div class="page-header">
+              <h1 class="page-title">Add expense</h1>
+              <p class="page-subtitle">Bora Weekend · PHP</p>
+            </div>
+
+            <div class="card">
+              <div class="field">
+                <label class="field-label" for="amt">Amount</label>
+                <div class="input-wrap amount-input is-focused">
+                  <span class="amount-prefix">₱</span>
+                  <input id="amt" value="3,240.00" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label" for="ttl">Title</label>
+                <div class="input-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></svg>
+                  <input id="ttl" value="Dinner at Cyma" />
+                </div>
+              </div>
+            </div>
+
+            <div class="section-heading">
+              <h3>Paid by</h3>
+            </div>
+
+            <button class="select-row is-selected">
+              <span class="select-lead">
+                <span class="select-icon">R</span>
+                <span class="select-copy">
+                  <span class="select-title">Ren (you)</span>
+                  <span class="select-detail">Personal money</span>
+                </span>
+              </span>
+              <span class="mark is-active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </span>
+            </button>
+
+            <button class="select-row">
+              <span class="select-lead">
+                <span class="select-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+                <span class="select-copy">
+                  <span class="select-title">Central fund</span>
+                  <span class="select-detail">₱6,500.00 available</span>
+                </span>
+              </span>
+              <span class="mark"></span>
+            </button>
+
+            <div class="section-heading">
+              <h3>Split between</h3>
+              <button class="section-link">All 6</button>
+            </div>
+
+            <div class="card">
+              <div class="row">
+                <span class="row-icon">M</span>
+                <span class="row-copy">
+                  <span class="row-title">Mika</span>
+                  <span class="row-detail">Equal share</span>
+                </span>
+                <span class="row-value">₱540.00</span>
+              </div>
+              <div class="row">
+                <span class="row-icon">J</span>
+                <span class="row-copy">
+                  <span class="row-title">Jomar</span>
+                  <span class="row-detail">Equal share</span>
+                </span>
+                <span class="row-value">₱540.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-overlay">
+            <button class="btn btn-primary btn-block">Save expense</button>
+          </div>
+        </div>
+        <span class="home-indicator"></span>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- ══════════════ SPEC PANEL ══════════════ -->
+<section class="panel">
+  <div class="wrap">
+    <h2>The system, unpacked</h2>
+    <p class="lede">
+      Every value below is live in <code>src/theme/tokens.ts</code> and normative in
+      <code>DESIGN.md</code>. The prose says where and why; the tokens say what.
+    </p>
+
+    <h3>Palette</h3>
+    <div class="color-grid">
+      <div class="color-chip">
+        <div class="fill" style="background:#2F6F57"></div>
+        <div class="meta">
+          <span class="name">Settled Forest</span>
+          <span class="hex">#2F6F57</span>
+          <span class="use">Header, the one primary action, current selection. Nothing else.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#3E8C6A"></div>
+        <div class="meta">
+          <span class="name">Canopy</span>
+          <span class="hex">#3E8C6A</span>
+          <span class="use">Currently unused. Retained for pressed states on green surfaces.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#22C55E"></div>
+        <div class="meta">
+          <span class="name">Signal Green</span>
+          <span class="hex">#22C55E</span>
+          <span class="use">Live status: active badges, positive stat icons.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#E8F2EC"></div>
+        <div class="meta">
+          <span class="name">Sage Wash</span>
+          <span class="hex">#E8F2EC</span>
+          <span class="use">Hero card fill and selected rows. The one large tint.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#F1F7F3"></div>
+        <div class="meta">
+          <span class="name">Morning Wash</span>
+          <span class="hex">#F1F7F3</span>
+          <span class="use">Icon badges, default pills, tile squares.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#1C1C1E"></div>
+        <div class="meta">
+          <span class="name">Receipt Ink</span>
+          <span class="hex">#1C1C1E</span>
+          <span class="use">All text, black utility buttons, toasts. Never #000.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#6B6B6F"></div>
+        <div class="meta">
+          <span class="name">Faded Ink</span>
+          <span class="hex">#6B6B6F</span>
+          <span class="use">Labels, captions, placeholders, inactive tabs.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#F4F5F6"></div>
+        <div class="meta">
+          <span class="name">Paper Gray</span>
+          <span class="hex">#F4F5F6</span>
+          <span class="use">The canvas: body panel, input fills, selectable rows.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#3B82F6"></div>
+        <div class="meta">
+          <span class="name">Info Blue</span>
+          <span class="hex">#3B82F6</span>
+          <span class="use">Neutral and pending status. The only non-green hue in routine use.</span>
+        </div>
+      </div>
+      <div class="color-chip">
+        <div class="fill" style="background:#E74C3C"></div>
+        <div class="meta">
+          <span class="name">Danger Clay</span>
+          <span class="hex">#E74C3C</span>
+          <span class="use">Destructive actions, field errors, the unread count.</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Type scale</h3>
+    <div class="type-list">
+      <div class="type-row">
+        <span class="type-key">display / 32 · 700</span>
+        <span class="type-sample" style="font-size:32px;font-weight:700;line-height:38px">Splyt</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">amount / 30 · 700</span>
+        <span class="type-sample" style="font-size:30px;font-weight:700;line-height:36px;font-variant-numeric:tabular-nums">₱12,450.00</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">page-title / 28 · 700</span>
+        <span class="type-sample" style="font-size:28px;font-weight:700;line-height:35px">Bora Weekend</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">section / 20 · 600</span>
+        <span class="type-sample" style="font-size:20px;font-weight:600;line-height:26px">Latest expenses</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">card-title / 17 · 600</span>
+        <span class="type-sample" style="font-size:17px;font-weight:600;line-height:23px">My balance</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">body / 15 · 400</span>
+        <span class="type-sample" style="font-size:15px;font-weight:400;line-height:22px;letter-spacing:0">Split it six ways and settle after the trip.</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">label / 13 · 500</span>
+        <span class="type-sample" style="font-size:13px;font-weight:500;line-height:18px;color:#6B6B6F;letter-spacing:0">Event name</span>
+      </div>
+      <div class="type-row">
+        <span class="type-key">caption / 12 · 500</span>
+        <span class="type-sample" style="font-size:12px;font-weight:500;line-height:17px;color:#6B6B6F;letter-spacing:0">Updated 21h ago</span>
+      </div>
+    </div>
+
+    <h3>Components</h3>
+    <div class="grid">
+      <div class="spec-card">
+        <h4>Primary · Secondary</h4>
+        <div class="spec-demo">
+          <button class="btn btn-primary btn-sm">Create event</button>
+          <button class="btn btn-secondary btn-sm">Join by code</button>
+        </div>
+        <p class="spec-note">48pt tall, <code>14px</code> radius. One primary per screen.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Black · Destructive</h4>
+        <div class="spec-demo">
+          <button class="btn btn-black btn-sm">Invite user</button>
+          <button class="btn btn-destructive btn-sm">Delete event</button>
+        </div>
+        <p class="spec-note">Black = operational. Green = brand-affirmative.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Loading · Disabled</h4>
+        <div class="spec-demo">
+          <button class="btn btn-primary btn-sm"><span class="spinner"></span>Saving</button>
+          <button class="btn btn-primary btn-sm" disabled>Save</button>
+        </div>
+        <p class="spec-note">The label survives loading; <code>opacity 0.4</code> when disabled.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Field — rest, focus, error</h4>
+        <div class="spec-demo" style="flex-direction:column;align-items:stretch;gap:10px">
+          <div class="input-wrap"><input value="Bora Weekend" aria-label="Rest" /></div>
+          <div class="input-wrap is-focused"><input value="Sagada Trip" aria-label="Focus" /></div>
+          <div class="input-wrap is-error"><input value="" placeholder="Event name" aria-label="Error" /></div>
+          <span class="field-error">Event name is required.</span>
+        </div>
+        <p class="spec-note">Filled, never outlined at rest. The border is the entire focus signal.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Pills</h4>
+        <div class="spec-demo">
+          <span class="pill pill-default">PHP · ₱</span>
+          <span class="pill pill-accent">Owner</span>
+          <span class="pill pill-success">Active</span>
+          <span class="pill pill-info">Pending</span>
+          <span class="pill pill-danger">Overdue</span>          <span class="pill pill-outline">Settled</span>
+        </div>
+        <p class="spec-note">Pills state facts. They are never tappable.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Selection mark</h4>
+        <div class="spec-demo" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="select-row is-selected">
+            <span class="select-lead">
+              <span class="select-icon">M</span>
+              <span class="select-copy"><span class="select-title">Mika</span><span class="select-detail">Joined</span></span>
+            </span>
+            <span class="mark is-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          </div>
+          <div class="select-row">
+            <span class="select-lead">
+              <span class="select-icon">J</span>
+              <span class="select-copy"><span class="select-title">Jomar</span><span class="select-detail">Invited</span></span>
+            </span>
+            <span class="mark"></span>
+          </div>
+        </div>
+        <p class="spec-note">Selection reads as Sage Wash fill plus a filled mark.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Toast</h4>
+        <div class="spec-demo">
+          <span class="toast">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Expense added
+          </span>
+        </div>
+        <p class="spec-note">The one genuinely floating element in the system.</p>
+      </div>
+      <div class="spec-card">
+        <h4>Empty state</h4>
+        <div class="spec-demo" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <span class="event-icon" style="border-radius:999px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+          </span>
+          <span style="font-size:17px;font-weight:600;line-height:23px">No events yet</span>
+          <span style="font-size:15px;line-height:22px;color:#6B6B6F">Create one for your next trip, or join with a code.</span>
+          <button class="btn btn-primary btn-sm" style="margin-top:4px">Create event</button>
+        </div>
+        <p class="spec-note">Empty states name the next action, never just the absence.</p>
+      </div>
+    </div>
+
+    <h3>Radius ladder</h3>
+    <div class="radius-row">
+      <div class="radius-item"><div class="radius-box" style="border-radius:8px"></div><span class="radius-label">8 · badges</span></div>
+      <div class="radius-item"><div class="radius-box" style="border-radius:14px"></div><span class="radius-label">14 · controls</span></div>
+      <div class="radius-item"><div class="radius-box" style="border-radius:16px"></div><span class="radius-label">16 · cards</span></div>
+      <div class="radius-item"><div class="radius-box" style="border-radius:20px"></div><span class="radius-label">20 · hero</span></div>
+      <div class="radius-item"><div class="radius-box" style="border-radius:24px 24px 0 0"></div><span class="radius-label">24 · panels</span></div>
+      <div class="radius-item"><div class="radius-box" style="border-radius:999px"></div><span class="radius-label">pill</span></div>
+    </div>
+
+    <h3>The rules that decide arguments</h3>
+    <div class="rules">
+      <div class="rule"><b>The Rationed Green Rule</b><span>Settled Forest appears in exactly three places on a screen: the header, the primary action, and the current selection. A fourth means one of them is not actually primary.</span></div>
+      <div class="rule"><b>The Two Greens Are Not Interchangeable Rule</b><span>Settled Forest means <em>Splyt</em>. Signal Green means <em>live right now</em>. Swapping them makes chrome look like status.</span></div>
+      <div class="rule"><b>The Money Is The Headline Rule</b><span>The currency value is the largest and heaviest element in its section. If a label outweighs the number, the hierarchy is inverted.</span></div>
+      <div class="rule"><b>The Two Steps Rule</b><span>A value sits one size step <em>and</em> one weight step above its own label — never one or the other.</span></div>
+      <div class="rule"><b>The Tone Before Lift Rule</b><span>Separate surfaces by tone first. Shadows are a last resort, and they are <code>#163628</code>, never black.</span></div>
+      <div class="rule"><b>The Radius Scales With Size Rule</b><span>Icon badge 8 → control 14 → card 16 → hero 20 → panel 24. Never a 24pt chip or an 8pt panel.</span></div>
+      <div class="rule"><b>The Lifted Panel Rule</b><span>The body container overlaps the header by 20pt with 24pt top corners. It never gains a shadow, a border, or bottom rounding.</span></div>
+      <div class="rule"><b>The No Shouting Rule</b><span>No uppercase except the hero eyebrow. Bold is for titles and money only, never for mid-sentence emphasis.</span></div>
+    </div>
+
+    <div class="drift">
+      <b>This preview now matches the app</b>
+      <ul>
+        <li><b>The header is a flat <code>#2F6F57</code> fill.</b> A gradient was implemented and reverted — <code>react-native-linear-gradient</code> mis-measures the header on this RN version and clips the header row under the status bar.</li>
+        <li><b>Press response.</b> Buttons spring to <code>scale(0.97)</code> on press-in and release back to <code>1</code>.</li>
+        <li><b>Contrast.</b> Semantic colors are fills only; text uses the darkened variants (<code>#B3261E</code>, <code>#15803D</code>, <code>#B45309</code>, <code>#1D4ED8</code>), and bright fills carry Receipt Ink rather than white.</li>
+      </ul>
+    </div>
+
+    <p class="footnote">
+      Preview of <code>DESIGN.md</code> · tokens from <code>src/theme/tokens.ts</code> · components from
+      <code>src/components/ui/</code>. This file is a reference rendering, not shipped app code.
+      Sample amounts, names, and events are illustrative.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

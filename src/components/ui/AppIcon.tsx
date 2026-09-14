@@ -59,6 +59,9 @@ const iconMap = {
 
 export type AppIconName = keyof typeof iconMap;
 
+/** Brings the 34-36pt circular controls up to the 44pt minimum target. */
+export const ICON_BUTTON_HIT_SLOP = {top: 8, bottom: 8, left: 8, right: 8};
+
 export function AppIcon({
   name,
   size = 18,
@@ -97,6 +100,7 @@ export function IconButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       onPress={onPress}
       style={({pressed}) => [
         onWhite ? styles.iconButtonOnWhite : styles.iconButton,
@@ -123,11 +127,12 @@ export function NotificationButton({
           : 'Open notifications'
       }
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.headerBellButton, pressed ? styles.buttonPressed : null]}>
       <AppIcon name="bell" tone="white" size={18} />
       {unreadCount > 0 ? (
         <View style={styles.headerNotificationDot}>
-          <Text style={styles.headerNotificationDotText}>
+          <Text style={styles.headerNotificationDotText} maxFontSizeMultiplier={1.3}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </Text>
         </View>
@@ -161,6 +166,7 @@ export function HeaderMenuButton({
       accessibilityRole="button"
       accessibilityLabel="Open menu"
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.headerAvatarCircle, pressed ? styles.buttonPressed : null]}>
       {avatarUrl ? (
         <Image
@@ -184,6 +190,7 @@ export function ScreenBackButton({onPress}: {onPress: () => void}) {
       accessibilityRole="button"
       accessibilityLabel="Go back"
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.backButton, pressed ? styles.buttonPressed : null]}>
       <AppIcon name="back" tone="accent" size={20} />
     </Pressable>

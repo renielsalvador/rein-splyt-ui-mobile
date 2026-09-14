@@ -24,7 +24,10 @@ export const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  // ─── hero card ─────────────────────────────────────────────────────────────
+  // ─── hero band ────────────────────────────────────────────────
+  heroWelcome: {
+    ...typography.pageTitle,
+  },
   heroLabel: {
     ...typography.label,
     color: palette.primary,
@@ -54,7 +57,7 @@ export const styles = StyleSheet.create({
   heroBadgeText: {
     ...typography.caption,
     fontWeight: '700',
-    color: palette.surface,
+    color: palette.ink,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -163,16 +166,16 @@ export const styles = StyleSheet.create({
   },
   eventStatusText: {
     ...typography.bodyStrong,
-    color: palette.greenAccent,
+    color: palette.successText,
   },
   eventStatusEnded: {
-    color: palette.danger,
+    color: palette.dangerText,
   },
   eventStatusUpcoming: {
-    color: palette.warning,
+    color: palette.warningText,
   },
   eventStatusInactive: {
-    color: '#8E99A4',
+    color: palette.inkMuted,
   },
   eventBalanceLabel: {
     ...typography.caption,
@@ -180,11 +183,11 @@ export const styles = StyleSheet.create({
   },
   eventBalanceOwed: {
     ...typography.bodyStrong,
-    color: palette.success,
+    color: palette.successText,
   },
   eventBalanceOwing: {
     ...typography.bodyStrong,
-    color: palette.danger,
+    color: palette.dangerText,
   },
   eventBalanceSettled: {
     ...typography.caption,
@@ -225,13 +228,13 @@ export const styles = StyleSheet.create({
   dashboardStatusText: {
     ...typography.caption,
     fontWeight: '700',
-    color: palette.greenAccent,
+    color: palette.successText,
   },
   dashboardEndedText: {
-    color: palette.warning,
+    color: palette.warningText,
   },
   dashboardInactiveText: {
-    color: '#8E99A4',
+    color: palette.inkMuted,
   },
   dashboardMemberCount: {
     ...typography.caption,
@@ -288,7 +291,7 @@ export const styles = StyleSheet.create({
     fontSize: 17,
   },
   dashboardMetricPositive: {
-    color: palette.success,
+    color: palette.successText,
   },
 
   // ─── shortcut row (4 buttons) ───────────────────────────────────────────────
@@ -413,16 +416,16 @@ export const styles = StyleSheet.create({
   },
   deleteEventButtonText: {
     ...typography.bodyStrong,
-    color: palette.danger,
+    color: palette.dangerText,
   },
   deleteEventConfirmText: {
     ...typography.body,
     color: palette.ink,
   },
   deleteConfirmButton: {
-    height: 52,
+    minHeight: 52,
     borderRadius: radii.pill,
-    backgroundColor: palette.danger,
+    backgroundColor: palette.dangerText,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -595,10 +598,10 @@ export const styles = StyleSheet.create({
     ...typography.bodyStrong,
   },
   memberRowBalancePositive: {
-    color: palette.success,
+    color: palette.successText,
   },
   memberRowBalanceNegative: {
-    color: palette.danger,
+    color: palette.dangerText,
   },
   memberCodeHeader: {
     flexDirection: 'row',
@@ -606,8 +609,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   refreshButtonLight: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: radii.pill,
     backgroundColor: palette.surface,
     borderWidth: 1,
@@ -657,11 +660,11 @@ export const styles = StyleSheet.create({
   },
   balanceDetailPositive: {
     ...typography.bodyStrong,
-    color: palette.success,
+    color: palette.successText,
   },
   balanceDetailNegative: {
     ...typography.bodyStrong,
-    color: palette.danger,
+    color: palette.dangerText,
   },
   balanceSheetSummary: {
     gap: spacing.xs,
@@ -678,10 +681,10 @@ export const styles = StyleSheet.create({
     ...typography.amount,
   },
   balanceAmountPositive: {
-    color: palette.success,
+    color: palette.successText,
   },
   balanceAmountNegative: {
-    color: palette.danger,
+    color: palette.dangerText,
   },
   balanceAmountNeutral: {
     color: palette.inkMuted,

@@ -21,7 +21,9 @@ export function SelectableRow({
 }) {
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="checkbox"
+      accessibilityState={{checked: selected}}
+      accessibilityLabel={detail ? `${label}, ${detail}` : label}
       onPress={onPress}
       style={({pressed}) => [
         styles.selectableRow,
