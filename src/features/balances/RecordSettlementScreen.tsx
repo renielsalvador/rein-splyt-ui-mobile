@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
@@ -34,6 +34,15 @@ export function RecordSettlementScreen({
   const [fieldError, setFieldError] = useState<string>();
   const [submitError, setSubmitError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>();
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+    const timeoutId = setTimeout(() => setSuccessMessage(undefined), 2600);
+    return () => clearTimeout(timeoutId);
+  }, [successMessage]);
 
   // Re-read the live plan so a stale suggestion cannot be submitted after another
   // payment landed for the same pair.
@@ -69,6 +78,23 @@ export function RecordSettlementScreen({
     toMemberId === currentMemberId,
   );
 
+  const pairPayments = summary.settlements.filter(
+    settlement =>
+      settlement.fromMemberId === fromMemberId &&
+      settlement.toMemberId === toMemberId,
+  );
+  const paidSoFar = pairPayments.reduce(
+    (total, settlement) => total + settlement.amount,
+    0,
+  );
+
+  const enteredAmount = toAmount(amount);
+  const remainingAfter =
+    Number.isFinite(enteredAmount) && enteredAmount > 0 && enteredAmount <= outstanding
+      ? roundAmount(outstanding - enteredAmount)
+      : undefined;
+  const isFullPayment = remainingAfter === 0;
+
   if (outstanding <= 0) {
     return (
       <AppScreen
@@ -98,6 +124,7 @@ export function RecordSettlementScreen({
 
     setFieldError(undefined);
     setSubmitError(undefined);
+    setSuccessMessage(undefined);
     setSubmitting(true);
 
     try {
@@ -108,7 +135,23 @@ export function RecordSettlementScreen({
         amount: parsed.data.amount,
         note: parsed.data.note,
       });
-      navigation.goBack();
+
+      const stillOwed = roundAmount(outstanding - parsed.data.amount);
+
+      if (stillOwed <= 0) {
+        navigation.goBack();
+        return;
+      }
+
+      // Stay put so the payer can keep chipping away at what is left.
+      setNote('');
+      setAmount(String(stillOwed));
+      setSuccessMessage(
+        `Recorded ${formatCurrency(parsed.data.amount, currency)}. ${formatCurrency(
+          stillOwed,
+          currency,
+        )} left to settle.`,
+      );
     } catch (recordError) {
       setSubmitError(
         recordError instanceof Error
@@ -128,7 +171,13 @@ export function RecordSettlementScreen({
       leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
       footerOverlay={
         <AppButton
-          label={submitting ? 'Saving…' : 'Mark as paid'}
+          label={
+            submitting
+              ? 'Saving…'
+              : isFullPayment
+                ? 'Mark as fully paid'
+                : 'Record payment'
+          }
           icon="check"
           disabled={submitting}
           onPress={handleSubmit}
@@ -140,7 +189,12 @@ export function RecordSettlementScreen({
         </Text>
         <MoneyValue value={outstanding} currency={currency} size="hero" absolute />
         <Text style={styles.heroMeta}>
-          Outstanding between them. Record less if only part of it was handed over.
+          {paidSoFar > 0
+            ? `Still outstanding after ${formatCurrency(
+                paidSoFar,
+                currency,
+              )} already recorded. Pay it off in as many instalments as you need.`
+            : 'Outstanding between them. Record part of it now and the rest whenever it is handed over.'}
         </Text>
       </AppCard>
 
@@ -158,6 +212,26 @@ export function RecordSettlementScreen({
           keyboardType="decimal-pad"
           errorMessage={fieldError}
         />
+        <View style={styles.quickRow}>
+          <AppButton
+            label={`Full ${formatCurrency(outstanding, currency)}`}
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              setAmount(String(outstanding));
+              setFieldError(undefined);
+            }}
+          />
+          <AppButton
+            label="Half"
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              setAmount(String(roundAmount(outstanding / 2)));
+              setFieldError(undefined);
+            }}
+          />
+        </View>
         <AppInput
           label="Note (optional)"
           value={note}
@@ -166,15 +240,41 @@ export function RecordSettlementScreen({
         />
         <View style={styles.hintRow}>
           <Text style={styles.hint}>
-            Maximum {formatCurrency(outstanding, currency)}
+            {remainingAfter === undefined
+              ? `Maximum ${formatCurrency(outstanding, currency)}`
+              : remainingAfter > 0
+                ? `Partial payment — ${formatCurrency(
+                    remainingAfter,
+                    currency,
+                  )} will still be outstanding.`
+                : 'Settles this pair in full.'}
           </Text>
         </View>
         {submitError ? <InlineError message={submitError} /> : null}
       </AppCard>
 
+      {pairPayments.length > 0 ? (
+        <AppCard>
+          <SectionHeading title="Payments so far" />
+          {pairPayments.map(settlement => (
+            <View key={settlement.id} style={styles.historyRow}>
+              <Text style={styles.hint}>
+                {settlement.note?.trim() || 'Payment recorded'}
+              </Text>
+              <MoneyValue value={settlement.amount} currency={currency} absolute />
+            </View>
+          ))}
+        </AppCard>
+      ) : null}
+
       {submitError ? <AppToast message={submitError} /> : null}
+      {!submitError && successMessage ? <AppToast message={successMessage} /> : null}
     </AppScreen>
   );
+}
+
+function roundAmount(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 const createStyles = (c: Colors) => {
@@ -196,6 +296,18 @@ const createStyles = (c: Colors) => {
     hint: {
       ...t.caption,
       color: c.inkMuted,
+    },
+    quickRow: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+    },
+    historyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
     },
   });
 };

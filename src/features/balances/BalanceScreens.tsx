@@ -243,7 +243,7 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
                       instruction.toMemberId === currentMemberId,
                     )}
                   </Text>
-                  <Text style={styles.rowHint}>Tap to mark as paid</Text>
+                  <Text style={styles.rowHint}>Tap to record a full or partial payment</Text>
                 </View>
                 <MoneyValue value={instruction.amount} currency={currency} tone="positive" />
                 <AppIcon name="chevron" tone="muted" size={16} />
