@@ -1,8 +1,9 @@
 import React from 'react';
 import {Image, Pressable, Text, View} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {palette} from '../../theme/tokens';
-import {styles} from './styles';
+import {getInitials} from './AppAvatar';
+import {useTheme} from '../../theme/ThemeProvider';
+import {useAppStyles} from './styles';
 
 const iconMap = {
   back: 'chevron-left',
@@ -59,6 +60,9 @@ const iconMap = {
 
 export type AppIconName = keyof typeof iconMap;
 
+/** Brings the 34-36pt circular controls up to the 44pt minimum target. */
+export const ICON_BUTTON_HIT_SLOP = {top: 8, bottom: 8, left: 8, right: 8};
+
 export function AppIcon({
   name,
   size = 18,
@@ -68,16 +72,19 @@ export function AppIcon({
   size?: number;
   tone?: 'default' | 'muted' | 'inverted' | 'accent' | 'danger' | 'white';
 }) {
+  const {colors: c} = useTheme();
   const color =
-    tone === 'inverted' || tone === 'white'
-      ? palette.surface
-      : tone === 'muted'
-        ? palette.inkMuted
-        : tone === 'accent'
-          ? palette.primary
-          : tone === 'danger'
-            ? palette.danger
-            : palette.ink;
+    tone === 'white'
+      ? c.onBrand
+      : tone === 'inverted'
+        ? c.surface
+        : tone === 'muted'
+          ? c.inkMuted
+          : tone === 'accent'
+            ? c.brand
+            : tone === 'danger'
+              ? c.danger
+              : c.ink;
 
   return <MaterialCommunityIcons name={iconMap[name]} size={size} color={color} />;
 }
@@ -93,10 +100,12 @@ export function IconButton({
   accessibilityLabel: string;
   onWhite?: boolean;
 }) {
+  const styles = useAppStyles();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       onPress={onPress}
       style={({pressed}) => [
         onWhite ? styles.iconButtonOnWhite : styles.iconButton,
@@ -114,6 +123,7 @@ export function NotificationButton({
   onPress: () => void;
   unreadCount?: number;
 }) {
+  const styles = useAppStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -123,11 +133,12 @@ export function NotificationButton({
           : 'Open notifications'
       }
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.headerBellButton, pressed ? styles.buttonPressed : null]}>
       <AppIcon name="bell" tone="white" size={18} />
       {unreadCount > 0 ? (
         <View style={styles.headerNotificationDot}>
-          <Text style={styles.headerNotificationDotText}>
+          <Text style={styles.headerNotificationDotText} maxFontSizeMultiplier={1.3}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </Text>
         </View>
@@ -146,21 +157,15 @@ export function HeaderMenuButton({
   avatarFallbackLabel?: string;
   label?: string;
 }) {
-  const initials = avatarFallbackLabel
-    ? avatarFallbackLabel
-        .trim()
-        .split(/\s+/)
-        .map(w => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'U';
+  const styles = useAppStyles();
+  const initials = avatarFallbackLabel ? getInitials(avatarFallbackLabel) : 'U';
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Open menu"
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.headerAvatarCircle, pressed ? styles.buttonPressed : null]}>
       {avatarUrl ? (
         <Image
@@ -179,11 +184,13 @@ export function HeaderMenuButton({
 }
 
 export function ScreenBackButton({onPress}: {onPress: () => void}) {
+  const styles = useAppStyles();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Go back"
       onPress={onPress}
+      hitSlop={ICON_BUTTON_HIT_SLOP}
       style={({pressed}) => [styles.backButton, pressed ? styles.buttonPressed : null]}>
       <AppIcon name="back" tone="accent" size={20} />
     </Pressable>

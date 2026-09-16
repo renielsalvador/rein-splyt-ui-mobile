@@ -1,10 +1,10 @@
-import React from 'react';
-import {ActivityIndicator, Pressable, Text, View} from 'react-native';
+import React, {useRef} from 'react';
+import {ActivityIndicator, Animated, Pressable, Text, View} from 'react-native';
 import {AppIcon, type AppIconName} from './AppIcon';
-import {styles} from './styles';
-import {palette} from '../../theme/tokens';
+import {useAppStyles} from './styles';
+import {useTheme} from '../../theme/ThemeProvider';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'black' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'tint' | 'black' | 'destructive';
 
 export function AppButton({
   label,
@@ -14,6 +14,7 @@ export function AppButton({
   loading = false,
   icon,
   size = 'default',
+  onTint = false,
 }: {
   label: string;
   onPress: () => void;
@@ -22,7 +23,11 @@ export function AppButton({
   loading?: boolean;
   icon?: AppIconName;
   size?: 'default' | 'sm' | 'compact';
+  /** Set when the button sits on a Sage Wash surface, where the tint fill would disappear. */
+  onTint?: boolean;
 }) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   const baseStyle =
     size === 'sm'
       ? styles.buttonSm
@@ -35,44 +40,77 @@ export function AppButton({
       ? styles.buttonPrimary
       : variant === 'secondary'
         ? styles.buttonSecondary
-        : variant === 'black'
-          ? styles.buttonBlack
-          : styles.buttonDestructive;
+        : variant === 'tint'
+          ? onTint
+            ? styles.buttonTintOnAccent
+            : styles.buttonTint
+          : variant === 'black'
+            ? styles.buttonBlack
+            : styles.buttonDestructive;
 
   const textStyle =
     variant === 'primary'
       ? styles.buttonTextPrimary
       : variant === 'secondary'
         ? styles.buttonTextSecondary
-        : variant === 'black'
-          ? styles.buttonTextBlack
-          : styles.buttonTextDestructive;
+        : variant === 'tint'
+          ? styles.buttonTextTint
+          : variant === 'black'
+            ? styles.buttonTextBlack
+            : styles.buttonTextDestructive;
 
   const iconTone =
-    variant === 'secondary' ? 'accent' : 'inverted';
-  const spinnerColor = variant === 'secondary' ? palette.primary : palette.surface;
+    variant === 'secondary' || variant === 'tint'
+      ? 'accent'
+      : variant === 'black'
+        ? 'inverted'
+        : 'white';
+  const spinnerColor =
+    variant === 'secondary'
+      ? c.brand
+      : variant === 'tint'
+        ? c.onBrandSoft
+        : variant === 'black'
+          ? c.onActionInk
+          : c.onBrand;
   const isDisabled = disabled || loading;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  function animateTo(value: number) {
+    Animated.spring(scale, {
+      toValue: value,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 6,
+    }).start();
+  }
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{disabled: isDisabled, busy: loading}}
-      disabled={isDisabled}
-      onPress={onPress}
-      style={({pressed}) => [
-        baseStyle,
-        variantStyle,
-        isDisabled ? styles.buttonDisabled : null,
-        pressed ? styles.buttonPressed : null,
-      ]}>
-      <View style={styles.buttonContent}>
-        {loading ? (
-          <ActivityIndicator color={spinnerColor} size="small" />
-        ) : icon ? (
-          <AppIcon name={icon} tone={iconTone} size={16} />
-        ) : null}
-        <Text style={[styles.buttonText, textStyle]}>{label}</Text>
-      </View>
-    </Pressable>
+    <Animated.View style={{transform: [{scale}]}}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{disabled: isDisabled, busy: loading}}
+        disabled={isDisabled}
+        onPress={onPress}
+        onPressIn={() => animateTo(0.97)}
+        onPressOut={() => animateTo(1)}
+        style={({pressed}) => [
+          baseStyle,
+          variantStyle,
+          isDisabled ? styles.buttonDisabled : null,
+          pressed ? styles.buttonPressed : null,
+        ]}>
+        <View style={styles.buttonContent}>
+          {loading ? (
+            <ActivityIndicator color={spinnerColor} size="small" />
+          ) : icon ? (
+            <AppIcon name={icon} tone={iconTone} size={16} />
+          ) : null}
+          <Text style={[styles.buttonText, textStyle]} maxFontSizeMultiplier={1.6}>
+            {label}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }

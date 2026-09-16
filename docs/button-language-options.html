@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Splyt — Button language options</title>
+<style>
+  :root{
+    --header-from:#1B4C3A; --header-via:#245A45; --header-mid:#2C6B53; --header-to:#337C60;
+    --panel:#F4F5F6; --surface:#FFFFFF; --field:#F4F5F6;
+    --ink:#1C1C1E; --ink-muted:#6B6B6F; --hairline:#E5E7EB;
+    --brand:#2F6F57; --brand-lift:#3E8C6A; --brand-soft:#E8F2EC; --brand-softer:#F1F7F3;
+    --on-brand:#FFFFFF; --on-brand-soft:#1B4838;
+    --action-ink:#1C1C1E; --on-action-ink:#FFFFFF;
+    --signal:#22C55E; --danger-text:#B3261E; --success-text:#15803D;
+    --shadow-card:0 4px 16px rgba(22,54,40,.06);
+    --shadow-lift:0 8px 20px rgba(22,54,40,.10);
+    --r-sm:8px; --r-md:14px; --r-lg:16px; --r-xl:20px; --r-sheet:28px; --r-pill:999px;
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:40px 28px 72px; font-family:var(--font);
+    background:#0E1512; color:#EAF1ED;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(34,197,94,.32); color:#fff;}
+  .masthead{max-width:1100px; margin:0 auto 36px;}
+  .masthead h1{font-size:30px; line-height:36px; font-weight:700; letter-spacing:-.9px; margin:0 0 10px;}
+  .masthead p{margin:0; max-width:64ch; font-size:14px; line-height:22px; color:#9FB2A8;}
+  .masthead b{color:#EAF1ED; font-weight:600;}
+
+  .grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; max-width:1100px; margin:0 auto; align-items:start;}
+  .grid.two{grid-template-columns:repeat(2,minmax(0,1fr)); max-width:740px; margin-bottom:56px;}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr; max-width:400px;} }
+
+  .rowhead{max-width:1100px; margin:0 auto 20px; display:flex; align-items:baseline; gap:14px;}
+  .rowhead h2{margin:0; font-size:17px; line-height:24px; font-weight:650; letter-spacing:-.3px;}
+  .rowhead span{font-size:13px; line-height:20px; color:#7E9188;}
+  .rowhead.dim h2{color:#8FA79C;}
+  .rowhead i{flex:1; height:1px; background:rgba(255,255,255,.09);}
+
+  .option > header{margin-bottom:16px;}
+  .tag{display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:600; letter-spacing:.3px; color:#7FD4A8; margin-bottom:7px;}
+  .tag i{width:5px; height:5px; border-radius:50%; background:#7FD4A8; display:block;}
+  .option h2{font-size:19px; line-height:25px; font-weight:650; letter-spacing:-.4px; margin:0 0 7px;}
+  .option .rule{margin:0; font-size:13px; line-height:20px; color:#9FB2A8; min-height:40px;}
+  .option .rule em{font-style:normal; color:#EAF1ED;}
+
+  /* ---- phone ---- */
+  .phone{
+    background:var(--panel); border-radius:32px; overflow:hidden; box-shadow:0 22px 52px rgba(0,0,0,.5);
+    border:1px solid rgba(255,255,255,.07);
+  }
+  .hdr{
+    background:linear-gradient(180deg,var(--header-from) 0%,var(--header-via) 34%,var(--header-mid) 68%,var(--header-to) 100%);
+    padding:14px 16px 34px; position:relative;
+  }
+  .hdr::after{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(120% 76% at 78% 4%, rgba(255,255,255,.13) 0%, rgba(255,255,255,.05) 46%, rgba(255,255,255,0) 72%);
+    pointer-events:none;
+  }
+  .status{display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:600; color:rgba(255,255,255,.82); margin-bottom:12px;}
+  .status .sys{display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.82);}
+  .hdr-row{display:flex; align-items:center; justify-content:space-between; min-height:34px; position:relative; z-index:1;}
+  .brand{display:flex; align-items:center; gap:9px; color:#fff; font-size:16px; font-weight:600; letter-spacing:-.2px;}
+  .brand .mark{width:24px; height:24px; border-radius:7px; background:rgba(255,255,255,.17); display:grid; place-items:center;}
+  .hdr-actions{display:flex; gap:8px;}
+  .circ{width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.17); display:grid; place-items:center;}
+  .avatar{width:32px; height:32px; border-radius:50%; background:#DDEDE6; color:#1B4332; display:grid; place-items:center; font-size:12px; font-weight:700;}
+
+  .body{background:var(--panel); border-radius:var(--r-sheet) var(--r-sheet) 0 0; margin-top:-20px; padding:22px 16px 18px; position:relative;}
+
+  .title-row{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;}
+  .title-row h3{margin:0; font-size:27px; line-height:33px; font-weight:700; letter-spacing:-.7px; color:var(--ink);}
+  .title-actions{display:flex; gap:8px; flex-shrink:0;}
+
+  /* ---- buttons ---- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:0; border-radius:var(--r-md); font-family:var(--font);
+    font-size:16px; font-weight:600; line-height:16px; letter-spacing:-.1px;
+    padding:0 16px; height:48px; cursor:default; white-space:nowrap;
+  }
+  .btn.sm{height:40px; font-size:14px; padding:0 13px; border-radius:12px; gap:6px;}
+  .btn.full{width:100%;}
+  .btn-green{background:var(--brand); color:var(--on-brand);}
+  .btn-black{background:var(--action-ink); color:var(--on-action-ink);}
+  .btn-ghost{background:var(--surface); color:var(--brand); box-shadow:inset 0 0 0 1px var(--hairline);}
+  .btn-quiet{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--hairline);}
+  .btn-tint{background:var(--brand-soft); color:var(--on-brand-soft);}
+  .btn-danger{background:var(--danger-text); color:#fff;}
+
+  /* ---- cards ---- */
+  .card{background:var(--surface); border-radius:var(--r-lg); padding:16px; box-shadow:var(--shadow-card); margin-bottom:14px;}
+  .trip-head{display:flex; align-items:flex-start; gap:12px; margin-bottom:14px;}
+  .badge{width:40px; height:40px; border-radius:12px; background:var(--brand-softer); display:grid; place-items:center; flex-shrink:0;}
+  .trip-name{margin:0; font-size:17px; line-height:23px; font-weight:600; letter-spacing:-.3px; color:var(--ink);}
+  .trip-meta{margin:2px 0 0; font-size:12px; line-height:17px; color:var(--ink-muted);}
+  .chip{
+    margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:5px;
+    height:24px; padding:0 9px; border-radius:var(--r-pill);
+    background:var(--signal); color:var(--ink); font-size:12px; font-weight:600;
+  }
+  .stat-label{font-size:13px; line-height:18px; font-weight:500; color:var(--ink-muted); margin:0 0 2px;}
+  .amount{margin:0; font-size:30px; line-height:36px; font-weight:700; letter-spacing:-.9px; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .owed{margin:5px 0 0; font-size:14px; line-height:20px; font-weight:600; color:var(--success-text); font-variant-numeric:tabular-nums;}
+  .divider{height:1px; background:var(--hairline); margin:14px -16px;}
+  .last{display:flex; align-items:center; gap:11px; margin-bottom:14px;}
+  .last .badge{width:34px; height:34px; border-radius:10px; background:var(--field);}
+  .last-title{margin:0; font-size:15px; line-height:21px; font-weight:600; color:var(--ink);}
+  .last-meta{margin:1px 0 0; font-size:12px; line-height:17px; color:var(--ink-muted);}
+  .last-amt{margin-left:auto; font-size:15px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .cta-row{display:flex; align-items:center; gap:10px;}
+  .stack{display:flex; flex-shrink:0;}
+  .stack span{
+    width:26px; height:26px; border-radius:50%; display:grid; place-items:center;
+    font-size:10px; font-weight:700; margin-left:-7px; box-shadow:0 0 0 2px var(--surface);
+  }
+  .stack span:first-child{margin-left:0;}
+
+  .section-rule{display:flex; align-items:center; gap:10px; margin:2px 0 12px;}
+  .section-rule span{font-size:13px; font-weight:600; color:var(--ink-muted); letter-spacing:-.1px;}
+  .section-rule i{flex:1; height:1px; background:var(--hairline);}
+
+  /* ---- detail strips ---- */
+  .strip{margin-top:22px;}
+  .strip > p{margin:0 0 10px; font-size:12px; font-weight:600; letter-spacing:-.1px; color:#7E9188;}
+  .strip-inner{background:var(--panel); border-radius:var(--r-xl); padding:16px; border:1px solid rgba(255,255,255,.06);}
+  .tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .tile{display:flex; flex-direction:column; align-items:center; gap:7px; padding:12px 4px; border-radius:var(--r-md);}
+  .tile em{font-style:normal; font-size:11px; font-weight:600; color:var(--ink); letter-spacing:-.1px;}
+  .tile .dot{width:38px; height:38px; border-radius:12px; display:grid; place-items:center;}
+  .footer-bar{background:var(--surface); border-radius:var(--r-xl); padding:14px 16px; box-shadow:var(--shadow-lift);}
+  .del-row{display:flex; justify-content:flex-start; margin-top:12px;}
+
+  .notes{list-style:none; margin:16px 0 0; padding:0;}
+  .notes li{position:relative; padding-left:16px; font-size:13px; line-height:20px; color:#9FB2A8; margin-bottom:6px;}
+  .notes li::before{content:""; position:absolute; left:0; top:8px; width:5px; height:5px; border-radius:50%; background:#41614F;}
+  .notes li b{color:#EAF1ED; font-weight:600;}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-join" viewBox="0 0 24 24"><path d="M14 20v-1.5a4 4 0 0 0-4-4H6.5a4 4 0 0 0-4 4V20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="8.25" cy="7.4" r="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M18.5 8.5v5.2M15.9 11.1h5.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-2.4-1.6-2.4 1.6-2.4-1.6L8.4 20.5 6 18.9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.2 8h5.6M9.2 11.6h5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-fork" viewBox="0 0 24 24"><path d="M8 3v7a2.4 2.4 0 0 0 2.4 2.4h0V21M8 3v4.6M11 3v4.6M16.6 3c-1.4 1.4-1.8 3.4-1.8 5.2 0 1.6.6 2.6 1.8 2.9V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.4 2H4.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 21.2h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M6 7.5h12M4 19h16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6 7.5 3 14h6zM18 7.5 15 14h6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 9h14l-3.2-3.4M20 15H6l3.2 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 20v-1.2A4.8 4.8 0 0 1 7.8 14h2.4A4.8 4.8 0 0 1 15 18.8V20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16.4 5.2a3.4 3.4 0 0 1 0 6.6M17.6 14h.6a3.8 3.8 0 0 1 3.8 3.8V20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4.2h5v2.3M6.6 6.5 7.5 20h9l.9-13.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M5.5 7.2 8 5.6l2.7 1.6L13.4 5.6l2.7 1.6 2.4-1.6v11.6l-2.4 1.6-2.7-1.6-2.7 1.6L8 17.2l-2.5 1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 10.4h6M9 13.6h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 18"><path d="M2 5.4a15 15 0 0 1 20 0M5.6 9.2a10 10 0 0 1 12.8 0M9.2 13a5 5 0 0 1 5.6 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 28 14"><rect x="1" y="2" width="22" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".5"/><rect x="3" y="4" width="17" height="6" rx="1.6" fill="currentColor"/><path d="M25 5.4v3.2a2.4 2.4 0 0 0 0-3.2z" fill="currentColor" opacity=".5"/></symbol>
+  </defs>
+</svg>
+
+<div class="masthead">
+  <h1>Which button language should Splyt speak?</h1>
+  <p>Three consistent systems, each applied across the same four moments: the Home title row, the trip card's primary action, the event dashboard's shortcuts, and the Add expense footer. Today the app mixes all three at once — that is the inconsistency you spotted. <b>Pick one and I'll enforce it everywhere.</b> Join now sits in the title row in all three, so it no longer sinks below the trip list.</p>
+</div>
+
+<div class="rowhead"><h2>Your mix</h2><span>black lead action, sage support</span><i></i></div>
+
+<div class="grid two">
+
+  <!-- ============ OPTION D ============ -->
+  <section class="option">
+    <header>
+      <div class="tag"><i></i>Option D</div>
+      <h2>Ink leads, sage supports</h2>
+      <p class="rule"><em>Black</em> = the one action that starts work. <em>Sage tint</em> = everything supporting it. Full green never lands on a button.</p>
+    </header>
+
+    <div class="phone">
+      <div class="hdr">
+        <div class="status"><span>11:38</span><span class="sys"><svg width="15" height="11"><use href="#i-wifi"/></svg><svg width="22" height="11"><use href="#i-battery"/></svg></span></div>
+        <div class="hdr-row">
+          <div class="brand"><span class="mark"><svg width="15" height="15" color="#fff"><use href="#i-logo"/></svg></span>Hi, Ren1</div>
+          <div class="hdr-actions">
+            <span class="circ"><svg width="17" height="17" color="#fff"><use href="#i-bell"/></svg></span>
+            <span class="avatar">RE</span>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>Your trips</h3>
+          <div class="title-actions">
+            <button class="btn sm btn-tint"><svg width="15" height="15"><use href="#i-join"/></svg>Join</button>
+            <button class="btn sm btn-black"><svg width="15" height="15"><use href="#i-plus"/></svg>New</button>
+          </div>
+        </div>
+        <div class="section-rule"><span>Now</span><i></i><span>2 trips</span></div>
+        <div class="card">
+          <div class="trip-head">
+            <span class="badge"><svg width="20" height="20" color="#2F6F57"><use href="#i-fork"/></svg></span>
+            <div>
+              <p class="trip-name">Sample</p>
+              <p class="trip-meta">Sep 9 – 14 · Day 6 of 6</p>
+            </div>
+            <span class="chip">Live</span>
+          </div>
+          <p class="stat-label">Total tracked</p>
+          <p class="amount">₱1,500.00</p>
+          <p class="owed">You're owed ₱467.00</p>
+          <div class="divider"></div>
+          <div class="last">
+            <span class="badge"><svg width="17" height="17" color="#6B6B6F"><use href="#i-receipt"/></svg></span>
+            <div><p class="last-title">Camp</p><p class="last-meta">Ren1 paid</p></div>
+            <span class="last-amt">₱400.00</span>
+          </div>
+          <div class="cta-row">
+            <button class="btn full btn-black"><svg width="17" height="17"><use href="#i-plus"/></svg>Add expense</button>
+            <span class="stack">
+              <span style="background:#DDEDE6;color:#1B4332">RE</span>
+              <span style="background:#E8F0FE;color:#2855AE">JT</span>
+              <span style="background:#FEF3C7;color:#92400E">DO</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <p>Event dashboard &amp; Add expense</p>
+      <div class="strip-inner">
+        <div class="tiles">
+          <div class="tile" style="background:var(--brand-soft)"><span class="dot" style="background:var(--action-ink)"><svg width="19" height="19" color="#fff"><use href="#i-receipt"/></svg></span><em>Expense</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-scale"/></svg></span><em>Balances</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-swap"/></svg></span><em>Settle</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-people"/></svg></span><em>Members</em></div>
+        </div>
+        <div class="del-row"><button class="btn sm btn-quiet" style="color:var(--danger-text)"><svg width="15" height="15"><use href="#i-trash"/></svg>Delete event</button></div>
+        <div style="height:14px"></div>
+        <div class="footer-bar" style="display:flex; gap:10px;">
+          <button class="btn btn-tint" style="flex:0 0 auto">Manage fund</button>
+          <button class="btn btn-black" style="flex:1">Save expense</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>Black is the anchor</b> — one per screen, always the darkest thing on it. The look you already like on Home, made the rule.</li>
+      <li>Sage tint carries Join, Manage fund and the shortcut tiles: visible, obviously tappable, never competing with the amount.</li>
+      <li>Cost: brand green appears on no button at all. Needs a DESIGN.md rewrite.</li>
+    </ul>
+  </section>
+
+  <!-- ============ OPTION E ============ -->
+  <section class="option">
+    <header>
+      <div class="tag"><i></i>Option E</div>
+      <h2>Ink leads, green closes</h2>
+      <p class="rule">Same as D, with one exception: the button that <em>commits money</em> stays full green. Green becomes rare, so it means something.</p>
+    </header>
+
+    <div class="phone">
+      <div class="hdr">
+        <div class="status"><span>11:38</span><span class="sys"><svg width="15" height="11"><use href="#i-wifi"/></svg><svg width="22" height="11"><use href="#i-battery"/></svg></span></div>
+        <div class="hdr-row">
+          <div class="brand"><span class="mark"><svg width="15" height="15" color="#fff"><use href="#i-logo"/></svg></span>Hi, Ren1</div>
+          <div class="hdr-actions">
+            <span class="circ"><svg width="17" height="17" color="#fff"><use href="#i-bell"/></svg></span>
+            <span class="avatar">RE</span>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>Your trips</h3>
+          <div class="title-actions">
+            <button class="btn sm btn-tint"><svg width="15" height="15"><use href="#i-join"/></svg>Join</button>
+            <button class="btn sm btn-black"><svg width="15" height="15"><use href="#i-plus"/></svg>New</button>
+          </div>
+        </div>
+        <div class="section-rule"><span>Now</span><i></i><span>2 trips</span></div>
+        <div class="card">
+          <div class="trip-head">
+            <span class="badge"><svg width="20" height="20" color="#2F6F57"><use href="#i-fork"/></svg></span>
+            <div>
+              <p class="trip-name">Sample</p>
+              <p class="trip-meta">Sep 9 – 14 · Day 6 of 6</p>
+            </div>
+            <span class="chip">Live</span>
+          </div>
+          <p class="stat-label">Total tracked</p>
+          <p class="amount">₱1,500.00</p>
+          <p class="owed">You're owed ₱467.00</p>
+          <div class="divider"></div>
+          <div class="last">
+            <span class="badge"><svg width="17" height="17" color="#6B6B6F"><use href="#i-receipt"/></svg></span>
+            <div><p class="last-title">Camp</p><p class="last-meta">Ren1 paid</p></div>
+            <span class="last-amt">₱400.00</span>
+          </div>
+          <div class="cta-row">
+            <button class="btn full btn-black"><svg width="17" height="17"><use href="#i-plus"/></svg>Add expense</button>
+            <span class="stack">
+              <span style="background:#DDEDE6;color:#1B4332">RE</span>
+              <span style="background:#E8F0FE;color:#2855AE">JT</span>
+              <span style="background:#FEF3C7;color:#92400E">DO</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <p>Event dashboard &amp; Add expense</p>
+      <div class="strip-inner">
+        <div class="tiles">
+          <div class="tile" style="background:var(--brand-soft)"><span class="dot" style="background:var(--action-ink)"><svg width="19" height="19" color="#fff"><use href="#i-receipt"/></svg></span><em>Expense</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-scale"/></svg></span><em>Balances</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-swap"/></svg></span><em>Settle</em></div>
+          <div class="tile"><span class="dot" style="background:var(--brand-softer)"><svg width="19" height="19" color="#2F6F57"><use href="#i-people"/></svg></span><em>Members</em></div>
+        </div>
+        <div class="del-row"><button class="btn sm btn-quiet" style="color:var(--danger-text)"><svg width="15" height="15"><use href="#i-trash"/></svg>Delete event</button></div>
+        <div style="height:14px"></div>
+        <div class="footer-bar" style="display:flex; gap:10px;">
+          <button class="btn btn-tint" style="flex:0 0 auto">Manage fund</button>
+          <button class="btn btn-green" style="flex:1">Save expense</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>Green survives, barely</b> — only on Save expense, Contribute and Settle. Three screens in the whole app.</li>
+      <li>Everything else matches D: black anchor, sage support. Home looks identical to D.</li>
+      <li>Keeps Splyt's colour in the moment that matters and satisfies the Rationed Green Rule without a doc rewrite.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="rowhead dim"><h2>The original three</h2><span>for comparison</span><i></i></div>
+
+<div class="grid">
+
+  <!-- ============ OPTION A ============ -->
+  <section class="option">
+    <header>
+      <div class="tag"><i></i>Option A</div>
+      <h2>Green commits money</h2>
+      <p class="rule"><em>Green</em> = this moves money. <em>Black</em> = this manages the ledger. Everything else is quiet.</p>
+    </header>
+
+    <div class="phone">
+      <div class="hdr">
+        <div class="status"><span>11:38</span><span class="sys"><svg width="15" height="11"><use href="#i-wifi"/></svg><svg width="22" height="11"><use href="#i-battery"/></svg></span></div>
+        <div class="hdr-row">
+          <div class="brand"><span class="mark"><svg width="15" height="15" color="#fff"><use href="#i-logo"/></svg></span>Hi, Ren1</div>
+          <div class="hdr-actions">
+            <span class="circ"><svg width="17" height="17" color="#fff"><use href="#i-bell"/></svg></span>
+            <span class="avatar">RE</span>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>Your trips</h3>
+          <div class="title-actions">
+            <button class="btn sm btn-quiet"><svg width="15" height="15"><use href="#i-join"/></svg>Join</button>
+            <button class="btn sm btn-black"><svg width="15" height="15"><use href="#i-plus"/></svg>New</button>
+          </div>
+        </div>
+        <div class="section-rule"><span>Now</span><i></i><span>2 trips</span></div>
+        <div class="card">
+          <div class="trip-head">
+            <span class="badge"><svg width="20" height="20" color="#2F6F57"><use href="#i-fork"/></svg></span>
+            <div>
+              <p class="trip-name">Sample</p>
+              <p class="trip-meta">Sep 9 – 14 · Day 6 of 6</p>
+            </div>
+            <span class="chip">Live</span>
+          </div>
+          <p class="stat-label">Total tracked</p>
+          <p class="amount">₱1,500.00</p>
+          <p class="owed">You're owed ₱467.00</p>
+          <div class="divider"></div>
+          <div class="last">
+            <span class="badge"><svg width="17" height="17" color="#6B6B6F"><use href="#i-receipt"/></svg></span>
+            <div><p class="last-title">Camp</p><p class="last-meta">Ren1 paid</p></div>
+            <span class="last-amt">₱400.00</span>
+          </div>
+          <div class="cta-row">
+            <button class="btn full btn-green"><svg width="17" height="17"><use href="#i-plus"/></svg>Add expense</button>
+            <span class="stack">
+              <span style="background:#DDEDE6;color:#1B4332">RE</span>
+              <span style="background:#E8F0FE;color:#2855AE">JT</span>
+              <span style="background:#FEF3C7;color:#92400E">DO</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <p>Event dashboard &amp; Add expense</p>
+      <div class="strip-inner">
+        <div class="tiles">
+          <div class="tile" style="background:var(--brand-soft)"><span class="dot" style="background:var(--brand)"><svg width="19" height="19" color="#fff"><use href="#i-receipt"/></svg></span><em>Expense</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-scale"/></svg></span><em>Balances</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-swap"/></svg></span><em>Settle</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-people"/></svg></span><em>Members</em></div>
+        </div>
+        <div class="del-row"><button class="btn sm btn-quiet" style="color:var(--danger-text)"><svg width="15" height="15"><use href="#i-trash"/></svg>Delete event</button></div>
+        <div style="height:14px"></div>
+        <div class="footer-bar"><button class="btn full btn-green">Save expense</button></div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>Green appears 3×:</b> header, Add expense, selected tile — exactly what the Rationed Green Rule asks.</li>
+      <li>Black keeps a job (New), so the dark pill you already like doesn't disappear.</li>
+      <li>Closest to DESIGN.md as written. Lowest risk.</li>
+    </ul>
+  </section>
+
+  <!-- ============ OPTION B ============ -->
+  <section class="option">
+    <header>
+      <div class="tag"><i></i>Option B</div>
+      <h2>One green, nothing else</h2>
+      <p class="rule">Black retires entirely. <em>One</em> green button per screen; every other action is a quiet outline.</p>
+    </header>
+
+    <div class="phone">
+      <div class="hdr">
+        <div class="status"><span>11:38</span><span class="sys"><svg width="15" height="11"><use href="#i-wifi"/></svg><svg width="22" height="11"><use href="#i-battery"/></svg></span></div>
+        <div class="hdr-row">
+          <div class="brand"><span class="mark"><svg width="15" height="15" color="#fff"><use href="#i-logo"/></svg></span>Hi, Ren1</div>
+          <div class="hdr-actions">
+            <span class="circ"><svg width="17" height="17" color="#fff"><use href="#i-bell"/></svg></span>
+            <span class="avatar">RE</span>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>Your trips</h3>
+          <div class="title-actions">
+            <button class="btn sm btn-quiet"><svg width="15" height="15"><use href="#i-join"/></svg>Join</button>
+            <button class="btn sm btn-green"><svg width="15" height="15"><use href="#i-plus"/></svg>New</button>
+          </div>
+        </div>
+        <div class="section-rule"><span>Now</span><i></i><span>2 trips</span></div>
+        <div class="card">
+          <div class="trip-head">
+            <span class="badge"><svg width="20" height="20" color="#2F6F57"><use href="#i-fork"/></svg></span>
+            <div>
+              <p class="trip-name">Sample</p>
+              <p class="trip-meta">Sep 9 – 14 · Day 6 of 6</p>
+            </div>
+            <span class="chip">Live</span>
+          </div>
+          <p class="stat-label">Total tracked</p>
+          <p class="amount">₱1,500.00</p>
+          <p class="owed">You're owed ₱467.00</p>
+          <div class="divider"></div>
+          <div class="last">
+            <span class="badge"><svg width="17" height="17" color="#6B6B6F"><use href="#i-receipt"/></svg></span>
+            <div><p class="last-title">Camp</p><p class="last-meta">Ren1 paid</p></div>
+            <span class="last-amt">₱400.00</span>
+          </div>
+          <div class="cta-row">
+            <button class="btn full btn-tint"><svg width="17" height="17"><use href="#i-plus"/></svg>Add expense</button>
+            <span class="stack">
+              <span style="background:#DDEDE6;color:#1B4332">RE</span>
+              <span style="background:#E8F0FE;color:#2855AE">JT</span>
+              <span style="background:#FEF3C7;color:#92400E">DO</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <p>Event dashboard &amp; Add expense</p>
+      <div class="strip-inner">
+        <div class="tiles">
+          <div class="tile" style="background:var(--brand-soft)"><span class="dot" style="background:rgba(255,255,255,.82)"><svg width="19" height="19" color="#1B4838"><use href="#i-receipt"/></svg></span><em>Expense</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-scale"/></svg></span><em>Balances</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-swap"/></svg></span><em>Settle</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-people"/></svg></span><em>Members</em></div>
+        </div>
+        <div class="del-row"><button class="btn sm btn-quiet" style="color:var(--danger-text)"><svg width="15" height="15"><use href="#i-trash"/></svg>Delete event</button></div>
+        <div style="height:14px"></div>
+        <div class="footer-bar"><button class="btn full btn-green">Save expense</button></div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>Strictest hierarchy:</b> exactly one filled green per screen, so the eye never has to choose.</li>
+      <li>The trip card's Add expense becomes a soft green tint — present, but it stops out-shouting the amount above it.</li>
+      <li>Quietest of the three. Risk: the Home card loses some of its punch.</li>
+    </ul>
+  </section>
+
+  <!-- ============ OPTION C ============ -->
+  <section class="option">
+    <header>
+      <div class="tag"><i></i>Option C</div>
+      <h2>Black does the work</h2>
+      <p class="rule"><em>Black</em> is the action ink for every task. <em>Green</em> becomes identity only — header, status, selection.</p>
+    </header>
+
+    <div class="phone">
+      <div class="hdr">
+        <div class="status"><span>11:38</span><span class="sys"><svg width="15" height="11"><use href="#i-wifi"/></svg><svg width="22" height="11"><use href="#i-battery"/></svg></span></div>
+        <div class="hdr-row">
+          <div class="brand"><span class="mark"><svg width="15" height="15" color="#fff"><use href="#i-logo"/></svg></span>Hi, Ren1</div>
+          <div class="hdr-actions">
+            <span class="circ"><svg width="17" height="17" color="#fff"><use href="#i-bell"/></svg></span>
+            <span class="avatar">RE</span>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-row">
+          <h3>Your trips</h3>
+          <div class="title-actions">
+            <button class="btn sm btn-quiet"><svg width="15" height="15"><use href="#i-join"/></svg>Join</button>
+            <button class="btn sm btn-black"><svg width="15" height="15"><use href="#i-plus"/></svg>New</button>
+          </div>
+        </div>
+        <div class="section-rule"><span>Now</span><i></i><span>2 trips</span></div>
+        <div class="card">
+          <div class="trip-head">
+            <span class="badge"><svg width="20" height="20" color="#2F6F57"><use href="#i-fork"/></svg></span>
+            <div>
+              <p class="trip-name">Sample</p>
+              <p class="trip-meta">Sep 9 – 14 · Day 6 of 6</p>
+            </div>
+            <span class="chip">Live</span>
+          </div>
+          <p class="stat-label">Total tracked</p>
+          <p class="amount">₱1,500.00</p>
+          <p class="owed">You're owed ₱467.00</p>
+          <div class="divider"></div>
+          <div class="last">
+            <span class="badge"><svg width="17" height="17" color="#6B6B6F"><use href="#i-receipt"/></svg></span>
+            <div><p class="last-title">Camp</p><p class="last-meta">Ren1 paid</p></div>
+            <span class="last-amt">₱400.00</span>
+          </div>
+          <div class="cta-row">
+            <button class="btn full btn-black"><svg width="17" height="17"><use href="#i-plus"/></svg>Add expense</button>
+            <span class="stack">
+              <span style="background:#DDEDE6;color:#1B4332">RE</span>
+              <span style="background:#E8F0FE;color:#2855AE">JT</span>
+              <span style="background:#FEF3C7;color:#92400E">DO</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <p>Event dashboard &amp; Add expense</p>
+      <div class="strip-inner">
+        <div class="tiles">
+          <div class="tile" style="background:var(--brand-soft)"><span class="dot" style="background:var(--action-ink)"><svg width="19" height="19" color="#fff"><use href="#i-receipt"/></svg></span><em>Expense</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-scale"/></svg></span><em>Balances</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-swap"/></svg></span><em>Settle</em></div>
+          <div class="tile"><span class="dot" style="background:var(--surface)"><svg width="19" height="19" color="#1C1C1E"><use href="#i-people"/></svg></span><em>Members</em></div>
+        </div>
+        <div class="del-row"><button class="btn sm btn-quiet" style="color:var(--danger-text)"><svg width="15" height="15"><use href="#i-trash"/></svg>Delete event</button></div>
+        <div style="height:14px"></div>
+        <div class="footer-bar"><button class="btn full btn-black">Save expense</button></div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>Keeps the look you already shipped</b> on Home and makes every other screen match it.</li>
+      <li>Highest contrast, most "product tool" — black reads as neutral and gets out of the way of the money.</li>
+      <li>Cost: the brand green never appears on an action, so Splyt's colour lives only in chrome. Needs a DESIGN.md rewrite.</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>

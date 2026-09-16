@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,7 +15,9 @@ import {
 import {useApp} from '../../app/AppProvider';
 import {AppButton, AppInput, AppToast, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
-import {palette, radii, spacing, typography} from '../../theme/tokens';
+import {createTypography, radii, spacing} from '../../theme/tokens';
+import type {Colors} from '../../theme/tokens';
+import {useStyles, useTheme} from '../../theme/ThemeProvider';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -41,6 +45,7 @@ function AuthHeader({
   title: string;
   subtitle: string;
 }) {
+  const styles = useStyles(createStyles);
   return (
     <View style={styles.wordmarkBlock}>
       <Image
@@ -55,6 +60,8 @@ function AuthHeader({
 }
 
 export function AuthScreen() {
+  const styles = useStyles(createStyles);
+  const {colors: c} = useTheme();
   const {
     signIn,
     signUp,
@@ -190,11 +197,17 @@ export function AuthScreen() {
   if (mode === 'forgot') {
     return (
       <SafeAreaView style={styles.root}>
-        <View style={styles.inner}>
-          <AuthHeader
-            title="Forgot password"
-            subtitle="Enter your email and we’ll send a reset link."
-          />
+        <KeyboardAvoidingView
+          style={styles.fill}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <ScrollView
+            contentContainerStyle={styles.inner}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <AuthHeader
+              title="Forgot password"
+              subtitle="Enter your email and we’ll send a reset link."
+            />
 
           <View style={styles.formBlock}>
             <AppInput
@@ -230,7 +243,8 @@ export function AuthScreen() {
               }}
             />
           </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
         {toastMessage ? (
           <View
             style={[
@@ -248,7 +262,13 @@ export function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.inner}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
         <AuthHeader
           title="Splyt"
           subtitle={
@@ -295,7 +315,7 @@ export function AuthScreen() {
               setFieldErrors(current => ({...current, password: undefined}));
               clearError();
             }}
-            placeholder={mode === 'login' ? '••••••••' : 'At least 8 characters'}
+            placeholder={mode === 'login' ? '••••••••' : 'At least 6 characters'}
             secureTextEntry
             autoCapitalize="none"
             prefixIcon="lock"
@@ -349,7 +369,7 @@ export function AuthScreen() {
             ]}>
             <View style={styles.oauthButtonContent}>
               {googleSubmitting ? (
-                <ActivityIndicator color={palette.ink} size="small" />
+                <ActivityIndicator color={c.ink} size="small" />
               ) : (
                 <Image
                   source={require('../../../assets/branding/icon-google.png')}
@@ -382,7 +402,8 @@ export function AuthScreen() {
             </Text>
           </Text>
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       {toastMessage ? (
         <View
           style={[
@@ -399,6 +420,7 @@ export function AuthScreen() {
 }
 
 export function ResetPasswordScreen() {
+  const styles = useStyles(createStyles);
   const {recoveryUser, updatePassword, error, clearError} = useApp();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -434,7 +456,13 @@ export function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.inner}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
         <AuthHeader
           title="Reset password"
           subtitle={
@@ -484,116 +512,124 @@ export function ResetPasswordScreen() {
             }}
           />
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: palette.surface,
-  },
-  inner: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.xl,
-  },
-  wordmarkBlock: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  brandLogo: {
-    width: 60,
-    height: 60,
-    marginBottom: spacing.sm,
-  },
-  wordmark: {
-    ...typography.display,
-    color: palette.primary,
-    textAlign: 'center',
-  },
-  tagline: {
-    ...typography.body,
-    color: palette.inkMuted,
-    textAlign: 'center',
-  },
-  formBlock: {
-    gap: spacing.md,
-  },
-  forgotRow: {
-    alignItems: 'flex-end',
-    marginTop: -spacing.sm,
-  },
-  forgotText: {
-    ...typography.label,
-    color: palette.primary,
-    fontWeight: '600',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginVertical: spacing.xs,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: palette.divider,
-  },
-  dividerText: {
-    ...typography.caption,
-    color: palette.inkMuted,
-  },
-  oauthButton: {
-    height: 48,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: palette.divider,
-    backgroundColor: palette.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  oauthButtonPressed: {
-    opacity: 0.82,
-  },
-  oauthButtonDisabled: {
-    opacity: 0.55,
-  },
-  oauthButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  oauthButtonText: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  oauthLogo: {
-    width: 18,
-    height: 18,
-  },
-  switchBlock: {
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  switchText: {
-    ...typography.body,
-    color: palette.inkMuted,
-  },
-  switchLink: {
-    ...typography.bodyStrong,
-    color: palette.ink,
-  },
-  toastWrap: {
-    position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
-    bottom: spacing.lg,
-    alignItems: 'center',
-  },
-});
+const createStyles = (c: Colors) => {
+  const t = createTypography(c);
+
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: c.surface,
+    },
+    fill: {
+      flex: 1,
+    },
+    inner: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.lg,
+      gap: spacing.xl,
+    },
+    wordmarkBlock: {
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    brandLogo: {
+      width: 60,
+      height: 60,
+      marginBottom: spacing.sm,
+    },
+    wordmark: {
+      ...t.display,
+      color: c.brand,
+      textAlign: 'center',
+    },
+    tagline: {
+      ...t.body,
+      color: c.inkMuted,
+      textAlign: 'center',
+    },
+    formBlock: {
+      gap: spacing.md,
+    },
+    forgotRow: {
+      alignItems: 'flex-end',
+      marginTop: -spacing.sm,
+    },
+    forgotText: {
+      ...t.label,
+      color: c.brand,
+      fontWeight: '600',
+    },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginVertical: spacing.xs,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: c.rule,
+    },
+    dividerText: {
+      ...t.caption,
+      color: c.inkMuted,
+    },
+    oauthButton: {
+      height: 48,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: c.hairline,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    oauthButtonPressed: {
+      opacity: 0.82,
+    },
+    oauthButtonDisabled: {
+      opacity: 0.55,
+    },
+    oauthButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    oauthButtonText: {
+      ...t.bodyStrong,
+      color: c.ink,
+    },
+    oauthLogo: {
+      width: 18,
+      height: 18,
+    },
+    switchBlock: {
+      alignItems: 'center',
+      marginTop: 'auto',
+    },
+    switchText: {
+      ...t.body,
+      color: c.inkMuted,
+    },
+    switchLink: {
+      ...t.bodyStrong,
+      color: c.ink,
+    },
+    toastWrap: {
+      position: 'absolute',
+      left: spacing.md,
+      right: spacing.md,
+      bottom: spacing.lg,
+      alignItems: 'center',
+    },
+  });
+};

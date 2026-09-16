@@ -4,18 +4,24 @@ import type {
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
+  CreateSettlementInput,
   Event,
   EventMember,
   EventSummary,
   Invite,
   JoinEventInput,
   MemberBalance,
+  NotificationPreferences,
   PendingInvite,
   RespondToInviteInput,
+  Settlement,
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateNotificationPreferencesInput,
+  UpdateUserPreferencesInput,
   UpdateUserProfileInput,
+  UserPreferences,
   UserProfile,
 } from '../../types/domain';
 
@@ -64,4 +70,18 @@ export interface AppBackend {
   ): Promise<void>;
   getBalances(eventId: string): Promise<MemberBalance[]>;
   getSettlementPlan(eventId: string): Promise<SettlementInstruction[]>;
+  listSettlements(eventId: string): Promise<Settlement[]>;
+  recordSettlement(userId: string, input: CreateSettlementInput): Promise<void>;
+  getUserPreferences(userId: string): Promise<UserPreferences>;
+  updateUserPreferences(
+    userId: string,
+    input: UpdateUserPreferencesInput,
+  ): Promise<UserPreferences>;
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences>;
+  updateNotificationPreferences(
+    userId: string,
+    input: UpdateNotificationPreferencesInput,
+  ): Promise<NotificationPreferences>;
+  registerDeviceToken(token: string, platform: 'ios' | 'android'): Promise<void>;
+  unregisterDeviceToken(token: string): Promise<void>;
 }

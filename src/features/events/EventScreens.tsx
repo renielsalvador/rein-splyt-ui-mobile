@@ -7,20 +7,16 @@ import {
   AppCard,
   AppIcon,
   AppInput,
-  AppMenu,
   AppModal,
   AppScreen,
   AppToast,
-  BrandLogo,
   EmptyState,
-  HeaderMenuButton,
   InlineError,
-  NotificationButton,
   ScreenBackButton,
   SelectableRow,
   SectionHeading,
 } from '../../components/ui';
-import {eventSchema, joinSchema} from '../../lib/validation/forms';
+import {eventSchema} from '../../lib/validation/forms';
 import {
   formatCurrency,
   formatDateLabel,
@@ -34,14 +30,13 @@ import {
   EventDateRangeField,
   EventDateRangePicker,
   EventIconPicker,
-  HomeEventCard,
   MemberRosterList,
   PendingInviteDetailCard,
-  PendingInviteListItem,
   RecentExpenseListItem,
   SelectedMembersPreview,
 } from './EventScreenComponents';
-import {styles} from './EventScreenStyles';
+import {useEventStyles} from './EventScreenStyles';
+import {useTheme} from '../../theme/ThemeProvider';
 import {
   buildSettlementInstructions,
   formatSelfDisplayName,
@@ -52,271 +47,7 @@ import {
 import {
   getEventLifecycle,
   getEventStatusBadge,
-  isEventIncludedInDashboard,
-  sortEventsByStartDate,
 } from './eventStatus';
-
-export function HomeScreen({
-  navigation,
-  hasTabBar,
-  tabBarBottomInset,
-}: ScreenProps<'Home'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
-  const {
-    currentUser,
-    events,
-    signOut,
-    summaries,
-    hydrateEvent,
-    joinEvent,
-    pendingInvites,
-    refreshPendingInvites,
-    error,
-  } = useApp();
-  const [joinModalVisible, setJoinModalVisible] = useState(false);
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-  const [inviteCode, setInviteCode] = useState('');
-  const [joinFieldError, setJoinFieldError] = useState<string>();
-  const [joining, setJoining] = useState(false);
-  const sortedEvents = useMemo(() => sortEventsByStartDate(events), [events]);
-  const includedEvents = useMemo(
-    () => sortedEvents.filter(event => isEventIncludedInDashboard(event)),
-    [sortedEvents],
-  );
-
-  useEffect(() => {
-    events.forEach(event => {
-      if (!summaries[event.id]) {
-        hydrateEvent(event.id).catch(() => undefined);
-      }
-    });
-  }, [events, hydrateEvent, summaries]);
-
-  useEffect(() => {
-    if (!notificationModalVisible) {
-      return;
-    }
-    refreshPendingInvites().catch(() => undefined);
-  }, [notificationModalVisible, refreshPendingInvites]);
-
-  const totalSpend = useMemo(
-    () =>
-      includedEvents.reduce((sum, event) => {
-        const summary = summaries[event.id];
-        return sum + (summary?.expenses.reduce((s, e) => s + e.amount, 0) ?? 0);
-      }, 0),
-    [includedEvents, summaries],
-  );
-
-  const primaryCurrency = includedEvents[0]?.currency ?? sortedEvents[0]?.currency ?? 'PHP';
-
-  async function handleJoin() {
-    const parsed = joinSchema.safeParse({inviteCode});
-    if (!parsed.success) {
-      setJoinFieldError(parsed.error.issues[0]?.message);
-      return;
-    }
-    setJoinFieldError(undefined);
-    setJoining(true);
-    try {
-      const event = await joinEvent(parsed.data);
-      setInviteCode('');
-      setJoinModalVisible(false);
-      navigation.navigate('EventDashboard', {eventId: event.id});
-    } finally {
-      setJoining(false);
-    }
-  }
-
-  const firstName = currentUser?.displayName?.split(' ')[0] ?? 'traveler';
-
-  return (
-    <>
-      <AppScreen
-        variant="main"
-        hasTabBar={hasTabBar}
-        tabBarBottomInset={tabBarBottomInset}
-        headerLeft={
-          <View style={styles.homeHeaderLeft}>
-            <BrandLogo />
-            <Text style={styles.homeHeaderUserName}>{`Hi, ${firstName}`}</Text>
-          </View>
-        }
-        headerRight={
-          <View style={styles.homeHeaderRight}>
-            <NotificationButton
-              unreadCount={pendingInvites.length}
-              onPress={() => setNotificationModalVisible(true)}
-            />
-            <AppMenu
-              items={[
-                {
-                  label: 'Settings',
-                  icon: 'settings',
-                  onPress: () => navigation.navigate('Settings'),
-                },
-                {
-                  label: 'Sign out',
-                  icon: 'signout',
-                  onPress: () => signOut().catch(() => undefined),
-                },
-              ]}
-              renderTrigger={({toggle}) => (
-                <HeaderMenuButton
-                  onPress={toggle}
-                  avatarUrl={currentUser?.avatarUrl}
-                  avatarFallbackLabel={currentUser?.displayName}
-                />
-              )}
-            />
-          </View>
-        }>
-        <AppCard tone="accent">
-          <View style={styles.heroTopRow}>
-            <Text style={styles.heroLabel}>Total tracked spend</Text>
-            {includedEvents.length > 0 && (
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText}>
-                  {includedEvents.length} event{includedEvents.length === 1 ? '' : 's'}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.heroAmount}>{formatCurrency(totalSpend, primaryCurrency)}</Text>
-          <Text style={styles.heroMeta}>Across all your active events</Text>
-          <View style={styles.actionRow}>
-            <View style={styles.actionRowItem}>
-              <AppButton
-                label="New event"
-                icon="create"
-                size="compact"
-                onPress={() => navigation.navigate('CreateEvent')}
-              />
-            </View>
-            <View style={styles.actionRowItem}>
-              <AppButton
-                label="Join code"
-                icon="join"
-                variant="secondary"
-                size="compact"
-                onPress={() => {
-                  setJoinFieldError(undefined);
-                  setJoinModalVisible(true);
-                }}
-              />
-            </View>
-          </View>
-        </AppCard>
-
-        <View style={styles.statCardRow}>
-          <View style={styles.statCard}>
-            <View style={styles.statCardTopRow}>
-              <Text style={styles.statCardLabel}>Active events</Text>
-            <View style={[styles.statCardIconBadge, styles.statCardIconGreen]}>
-                <AppIcon name="event" tone="inverted" size={16} />
-              </View>
-            </View>
-            <Text style={styles.statCardValue}>{includedEvents.length}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={styles.statCardTopRow}>
-              <Text style={styles.statCardLabel}>Invites</Text>
-              <View style={[styles.statCardIconBadge, styles.statCardIconBlue]}>
-                <AppIcon name="invite" tone="inverted" size={16} />
-              </View>
-            </View>
-            <Text style={styles.statCardValue}>{pendingInvites.length}</Text>
-          </View>
-        </View>
-
-        <SectionHeading
-          title="Your events"
-          detail="See all"
-          onDetailPress={() => navigation.navigate('Events')}
-        />
-        {sortedEvents.length === 0 ? (
-          <EmptyState
-            title="No events yet"
-            body="Create a trip or join one with an invite code to start tracking shared spending."
-          />
-        ) : null}
-        {sortedEvents.slice(0, 3).map(event => {
-          const summary = summaries[event.id];
-          const totalEventSpend =
-            summary?.expenses.reduce((sum, expense) => sum + expense.amount, 0) ?? 0;
-          return (
-            <HomeEventCard
-              key={event.id}
-              event={event}
-              members={summary?.members ?? []}
-              totalSpend={totalEventSpend}
-              onPress={() => navigation.navigate('EventDashboard', {eventId: event.id})}
-            />
-          );
-        })}
-      </AppScreen>
-
-      <AppModal
-        visible={notificationModalVisible}
-        title="Notifications"
-        subtitle="Unread updates and invites that need your attention."
-        scrollable
-        onClose={() => setNotificationModalVisible(false)}>
-        {pendingInvites.length === 0 ? (
-          <EmptyState
-            title="Nothing new"
-            body="Unread invites and other alerts will appear here."
-          />
-        ) : (
-          <ScrollView contentContainerStyle={styles.notificationList}>
-            {pendingInvites.map(pendingInvite => (
-              <PendingInviteListItem
-                key={pendingInvite.invite.id}
-                pendingInvite={pendingInvite}
-                onPress={() => {
-                  setNotificationModalVisible(false);
-                  navigation.navigate('NotificationDetail', {
-                    inviteId: pendingInvite.invite.id,
-                  });
-                }}
-              />
-            ))}
-          </ScrollView>
-        )}
-        <InlineError message={error ?? undefined} />
-      </AppModal>
-
-      <AppModal
-        visible={joinModalVisible}
-        title="Join event"
-        subtitle="Paste the invite code shared by the event owner."
-        onClose={() => {
-          setJoinModalVisible(false);
-          setJoinFieldError(undefined);
-          setInviteCode('');
-        }}>
-        <AppInput
-          label="Invite code"
-          value={inviteCode}
-          onChangeText={value => {
-            setInviteCode(value);
-            setJoinFieldError(undefined);
-          }}
-          placeholder="ABC123"
-          autoCapitalize="characters"
-          autoFocus
-          errorMessage={joinFieldError}
-        />
-        <InlineError message={error ?? undefined} />
-        <AppButton
-          label="Join event"
-          icon="join"
-          loading={joining}
-          onPress={() => handleJoin().catch(() => undefined)}
-        />
-      </AppModal>
-    </>
-  );
-}
 
 export function NotificationDetailScreen({
   navigation,
@@ -379,10 +110,11 @@ export function NotificationDetailScreen({
 }
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
-  const {contacts, createEvent, currentUser, error} = useApp();
+  const styles = useEventStyles();
+  const {contacts, createEvent, currentUser, error, preferences} = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [currency, setCurrency] = useState<CurrencyCode>('PHP');
+  const [currency, setCurrency] = useState<CurrencyCode>(preferences.preferredCurrency);
   const [icon, setIcon] = useState<EventIconName>('event');
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
@@ -555,7 +287,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
                 : 'Add members'
             }
             icon="members"
-            variant="secondary"
+            variant="tint"
             onPress={() => setMemberModalVisible(true)}
           />
           <SelectedMembersPreview
@@ -567,7 +299,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           <View style={styles.actionRowItem}>
             <AppButton
               label={`Currency: ${currency}`}
-              variant="secondary"
+              variant="tint"
               onPress={() => setCurrency(currency === 'USD' ? 'PHP' : 'USD')}
             />
           </View>
@@ -695,6 +427,8 @@ export function EventDashboardScreen({
   navigation,
   route,
 }: ScreenProps<'EventDashboard'>) {
+  const styles = useEventStyles();
+  const {colors} = useTheme();
   const {eventId} = route.params;
   const {hydrateEvent, summaries, balances, currentUser, updateEvent, deleteEvent, error} =
     useApp();
@@ -831,8 +565,8 @@ export function EventDashboardScreen({
                   .finally(() => setUpdatingStatus(false));
               }}
               disabled={updatingStatus}
-              trackColor={{false: '#CBD5E1', true: '#86EFAC'}}
-              thumbColor="#FFFFFF"
+              trackColor={{false: colors.hairline, true: colors.brandLift}}
+              thumbColor={colors.surface}
             />
           </View>
         }>
@@ -872,7 +606,7 @@ export function EventDashboardScreen({
                   setEditModalStep('details');
                 }}
               style={({pressed}) => [styles.dashboardEditButton, pressed && styles.pressed]}>
-              <AppIcon name="edit" tone="accent" size={12} />
+              <AppIcon name="edit" tone="accent" size={16} />
               <Text style={styles.dashboardEditText}>Edit</Text>
             </Pressable>
           </View>
@@ -900,36 +634,28 @@ export function EventDashboardScreen({
             accessibilityRole="button"
             onPress={() => navigation.navigate('AddExpense', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="expense" tone="accent" size={22} />
-            </View>
+            <AppIcon name="expense" size={24} />
             <Text style={styles.shortcutLabel}>Expense</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Balances', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="balances" tone="accent" size={22} />
-            </View>
+            <AppIcon name="balances" size={24} />
             <Text style={styles.shortcutLabel}>Balances</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Settlement', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="settlement" tone="accent" size={22} />
-            </View>
+            <AppIcon name="settlement" size={24} />
             <Text style={styles.shortcutLabel}>Settle</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('Members', {eventId})}
             style={({pressed}) => [styles.shortcutItem, pressed && styles.pressed]}>
-            <View style={styles.shortcutIconBubble}>
-              <AppIcon name="members" tone="accent" size={22} />
-            </View>
+            <AppIcon name="members" size={24} />
             <Text style={styles.shortcutLabel}>Members</Text>
           </Pressable>
         </View>
@@ -1135,6 +861,15 @@ export function EventDashboardScreen({
           currency={event.currency}
           owesYou={owesYou}
           youOwe={youOwe}
+          onSettle={instruction => {
+            setShowBalanceDetails(false);
+            navigation.navigate('RecordSettlement', {
+              eventId,
+              fromMemberId: instruction.fromMemberId,
+              toMemberId: instruction.toMemberId,
+              suggestedAmount: instruction.amount,
+            });
+          }}
         />
       </AppModal>
     </>
@@ -1142,6 +877,7 @@ export function EventDashboardScreen({
 }
 
 export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
+  const styles = useEventStyles();
   const {eventId} = route.params;
   const {summaries, addManualMember, createInvite, currentUser, error} = useApp();
   const summary = summaries[eventId];
@@ -1256,6 +992,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           <AppButton
             label="Generate event code"
             icon="invite"
+            variant="tint"
+            onTint
             loading={generatingCode}
             onPress={() => {
               setGeneratingCode(true);
@@ -1284,6 +1022,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Add placeholder member"
           icon="members"
+          variant="tint"
           loading={addingMember}
           onPress={() => {
             if (displayName.trim().length < 2) {
@@ -1318,6 +1057,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         <AppButton
           label="Send invite"
           icon="invite"
+          variant="tint"
           loading={sendingInvite}
           onPress={() => {
             const normalizedEmail = normalizeEmail(inviteEmail);

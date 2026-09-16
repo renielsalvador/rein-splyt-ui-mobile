@@ -11,6 +11,7 @@ import type {
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
+  CreateSettlementInput,
   Event,
   EventMember,
   EventSummary,
@@ -19,12 +20,17 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  NotificationPreferences,
   PendingInvite,
   RespondToInviteInput,
+  Settlement,
   SettlementInstruction,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateNotificationPreferencesInput,
+  UpdateUserPreferencesInput,
   UpdateUserProfileInput,
+  UserPreferences,
   UserProfile,
 } from '../../types/domain';
 
@@ -40,6 +46,20 @@ type PersistedState = {
   expenseSplits: ExpenseSplit[];
   centralFunds: CentralFund[];
   contributions: CentralFundContribution[];
+  settlements: Settlement[];
+  userPreferences: Record<string, UserPreferences>;
+  notificationPreferences: Record<string, NotificationPreferences>;
+  deviceTokens: Array<{userId: string; token: string; platform: 'ios' | 'android'}>;
+};
+
+const defaultUserPreferences: UserPreferences = {preferredCurrency: 'PHP'};
+
+const defaultNotificationPreferences: NotificationPreferences = {
+  pushEnabled: false,
+  expenses: true,
+  settlements: true,
+  invites: true,
+  eventUpdates: true,
 };
 
 const defaultState: PersistedState = {
@@ -54,6 +74,10 @@ const defaultState: PersistedState = {
   expenseSplits: [],
   centralFunds: [],
   contributions: [],
+  settlements: [],
+  userPreferences: {},
+  notificationPreferences: {},
+  deviceTokens: [],
 };
 
 function createId(prefix: string) {
@@ -548,6 +572,9 @@ export class MockBackend implements AppBackend {
       contributions: this.state.contributions.filter(
         contribution => contribution.fundId === fund.id,
       ),
+      settlements: this.state.settlements
+        .filter(settlement => settlement.eventId === eventId)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     };
   }
 
@@ -725,6 +752,8 @@ export class MockBackend implements AppBackend {
         displayName: member.displayName,
         paid: 0,
         owed: 0,
+        settledOut: 0,
+        settledIn: 0,
         net: 0,
       });
     });
@@ -757,10 +786,25 @@ export class MockBackend implements AppBackend {
         });
     });
 
+    summary.settlements.forEach(settlement => {
+      const payer = balances.get(settlement.fromMemberId);
+      const receiver = balances.get(settlement.toMemberId);
+
+      if (payer) {
+        payer.settledOut = roundCurrency(payer.settledOut + settlement.amount);
+      }
+
+      if (receiver) {
+        receiver.settledIn = roundCurrency(receiver.settledIn + settlement.amount);
+      }
+    });
+
     return Array.from(balances.values())
       .map(balance => ({
         ...balance,
-        net: roundCurrency(balance.paid - balance.owed),
+        net: roundCurrency(
+          balance.paid - balance.owed + balance.settledOut - balance.settledIn,
+        ),
       }))
       .sort((left, right) => right.net - left.net);
   }
@@ -804,6 +848,121 @@ export class MockBackend implements AppBackend {
     }
 
     return instructions;
+  }
+
+  async listSettlements(eventId: string): Promise<Settlement[]> {
+    return this.state.settlements
+      .filter(settlement => settlement.eventId === eventId)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
+  async recordSettlement(userId: string, input: CreateSettlementInput) {
+    const event = this.state.events.find(item => item.id === input.eventId);
+
+    if (!event) {
+      throw new Error('Event not found.');
+    }
+
+    if (input.fromMemberId === input.toMemberId) {
+      throw new Error('A member cannot settle with themselves.');
+    }
+
+    const amount = roundCurrency(input.amount);
+
+    if (!(amount > 0)) {
+      throw new Error('Enter an amount greater than zero.');
+    }
+
+    const outstanding = (await this.getSettlementPlan(input.eventId)).find(
+      instruction =>
+        instruction.fromMemberId === input.fromMemberId &&
+        instruction.toMemberId === input.toMemberId,
+    )?.amount;
+
+    if (!outstanding || outstanding <= 0) {
+      throw new Error('There is nothing outstanding between these members.');
+    }
+
+    if (amount > outstanding) {
+      throw new Error(
+        `Amount exceeds the ${outstanding} outstanding between these members.`,
+      );
+    }
+
+    const members = this.state.eventMembers.filter(
+      member => member.eventId === input.eventId,
+    );
+    const fromMember = members.find(member => member.id === input.fromMemberId);
+    const toMember = members.find(member => member.id === input.toMemberId);
+
+    if (!fromMember || !toMember) {
+      throw new Error('Both members must belong to this event.');
+    }
+
+    const now = new Date().toISOString();
+    event.updatedAt = now;
+
+    this.state.settlements.push({
+      id: createId('settlement'),
+      eventId: input.eventId,
+      fromMemberId: fromMember.id,
+      fromDisplayName: fromMember.displayName,
+      toMemberId: toMember.id,
+      toDisplayName: toMember.displayName,
+      amount,
+      currency: event.currency,
+      note: input.note?.trim() || undefined,
+      recordedBy: userId,
+      createdAt: now,
+    });
+  }
+
+  async getUserPreferences(userId: string): Promise<UserPreferences> {
+    return this.state.userPreferences[userId] ?? defaultUserPreferences;
+  }
+
+  async updateUserPreferences(userId: string, input: UpdateUserPreferencesInput) {
+    const next = {
+      ...(this.state.userPreferences[userId] ?? defaultUserPreferences),
+      ...input,
+    };
+    this.state.userPreferences[userId] = next;
+    return next;
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+    return this.state.notificationPreferences[userId] ?? defaultNotificationPreferences;
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    input: UpdateNotificationPreferencesInput,
+  ) {
+    const next = {
+      ...(this.state.notificationPreferences[userId] ?? defaultNotificationPreferences),
+      ...input,
+    };
+    this.state.notificationPreferences[userId] = next;
+    return next;
+  }
+
+  async registerDeviceToken(token: string, platform: 'ios' | 'android') {
+    const userId = this.state.sessionUserId;
+
+    if (!userId) {
+      throw new Error('Authentication required');
+    }
+
+    this.state.deviceTokens = this.state.deviceTokens.filter(
+      item => item.token !== token,
+    );
+    this.state.deviceTokens.push({userId, token, platform});
+  }
+
+  async unregisterDeviceToken(token: string) {
+    this.state.deviceTokens = this.state.deviceTokens.filter(
+      item => item.token !== token,
+    );
   }
 
   private getUser(userId: string) {

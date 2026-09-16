@@ -5,9 +5,12 @@ import type {
   CreateContributionInput,
   CreateEventInput,
   CreateExpenseInput,
+  CreateSettlementInput,
   RespondToInviteInput,
   UpdateEventInput,
   UpdateExpenseInput,
+  UpdateNotificationPreferencesInput,
+  UpdateUserPreferencesInput,
   UpdateUserProfileInput,
 } from '../../types/domain';
 import {
@@ -47,6 +50,18 @@ import {
   createExpense,
   updateExpense,
 } from './supabase/expenseService';
+import {
+  listSettlements,
+  recordSettlement,
+} from './supabase/settlementService';
+import {
+  getNotificationPreferences,
+  getUserPreferences,
+  registerDeviceToken,
+  unregisterDeviceToken,
+  updateNotificationPreferences,
+  updateUserPreferences,
+} from './supabase/preferencesService';
 
 export class SupabaseBackend implements AppBackend {
   constructor(private readonly client: SupabaseClient) {}
@@ -160,5 +175,40 @@ export class SupabaseBackend implements AppBackend {
 
   async getSettlementPlan(eventId: string) {
     return getSettlementPlan(this.client, eventId);
+  }
+
+  async listSettlements(eventId: string) {
+    return listSettlements(this.client, eventId);
+  }
+
+  async recordSettlement(_userId: string, input: CreateSettlementInput) {
+    return recordSettlement(this.client, input);
+  }
+
+  async getUserPreferences(userId: string) {
+    return getUserPreferences(this.client, userId);
+  }
+
+  async updateUserPreferences(userId: string, input: UpdateUserPreferencesInput) {
+    return updateUserPreferences(this.client, userId, input);
+  }
+
+  async getNotificationPreferences(userId: string) {
+    return getNotificationPreferences(this.client, userId);
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    input: UpdateNotificationPreferencesInput,
+  ) {
+    return updateNotificationPreferences(this.client, userId, input);
+  }
+
+  async registerDeviceToken(token: string, platform: 'ios' | 'android') {
+    return registerDeviceToken(this.client, token, platform);
+  }
+
+  async unregisterDeviceToken(token: string) {
+    return unregisterDeviceToken(this.client, token);
   }
 }

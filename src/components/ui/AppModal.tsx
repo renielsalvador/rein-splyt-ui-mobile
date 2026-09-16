@@ -10,9 +10,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import {surfaces} from '../../theme/tokens';
+import {cardSurface} from '../../theme/tokens';
+import {useTheme} from '../../theme/ThemeProvider';
 import {IconButton} from './AppIcon';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function AppModal({
   visible,
@@ -28,6 +29,8 @@ export function AppModal({
   onClose: () => void;
   scrollable?: boolean;
 }>) {
+  const {colors: c} = useTheme();
+  const styles = useAppStyles();
   const [rendered, setRendered] = useState(visible);
   const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : 28)).current;
@@ -90,8 +93,14 @@ export function AppModal({
           pointerEvents="none"
           style={[styles.modalBackdropTint, {opacity: backdropOpacity}]}
         />
-        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={styles.modalBackdrop}
+          onPress={onClose}
+        />
         <Animated.View
+          accessibilityViewIsModal
           style={[
             styles.modalSheet,
             {
@@ -99,7 +108,7 @@ export function AppModal({
             },
           ]}>
           <View style={styles.modalHandle} />
-          <View style={[surfaces.card, styles.modalCard]}>
+          <View style={[cardSurface(c), styles.modalCard]}>
             <View style={styles.modalHeader}>
               <View style={styles.modalCopy}>
                 <Text style={styles.modalTitle}>{title}</Text>

@@ -1,6 +1,7 @@
 import React from 'react';
 import {Image, Text, View} from 'react-native';
-import {palette, radii, typography} from '../../theme/tokens';
+import {createTypography, radii} from '../../theme/tokens';
+import {useTheme} from '../../theme/ThemeProvider';
 
 const AVATAR_COLORS = [
   {bg: '#DDEDE6', text: '#1B4332'},
@@ -21,7 +22,7 @@ function getAvatarColor(name: string) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function getInitials(name: string): string {
+export function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) {
     return parts[0].slice(0, 2).toUpperCase();
@@ -54,6 +55,8 @@ export function AppAvatar({
   size?: 'xs' | 'sm' | 'md' | 'lg';
   style?: object;
 }) {
+  const {colors: c} = useTheme();
+  const t = createTypography(c);
   const dim = SIZE_MAP[size];
   const fontSize = FONT_SIZE_MAP[size];
   const colors = getAvatarColor(name);
@@ -84,7 +87,7 @@ export function AppAvatar({
       ) : (
         <Text
           style={{
-            ...typography.caption,
+            ...t.caption,
             fontSize,
             fontWeight: '700',
             color: colors.text,
@@ -104,6 +107,7 @@ export function AppAvatarStack({
   names: string[];
   size?: 'xs' | 'sm';
 }) {
+  const {colors: c} = useTheme();
   const dim = SIZE_MAP[size];
   const overlap = Math.floor(dim * 0.35);
   const visible = names.slice(0, 4);
@@ -118,7 +122,7 @@ export function AppAvatarStack({
           size={size}
           style={[
             index > 0 && {marginLeft: -overlap},
-            {borderWidth: 1.5, borderColor: palette.surface},
+            {borderWidth: 1.5, borderColor: c.surface},
           ]}
         />
       ))}
@@ -128,14 +132,14 @@ export function AppAvatarStack({
             width: dim,
             height: dim,
             borderRadius: radii.pill,
-            backgroundColor: palette.bgApp,
+            backgroundColor: c.panel,
             alignItems: 'center',
             justifyContent: 'center',
             marginLeft: -overlap,
             borderWidth: 1.5,
-            borderColor: palette.surface,
+            borderColor: c.surface,
           }}>
-          <Text style={{fontSize: 9, fontWeight: '700', color: palette.inkMuted}}>
+          <Text style={{fontSize: 9, fontWeight: '700', color: c.inkMuted}}>
             +{overflow}
           </Text>
         </View>

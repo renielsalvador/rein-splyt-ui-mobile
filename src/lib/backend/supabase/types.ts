@@ -136,13 +136,44 @@ export type BalanceRow = {
   display_name: string;
   paid: number | string;
   owed: number | string;
+  settled_out: number | string;
+  settled_in: number | string;
   net: number | string;
 };
 
+/** A row of the computed settlement plan, not a recorded payment. */
 export type SettlementRow = {
   from_member_id: string;
   from_display_name: string;
   to_member_id: string;
   to_display_name: string;
   amount: number | string;
+};
+
+export type SettlementRecordRow = {
+  id: string;
+  event_id: string;
+  from_member_id: string;
+  from_display_name: string;
+  to_member_id: string;
+  to_display_name: string;
+  amount: number | string;
+  currency: string;
+  note: string | null;
+  recorded_by: string;
+  created_at: string;
+};
+
+export type UserPreferencesRow = {
+  user_id: string;
+  preferred_currency: string;
+};
+
+export type NotificationPreferencesRow = {
+  user_id: string;
+  push_enabled: boolean;
+  expenses: boolean;
+  settlements: boolean;
+  invites: boolean;
+  event_updates: boolean;
 };

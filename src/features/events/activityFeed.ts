@@ -113,6 +113,20 @@ export function buildActivityFeed(
         meta: formatDateLabel(contribution.createdAt),
       });
     });
+
+    summary.settlements.forEach(settlement => {
+      entries.push({
+        id: `settlement:${settlement.id}`,
+        eventId: event.id,
+        timestamp: settlement.createdAt,
+        icon: 'check',
+        title: 'Payment recorded',
+        body: `${settlement.fromDisplayName} paid ${
+          settlement.toDisplayName
+        } ${formatCurrency(settlement.amount, settlement.currency)}.`,
+        meta: `${event.name} • ${formatDateLabel(settlement.createdAt)}`,
+      });
+    });
   });
 
   return entries.sort((left, right) => {

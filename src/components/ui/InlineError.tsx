@@ -1,8 +1,9 @@
 import React from 'react';
 import {Text} from 'react-native';
-import {styles} from './styles';
+import {useAppStyles} from './styles';
 
 export function InlineError({message}: {message?: string}) {
+  const styles = useAppStyles();
   if (!message) {
     return null;
   }

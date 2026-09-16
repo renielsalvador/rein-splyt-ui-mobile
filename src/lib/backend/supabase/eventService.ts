@@ -23,6 +23,7 @@ import type {
   ExpenseSplitRow,
   InviteRow,
 } from './types';
+import {listSettlements} from './settlementService';
 import {assertNoError, normalizeDisplayName} from './utils';
 
 export async function listEvents(client: SupabaseClient) {
@@ -169,6 +170,8 @@ export async function getEventSummary(
     'Unable to load central fund contributions.',
   );
 
+  const settlements = await listSettlements(client, eventId);
+
   return {
     event: mapEvent(eventResult.data as EventRow),
     members: (membersResult.data ?? []).map(item =>
@@ -187,6 +190,7 @@ export async function getEventSummary(
     contributions: (contributionsResult.data ?? []).map(item =>
       mapContribution(item as ContributionRow),
     ),
+    settlements,
   };
 }
 
