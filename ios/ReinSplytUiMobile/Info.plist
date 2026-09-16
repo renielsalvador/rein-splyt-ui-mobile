@@ -35,6 +35,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -45,13 +47,9 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow Splyt to take a profile photo for your account avatar.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow Splyt to access your location to improve user experience.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Allow Splyt to save or update your selected profile photo.</string>
+	<string>Allow Splyt to take photos of receipts for your shared expenses and a profile photo for your account avatar.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow Splyt to choose a profile photo from your library.</string>
+	<string>Allow Splyt to choose receipt photos for your shared expenses and a profile photo from your library.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

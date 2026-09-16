@@ -30,5 +30,19 @@ target 'ReinSplytUiMobile' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Archives don't run the npm scripts that export ENVFILE, so Release would
+    # otherwise fall back to .env (local Supabase). react-native-config's codegen
+    # script phase reads this as a build setting.
+    release_envfile = ENV['ENVFILE'] || '.env.production'
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'react-native-config'
+
+      target.build_configurations.each do |build_configuration|
+        next unless build_configuration.name == 'Release'
+
+        build_configuration.build_settings['ENVFILE'] = release_envfile
+      end
+    end
   end
 end
