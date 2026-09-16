@@ -14,7 +14,7 @@ import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import {version as appVersion} from '../../../package.json';
 
-const SUPPORT_EMAIL = 'support@splyt.app';
+const SUPPORT_EMAIL = 'reniel.salvador@gmail.com';
 
 const FAQS: Array<{question: string; answer: string}> = [
   {
