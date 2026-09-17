@@ -819,6 +819,7 @@ export class MockBackend implements AppBackend {
         owed: 0,
         settledOut: 0,
         settledIn: 0,
+        fundStake: 0,
         net: 0,
       });
     });
@@ -864,11 +865,36 @@ export class MockBackend implements AppBackend {
       }
     });
 
+    const contributed = summary.contributions.reduce(
+      (total, contribution) => total + contribution.amount,
+      0,
+    );
+    const fundSpent = summary.expenses
+      .filter(expense => expense.paymentSource === 'central_fund')
+      .reduce((total, expense) => total + expense.amount, 0);
+    const unspent = Math.max(contributed - fundSpent, 0);
+
+    if (contributed > 0) {
+      summary.contributions.forEach(contribution => {
+        const balance = balances.get(contribution.memberId);
+
+        if (balance) {
+          balance.fundStake = roundCurrency(
+            balance.fundStake + (contribution.amount * unspent) / contributed,
+          );
+        }
+      });
+    }
+
     return Array.from(balances.values())
       .map(balance => ({
         ...balance,
         net: roundCurrency(
-          balance.paid - balance.owed + balance.settledOut - balance.settledIn,
+          balance.paid -
+            balance.owed +
+            balance.settledOut -
+            balance.settledIn -
+            balance.fundStake,
         ),
       }))
       .sort((left, right) => right.net - left.net);

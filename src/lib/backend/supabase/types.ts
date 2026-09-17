@@ -138,6 +138,7 @@ export type BalanceRow = {
   owed: number | string;
   settled_out: number | string;
   settled_in: number | string;
+  fund_stake: number | string;
   net: number | string;
 };
 

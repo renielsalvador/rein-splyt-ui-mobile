@@ -47,6 +47,14 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   }
 
   const currency = summary.event.currency;
+  const fundContributed = summary.contributions.reduce(
+    (total, contribution) => total + contribution.amount,
+    0,
+  );
+  const fundSpent = summary.expenses
+    .filter(expense => expense.paymentSource === 'central_fund')
+    .reduce((total, expense) => total + expense.amount, 0);
+  const fundRemaining = fundContributed - fundSpent;
 
   return (
     <AppScreen
@@ -63,6 +71,54 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
             {formatCurrency(selfBalance.owed, currency)}.
           </Text>
         </AppCard>
+      ) : null}
+
+      {fundContributed > 0 ? (
+        <>
+          <SectionHeading
+            title="Central fund"
+            detail={fundRemaining < 0 ? 'Needs topping up' : 'Held by the group'}
+          />
+          <AppCard>
+            <View style={styles.row}>
+              <View style={styles.copy}>
+                <Text style={styles.memberName}>
+                  {fundRemaining < 0 ? 'Fund shortfall' : 'Left in the fund'}
+                </Text>
+                <Text style={styles.meta}>
+                  {formatCurrency(fundContributed, currency)} in ·{' '}
+                  {formatCurrency(fundSpent, currency)} spent
+                </Text>
+              </View>
+              <View style={styles.value}>
+                <MoneyValue
+                  value={fundRemaining}
+                  currency={currency}
+                  tone={fundRemaining < 0 ? 'negative' : 'positive'}
+                  absolute
+                />
+              </View>
+            </View>
+            {selfBalance && selfBalance.fundStake > 0.005 ? (
+              <View style={[styles.row, styles.rowDivided]}>
+                <View style={styles.copy}>
+                  <Text style={styles.memberName}>Your share of what is left</Text>
+                  <Text style={styles.meta}>
+                    Returned to you by the fund, not owed by other members.
+                  </Text>
+                </View>
+                <View style={styles.value}>
+                  <MoneyValue
+                    value={selfBalance.fundStake}
+                    currency={currency}
+                    tone="positive"
+                    absolute
+                  />
+                </View>
+              </View>
+            ) : null}
+          </AppCard>
+        </>
       ) : null}
 
       <SectionHeading title="Everyone" detail={`${eventBalances.length} members`} />

@@ -176,6 +176,9 @@ export type MemberBalance = {
   settledOut: number;
   /** Recorded settlements this member has received, which debit their net. */
   settledIn: number;
+  /** Pro-rata share of the unspent central fund, owed back by the fund rather than by members. */
+  fundStake: number;
+  /** Member-to-member position only. Excludes fundStake, so it sums to zero across the event. */
   net: number;
 };
 

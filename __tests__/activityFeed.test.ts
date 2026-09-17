@@ -110,6 +110,7 @@ describe('buildActivityFeed', () => {
           owed: 1200,
           settledOut: 0,
           settledIn: 1200,
+          fundStake: 0,
           net: 500,
         },
       ],
