@@ -108,6 +108,7 @@ export function ActivityScreen({
           navigation.navigate('AccountUpdate');
         }}
         onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenDeleteAccount={() => navigation.navigate('DeleteAccount')}
         onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
     </>

@@ -15,6 +15,7 @@ import type {
 } from '../../types/domain';
 import {
   completeAuthRedirect,
+  deleteAccount,
   getSession,
   requestPasswordReset,
   signIn,
@@ -100,6 +101,10 @@ export class SupabaseBackend implements AppBackend {
 
   async signOut() {
     return signOut(this.client);
+  }
+
+  async deleteAccount() {
+    return deleteAccount(this.client);
   }
 
   async updateProfile(userId: string, input: UpdateUserProfileInput) {

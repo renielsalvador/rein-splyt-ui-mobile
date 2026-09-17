@@ -49,6 +49,7 @@ export interface AppBackend {
   completeAuthRedirect(url: string): Promise<AuthRedirectResult | null>;
   updatePassword(password: string): Promise<void>;
   signOut(): Promise<void>;
+  deleteAccount(): Promise<void>;
   updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
   listPendingInvites(email: string): Promise<PendingInvite[]>;
   respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;

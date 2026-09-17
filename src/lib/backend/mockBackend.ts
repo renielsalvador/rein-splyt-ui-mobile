@@ -248,6 +248,71 @@ export class MockBackend implements AppBackend {
     this.state.sessionUserId = undefined;
   }
 
+  // Mirrors public.delete_own_account: solo events go, shared events keep an
+  // owner and retain an anonymised membership so other balances stay correct.
+  async deleteAccount() {
+    const userId = this.state.sessionUserId;
+
+    if (!userId) {
+      throw new Error('You must be signed in to delete your account.');
+    }
+
+    const memberships = this.state.eventMembers.filter(item => item.userId === userId);
+
+    for (const membership of memberships.filter(item => item.status === 'joined')) {
+      const others = this.state.eventMembers.filter(
+        item =>
+          item.eventId === membership.eventId &&
+          item.status === 'joined' &&
+          item.id !== membership.id,
+      );
+
+      if (others.length === 0) {
+        await this.deleteEvent(userId, membership.eventId);
+        continue;
+      }
+
+      if (membership.role === 'owner' && !others.some(item => item.role === 'owner')) {
+        const successor =
+          others.find(item => item.role === 'admin' && item.userId) ??
+          others.find(item => item.userId);
+
+        if (successor) {
+          successor.role = 'owner';
+        }
+      }
+
+      membership.userId = undefined;
+      membership.displayName = 'Deleted user';
+      membership.role = 'member';
+      membership.status = 'removed';
+    }
+
+    const retainedMemberIds = new Set(
+      this.state.eventMembers
+        .filter(item => item.displayName === 'Deleted user')
+        .map(item => item.id),
+    );
+    this.state.eventMembers = this.state.eventMembers.filter(
+      item => item.userId !== userId || retainedMemberIds.has(item.id),
+    );
+
+    const user = this.state.users.find(item => item.id === userId);
+    this.state.invites = this.state.invites.filter(
+      item => !user || item.invitedEmail?.toLowerCase() !== user.email.toLowerCase(),
+    );
+
+    this.state.users = this.state.users.filter(item => item.id !== userId);
+    this.state.credentials = this.state.credentials.filter(item => item.userId !== userId);
+    this.state.contacts = this.state.contacts.filter(
+      item => item.ownerUserId !== userId && item.userId !== userId,
+    );
+    this.state.deviceTokens = this.state.deviceTokens.filter(item => item.userId !== userId);
+    delete this.state.userPreferences[userId];
+    delete this.state.notificationPreferences[userId];
+    this.state.sessionUserId = undefined;
+  }
+
   async updateProfile(userId: string, input: UpdateUserProfileInput) {
     const user = this.getUser(userId);
     const displayName = normalizeDisplayName(input.displayName);

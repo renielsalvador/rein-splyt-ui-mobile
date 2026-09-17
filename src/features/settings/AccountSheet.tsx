@@ -27,12 +27,14 @@ export function AccountSheet({
   onOpenProfile,
   onOpenHelp,
   onOpenNotifications,
+  onOpenDeleteAccount,
 }: {
   visible: boolean;
   onClose: () => void;
   onOpenProfile: () => void;
   onOpenHelp?: () => void;
   onOpenNotifications?: () => void;
+  onOpenDeleteAccount?: () => void;
 }) {
   const {currentUser, signOut, preferences, notificationPreferences, updatePreferences} =
     useApp();
@@ -140,6 +142,21 @@ export function AccountSheet({
               onClose();
               signOut().catch(() => undefined);
             }}
+          />
+          <SheetRow
+            divided
+            icon="delete"
+            title="Delete account"
+            destructive
+            chevron
+            onPress={
+              onOpenDeleteAccount
+                ? () => {
+                    onClose();
+                    onOpenDeleteAccount();
+                  }
+                : undefined
+            }
           />
         </View>
       </AppModal>

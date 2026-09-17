@@ -17,6 +17,7 @@ import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScre
 import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
 import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
 import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
+import {DeleteAccountScreen} from '../features/settings/DeleteAccountScreen';
 import {NotificationSettingsScreen} from '../features/settings/NotificationSettingsScreen';
 import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT} from '../components/ui';
 import type {TabName} from '../components/ui';
@@ -42,6 +43,7 @@ export type AppStackParamList = {
   };
   AccountUpdate: undefined;
   HelpSupport: undefined;
+  DeleteAccount: undefined;
   NotificationSettings: undefined;
 };
 
@@ -97,6 +99,7 @@ const SCREEN_TAB: Partial<Record<ScreenName, TabName>> = {
 
 function AppNavigator() {
   const {colors} = useTheme();
+  const {clearError} = useApp();
   const [currentTab, setCurrentTab] = useState<TabName>('Home');
   const [stack, setStack] = useState<AnyRoute[]>([{name: 'Home'}]);
 
@@ -149,6 +152,12 @@ function AppNavigator() {
 
   const currentRoute = stack[stack.length - 1];
   const isTopLevel = stack.length === 1 && TAB_SCREENS.has(currentRoute.name);
+
+  // The provider holds a single error string, so a failure on one screen would
+  // otherwise keep showing on the next one the user opens.
+  useEffect(() => {
+    clearError();
+  }, [clearError, currentRoute.name]);
 
   function renderScreen(route: AnyRoute) {
     switch (route.name) {
@@ -206,6 +215,10 @@ function AppNavigator() {
         return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
       case 'HelpSupport':
         return <HelpSupportScreen navigation={navigation} route={route as Route<'HelpSupport'>} />;
+      case 'DeleteAccount':
+        return (
+          <DeleteAccountScreen navigation={navigation} route={route as Route<'DeleteAccount'>} />
+        );
       case 'NotificationSettings':
         return (
           <NotificationSettingsScreen

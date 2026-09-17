@@ -11,6 +11,7 @@
     "ios:simulator": "react-native run-ios --simulator='iPhone 17 Pro Max'",
     "ios:local": "ENVFILE=.env.local react-native run-ios",
     "ios:local:simulator": "ENVFILE=.env.local react-native run-ios --simulator='iPhone 17 Pro Max'",
+    "ios:local:simulator:iphone11": "ENVFILE=.env.local react-native run-ios --simulator='iPhone 11 Pro Max'",
     "ios:staging": "ENVFILE=.env.staging react-native run-ios",
     "ios:production": "ENVFILE=.env.production react-native run-ios",
     "lint": "eslint .",

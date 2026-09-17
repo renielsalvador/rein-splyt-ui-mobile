@@ -66,6 +66,7 @@ type AppContextValue = {
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   updateProfile: (input: UpdateUserProfileInput) => Promise<void>;
   refreshEvents: () => Promise<void>;
   refreshContacts: () => Promise<void>;
@@ -356,6 +357,21 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [applySession, backend, mutate],
   );
 
+  const clearError = useCallback(() => setError(null), []);
+
+  const clearSessionState = useCallback(() => {
+    setRecoveryUser(null);
+    setCurrentUser(null);
+    setEvents([]);
+    setContacts([]);
+    setPendingInvites([]);
+    setSummaries({});
+    setBalances({});
+    setSettlements({});
+    setPreferences(DEFAULT_USER_PREFERENCES);
+    setNotificationPreferences(DEFAULT_NOTIFICATION_PREFERENCES);
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!backend) {
       return;
@@ -363,18 +379,20 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
     await mutate(async () => {
       await backend.signOut();
-      setRecoveryUser(null);
-      setCurrentUser(null);
-      setEvents([]);
-      setContacts([]);
-      setPendingInvites([]);
-      setSummaries({});
-      setBalances({});
-      setSettlements({});
-      setPreferences(DEFAULT_USER_PREFERENCES);
-      setNotificationPreferences(DEFAULT_NOTIFICATION_PREFERENCES);
+      clearSessionState();
     });
-  }, [backend, mutate]);
+  }, [backend, clearSessionState, mutate]);
+
+  const deleteAccount = useCallback(async () => {
+    if (!backend) {
+      return;
+    }
+
+    await mutate(async () => {
+      await backend.deleteAccount();
+      clearSessionState();
+    });
+  }, [backend, clearSessionState, mutate]);
 
   const updateProfile = useCallback(
     async (input: UpdateUserProfileInput) => {
@@ -670,13 +688,14 @@ export function AppProvider({children}: React.PropsWithChildren) {
       preferences,
       notificationPreferences,
       error,
-      clearError: () => setError(null),
+      clearError,
       signIn,
       signUp,
       signInWithGoogle,
       requestPasswordReset,
       updatePassword,
       signOut,
+      deleteAccount,
       updateProfile,
       refreshEvents,
       refreshContacts,
@@ -715,6 +734,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       recoveryUser,
       contacts,
       pendingInvites,
+      clearError,
       error,
       events,
       hydrateEvent,
@@ -728,6 +748,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signIn,
       signInWithGoogle,
       signOut,
+      deleteAccount,
       signUp,
       updatePassword,
       updateProfile,
