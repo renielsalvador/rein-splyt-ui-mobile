@@ -118,6 +118,15 @@ export type ExpenseRow = {
   last_edited_at: string | null;
 };
 
+export type PaymentMethodRow = {
+  id: string;
+  user_id: string;
+  label: string;
+  qr_path: string;
+  is_primary: boolean;
+  created_at: string;
+};
+
 export type CentralFundRow = {
   id: string;
   event_id: string;

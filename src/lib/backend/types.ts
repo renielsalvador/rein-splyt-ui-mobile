@@ -8,6 +8,8 @@ import type {
   Event,
   EventMember,
   MemberRole,
+  PaymentMethod,
+  PaymentMethodAsset,
   EventSummary,
   Invite,
   JoinEventInput,
@@ -63,6 +65,15 @@ export interface AppBackend {
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;
+  listPaymentMethods(userId: string): Promise<PaymentMethod[]>;
+  addPaymentMethod(
+    userId: string,
+    label: string,
+    asset: PaymentMethodAsset,
+  ): Promise<PaymentMethod>;
+  setPrimaryPaymentMethod(paymentMethodId: string): Promise<PaymentMethod>;
+  deletePaymentMethod(paymentMethodId: string, qrPath: string): Promise<void>;
+  getPaymentMethodUrl(qrPath: string): Promise<string | undefined>;
   setMemberRole(
     eventId: string,
     memberId: string,

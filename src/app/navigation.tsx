@@ -28,6 +28,7 @@ import {BalanceDetailScreen} from '../features/balances/BalanceDetailScreen';
 import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
 import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
 import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
+import {PaymentOptionsScreen} from '../features/settings/PaymentOptionsScreen';
 import {DeleteAccountScreen} from '../features/settings/DeleteAccountScreen';
 import {NotificationSettingsScreen} from '../features/settings/NotificationSettingsScreen';
 import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT, ToastHost} from '../components/ui';
@@ -57,6 +58,7 @@ export type AppStackParamList = {
   };
   AccountUpdate: undefined;
   HelpSupport: undefined;
+  PaymentOptions: undefined;
   DeleteAccount: undefined;
   NotificationSettings: undefined;
 };
@@ -286,6 +288,10 @@ function AppNavigator() {
         return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
       case 'HelpSupport':
         return <HelpSupportScreen navigation={navigation} route={route as Route<'HelpSupport'>} />;
+      case 'PaymentOptions':
+        return (
+          <PaymentOptionsScreen navigation={navigation} route={route as Route<'PaymentOptions'>} />
+        );
       case 'DeleteAccount':
         return (
           <DeleteAccountScreen navigation={navigation} route={route as Route<'DeleteAccount'>} />

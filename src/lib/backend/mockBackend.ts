@@ -15,6 +15,8 @@ import type {
   Event,
   EventMember,
   MemberRole,
+  PaymentMethod,
+  PaymentMethodAsset,
   EventSummary,
   Expense,
   ExpenseSplit,
@@ -48,6 +50,7 @@ type PersistedState = {
   centralFunds: CentralFund[];
   contributions: CentralFundContribution[];
   settlements: Settlement[];
+  paymentMethods: PaymentMethod[];
   userPreferences: Record<string, UserPreferences>;
   notificationPreferences: Record<string, NotificationPreferences>;
   deviceTokens: Array<{userId: string; token: string; platform: 'ios' | 'android'}>;
@@ -76,6 +79,7 @@ const defaultState: PersistedState = {
   centralFunds: [],
   contributions: [],
   settlements: [],
+  paymentMethods: [],
   userPreferences: {},
   notificationPreferences: {},
   deviceTokens: [],
@@ -679,6 +683,52 @@ export class MockBackend implements AppBackend {
 
     member.role = role;
     return member;
+  }
+
+  async listPaymentMethods(userId: string) {
+    return this.state.paymentMethods
+      .filter(method => method.userId === userId)
+      .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary));
+  }
+
+  async addPaymentMethod(userId: string, label: string, _asset: PaymentMethodAsset) {
+    const existing = this.state.paymentMethods.filter(method => method.userId === userId);
+    const method: PaymentMethod = {
+      id: createId('payment_method'),
+      userId,
+      label: label.trim(),
+      qrPath: `${userId}/${Date.now()}-qr.jpg`,
+      isPrimary: existing.length === 0,
+      createdAt: new Date().toISOString(),
+    };
+    this.state.paymentMethods.push(method);
+    return method;
+  }
+
+  async setPrimaryPaymentMethod(paymentMethodId: string) {
+    const method = this.state.paymentMethods.find(item => item.id === paymentMethodId);
+
+    if (!method) {
+      throw new Error('Payment method not found.');
+    }
+
+    for (const item of this.state.paymentMethods) {
+      if (item.userId === method.userId) {
+        item.isPrimary = item.id === paymentMethodId;
+      }
+    }
+
+    return method;
+  }
+
+  async deletePaymentMethod(paymentMethodId: string) {
+    this.state.paymentMethods = this.state.paymentMethods.filter(
+      method => method.id !== paymentMethodId,
+    );
+  }
+
+  async getPaymentMethodUrl(qrPath: string) {
+    return `mock://${qrPath}`;
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {

@@ -124,6 +124,21 @@ export type Expense = {
   lastEditedAt?: string;
 };
 
+export type PaymentMethod = {
+  id: string;
+  userId: string;
+  label: string;
+  qrPath: string;
+  isPrimary: boolean;
+  createdAt: string;
+};
+
+export type PaymentMethodAsset = {
+  uri: string;
+  fileName?: string;
+  type?: string;
+};
+
 export type ExpenseSplit = {
   id: string;
   expenseId: string;

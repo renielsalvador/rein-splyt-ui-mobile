@@ -7,6 +7,7 @@ import type {
   CreateExpenseInput,
   CreateSettlementInput,
   MemberRole,
+  PaymentMethodAsset,
   RespondToInviteInput,
   UpdateEventInput,
   UpdateExpenseInput,
@@ -44,6 +45,13 @@ import {
   listEvents,
   updateEvent,
 } from './supabase/eventService';
+import {
+  addPaymentMethod,
+  deletePaymentMethod,
+  getPaymentMethodUrl,
+  listPaymentMethods,
+  setPrimaryPaymentMethod,
+} from './supabase/paymentMethodService';
 import {
   createInvite,
   listPendingInvites,
@@ -159,6 +167,26 @@ export class SupabaseBackend implements AppBackend {
 
   async setMemberRole(eventId: string, memberId: string, role: MemberRole) {
     return setMemberRole(this.client, eventId, memberId, role);
+  }
+
+  async listPaymentMethods(userId: string) {
+    return listPaymentMethods(this.client, userId);
+  }
+
+  async addPaymentMethod(userId: string, label: string, asset: PaymentMethodAsset) {
+    return addPaymentMethod(this.client, userId, label, asset);
+  }
+
+  async setPrimaryPaymentMethod(paymentMethodId: string) {
+    return setPrimaryPaymentMethod(this.client, paymentMethodId);
+  }
+
+  async deletePaymentMethod(paymentMethodId: string, qrPath: string) {
+    return deletePaymentMethod(this.client, paymentMethodId, qrPath);
+  }
+
+  async getPaymentMethodUrl(qrPath: string) {
+    return getPaymentMethodUrl(this.client, qrPath);
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {

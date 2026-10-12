@@ -68,3 +68,30 @@ The **central fund**: pooled group money that members contribute to before or du
 ## Accessibility & Inclusion
 
 No product-specific accessibility standard has been established. Both target platforms' baseline expectations (dynamic type, sufficient contrast, screen-reader labels on controls) apply until the user sets a stricter requirement.
+
+## Future: payment submission & acceptance
+
+Raised in the 2026-09-19 tester round and deferred pending further discussion.
+
+Today a settlement is recorded unilaterally: whoever opens the settle screen enters an
+amount and the balance moves immediately. Nobody confirms that the money arrived. The
+proposed flow adds the other half of that handshake:
+
+1. The payer sends the money and uploads a receipt.
+2. A **Payment submitted** action marks the settlement as pending rather than final.
+3. The payee is notified and asked to confirm receipt.
+4. On confirmation the balance adjusts; until then it stays as it was.
+
+What it builds on, and what is missing:
+
+- The `settlements` table and `record_settlement` RPC already model the payment itself, so
+  this is mostly a status column (`pending` / `confirmed` / `disputed`) plus the RPCs to
+  move between those states, and a rule that only the payee may confirm.
+- Receipt upload is a solved problem — `expense-receipts` and the newer private
+  `payment-qr` bucket both show the pattern.
+- **There is no notification channel.** `NotificationSettingsScreen` and
+  `notification_preferences` exist, but nothing delivers a message to another user. That
+  infrastructure is the real prerequisite and should be scoped before this feature.
+- Needs a product answer for the unhappy path: what happens when a payer marks a payment
+  submitted and the payee never responds, or disputes it.
+

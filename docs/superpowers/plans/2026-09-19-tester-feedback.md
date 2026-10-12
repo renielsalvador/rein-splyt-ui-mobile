@@ -13,14 +13,31 @@ Update this file in the same commit as the code.
 | A1 | Full expense list screen | Needs review | – | none | committed `7ac9916` |
 | A2 | Date picker sticky footer (`AppModal` `footer` prop) | Needs review | – | none | committed `7ac9916` |
 | A3 | Balance diagnostic (₱1,333 vs ₱1,000) | Done | n/a | none | no code bug — see decision below |
-| A4 | Split visibility (follow-up from A3) | Not started | – | none | new, from the A3 decision |
-| B | Global toasts, never occluded | Not started | – | none | after A2 |
-| C | Event colour coding | Not started | – | TBD | |
-| D | Balances per-person itemisation | Not started | – | none | |
-| E | Roles/admin + expense audit | Not started | – | TBD | |
-| F | Bank QR payment options | Not started | – | TBD | + storage bucket |
-| G | Hide bottom nav on scroll | Not started | – | none | |
-| H | Document payment submit/accept | Not started | n/a | none | PRODUCT.md |
+| A4 | Split visibility (follow-up from A3) | Needs review | – | none | "Split N ways" on expense rows |
+| B | Global toasts, never occluded | Needs review | – | none | top-anchored, also mounted inside `AppModal` |
+| C | Event colour coding | Needs review | – | `20261012220000_add_event_color` | 8 swatches, random on create |
+| D | Balances per-person itemisation | Needs review | – | none | `BalanceDetail` route + 7 unit tests |
+| E | Roles/admin + expense audit | Needs review | – | `20261012230000_add_member_roles_and_expense_audit` | owner-only role sheet |
+| F | Bank QR payment options | Needs review | – | `20261012240000_add_payment_methods` | private bucket, signed URLs |
+| G | Hide bottom nav on scroll | Needs review | – | none | RN `Animated`, native driver |
+| H | Document payment submit/accept | Done | n/a | none | `PRODUCT.md` |
+
+**All phases are code-complete and unverified on device.** Every row above still needs a
+visual pass before it can move to `Done`.
+
+### Deviations from the plan worth knowing
+
+- **Toasts are anchored to the top, not the bottom.** The plan called for a bottom toast
+  that measured the tab bar, any sticky footer CTA and the keyboard in order to clear
+  them. Anchoring to the top sidesteps all three structurally instead of chasing their
+  heights. The `AppModal` mount point is still required, because RN renders modals in a
+  separate native window.
+- **The expense list maps cards rather than using a `FlatList`.** `AppScreen` already owns
+  a `ScrollView`, and nesting a `FlatList` inside one is an anti-pattern. Matches
+  `HomeScreen`. Revisit if an event ever carries enough expenses to justify virtualising.
+- **`20261012220000_add_event_color.sql` was reconstructed from the live database.** The
+  file went missing from disk while the migration was already recorded as applied locally.
+  It was rebuilt from `pg_get_functiondef` output so the repo can reproduce the schema.
 
 ## Original feedback → phase mapping
 
@@ -208,8 +225,8 @@ order by x.created_at;
 
 ## Deferred / future
 
-- Payment submission & acceptance — needs a notification channel that does not exist yet.
-  To be written into `PRODUCT.md` in Phase H.
+- Payment submission & acceptance — now written up in `PRODUCT.md`. The blocker is that no
+  notification channel exists; that should be scoped first.
 - ~~Retroactive split backfill for late-joining members~~ — dropped. The A3 decision means
   everyone is included by default, so there is nothing to backfill.
 

@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
   AppButton,
@@ -13,6 +13,7 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {settlementSchema} from '../../lib/validation/forms';
+import {getBackend} from '../../lib/backend';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
@@ -33,6 +34,45 @@ export function RecordSettlementScreen({
   const [fieldError, setFieldError] = useState<string>();
   const [submitError, setSubmitError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const [payeeQr, setPayeeQr] = useState<{label: string; url: string}>();
+
+  const payeeUserId = summary?.members.find(
+    member => member.id === toMemberId,
+  )?.userId;
+  const isPayer =
+    summary?.members.find(member => member.id === fromMemberId)?.userId ===
+    currentUser?.id;
+
+  // Only the person actually paying needs to see where to send the money.
+  useEffect(() => {
+    if (!payeeUserId || !isPayer) {
+      setPayeeQr(undefined);
+      return;
+    }
+
+    let cancelled = false;
+
+    getBackend()
+      .then(async backend => {
+        const methods = await backend.listPaymentMethods(payeeUserId);
+        const primary = methods.find(method => method.isPrimary) ?? methods[0];
+        if (!primary) {
+          return undefined;
+        }
+        const url = await backend.getPaymentMethodUrl(primary.qrPath);
+        return url ? {label: primary.label, url} : undefined;
+      })
+      .then(next => {
+        if (!cancelled) {
+          setPayeeQr(next);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPayer, payeeUserId]);
 
   // Re-read the live plan so a stale suggestion cannot be submitted after another
   // payment landed for the same pair.
@@ -243,6 +283,18 @@ export function RecordSettlementScreen({
         {submitError ? <InlineError message={submitError} /> : null}
       </AppCard>
 
+      {payeeQr ? (
+        <AppCard>
+          <SectionHeading title="Pay with QR" detail={payeeQr.label} />
+          <Image
+            source={{uri: payeeQr.url}}
+            style={styles.payeeQr}
+            resizeMode="contain"
+            accessibilityLabel={`${payeeQr.label} QR code`}
+          />
+        </AppCard>
+      ) : null}
+
       {pairPayments.length > 0 ? (
         <AppCard>
           <SectionHeading title="Payments so far" />
@@ -288,6 +340,10 @@ const createStyles = (c: Colors) => {
       flexDirection: 'row',
       gap: spacing.xs,
       marginTop: spacing.xs,
+    },
+    payeeQr: {
+      width: '100%',
+      height: 220,
     },
     historyRow: {
       flexDirection: 'row',
