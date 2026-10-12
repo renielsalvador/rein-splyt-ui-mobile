@@ -3,6 +3,7 @@ import type {
   CreateEventInput,
   EventSummary,
   JoinEventInput,
+  MemberRole,
   UpdateEventInput,
 } from '../../../types/domain';
 import {
@@ -213,6 +214,23 @@ export async function addManualMember(
     .single();
 
   assertNoError(error, 'Unable to add the placeholder member.');
+
+  return mapMember(data as EventMemberRow);
+}
+
+export async function setMemberRole(
+  client: SupabaseClient,
+  eventId: string,
+  memberId: string,
+  role: MemberRole,
+) {
+  const {data, error} = await client.rpc('set_event_member_role', {
+    p_event_id: eventId,
+    p_member_id: memberId,
+    p_role: role,
+  });
+
+  assertNoError(error, 'Unable to change that member\u2019s role.');
 
   return mapMember(data as EventMemberRow);
 }

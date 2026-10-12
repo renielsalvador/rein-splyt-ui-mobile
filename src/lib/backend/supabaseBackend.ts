@@ -6,6 +6,7 @@ import type {
   CreateEventInput,
   CreateExpenseInput,
   CreateSettlementInput,
+  MemberRole,
   RespondToInviteInput,
   UpdateEventInput,
   UpdateExpenseInput,
@@ -35,6 +36,7 @@ import {
 } from './supabase/fundService';
 import {
   addManualMember,
+  setMemberRole,
   createEvent,
   deleteEvent,
   getEventSummary,
@@ -153,6 +155,10 @@ export class SupabaseBackend implements AppBackend {
 
   async addManualMember(eventId: string, displayName: string) {
     return addManualMember(this.client, eventId, displayName);
+  }
+
+  async setMemberRole(eventId: string, memberId: string, role: MemberRole) {
+    return setMemberRole(this.client, eventId, memberId, role);
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {

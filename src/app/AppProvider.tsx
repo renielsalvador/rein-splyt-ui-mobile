@@ -24,6 +24,7 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  MemberRole,
   NotificationPreferences,
   PendingInvite,
   RespondToInviteInput,
@@ -87,6 +88,11 @@ type AppContextValue = {
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
+  setMemberRole: (
+    eventId: string,
+    memberId: string,
+    role: MemberRole,
+  ) => Promise<EventMember>;
   createInvite: (eventId: string, recipient?: InviteRecipient) => Promise<Invite>;
   respondToInvite: (input: RespondToInviteInput) => Promise<Event | null>;
   addExpense: (input: CreateExpenseInput) => Promise<void>;
@@ -579,6 +585,22 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [backend, hydrateEvent, mutate],
   );
 
+  const setMemberRole = useCallback(
+    async (eventId: string, memberId: string, role: MemberRole) => {
+      if (!backend) {
+        throw new Error('Backend is not ready.');
+      }
+
+      let member!: EventMember;
+      await mutate(async () => {
+        member = await backend.setMemberRole(eventId, memberId, role);
+        await hydrateEvent(eventId);
+      });
+      return member;
+    },
+    [backend, hydrateEvent, mutate],
+  );
+
   const createInvite = useCallback(
     async (eventId: string, recipient?: InviteRecipient) => {
       if (!backend || !currentUser) {
@@ -737,6 +759,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       joinEvent,
       hydrateEvent,
       addManualMember,
+      setMemberRole,
       createInvite,
       respondToInvite,
       addExpense,
@@ -756,6 +779,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       addExpense,
       updateExpense,
       addManualMember,
+      setMemberRole,
       backendReady,
       createEvent,
       updateEvent,

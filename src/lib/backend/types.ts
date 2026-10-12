@@ -7,6 +7,7 @@ import type {
   CreateSettlementInput,
   Event,
   EventMember,
+  MemberRole,
   EventSummary,
   Invite,
   JoinEventInput,
@@ -62,6 +63,11 @@ export interface AppBackend {
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;
+  setMemberRole(
+    eventId: string,
+    memberId: string,
+    role: MemberRole,
+  ): Promise<EventMember>;
   createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient): Promise<Invite>;
   createExpense(userId: string, input: CreateExpenseInput): Promise<void>;
   updateExpense(userId: string, input: UpdateExpenseInput): Promise<void>;

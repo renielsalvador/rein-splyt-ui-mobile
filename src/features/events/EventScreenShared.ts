@@ -3,6 +3,7 @@ import type {
   EventIconName,
   ExpenseSplit,
   MemberBalance,
+  MemberRole,
   PendingInvite,
   SettlementInstruction,
 } from '../../types/domain';
@@ -46,6 +47,8 @@ export type MemberRosterRow = {
   email?: string;
   joinedLabel: string;
   statusLabel: 'Joined' | 'Pending';
+  role: MemberRole;
+  roleLabel?: string;
 };
 
 export function formatSelfDisplayName(

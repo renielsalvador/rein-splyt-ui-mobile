@@ -21,8 +21,15 @@ import type {ScreenProps} from '../../app/navigation';
 export function ExpenseListScreen({navigation, route}: ScreenProps<'AllExpenses'>) {
   const styles = useStyles(createStyles);
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, error} = useApp();
+  const {hydrateEvent, summaries, currentUser, error} = useApp();
   const summary = summaries[eventId];
+
+  // Only the people who can change an event get to see who changed it.
+  const canSeeAudit = summary?.members.some(
+    member =>
+      member.userId === currentUser?.id &&
+      (member.role === 'owner' || member.role === 'admin'),
+  );
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -98,13 +105,24 @@ export function ExpenseListScreen({navigation, route}: ScreenProps<'AllExpenses'
           <SectionHeading title={group.label} detail={formatCurrency(group.total, currency)} />
           {group.expenses.map(expense => {
             const payer = summary.members.find(member => member.id === expense.paidByMemberId);
+            const editor = expense.lastEditedBy
+              ? summary.members.find(member => member.userId === expense.lastEditedBy)
+              : undefined;
             return (
               <RecentExpenseListItem
                 key={expense.id}
                 title={expense.title}
                 meta={`${payer?.displayName || 'Unknown payer'}${
                   expense.paymentSource === 'central_fund' ? ' · Central fund' : ''
-                }${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
+                }${
+                  canSeeAudit && expense.lastEditedAt
+                    ? ` · Edited by ${editor?.displayName ?? 'someone'} ${formatDateLabel(
+                        expense.lastEditedAt,
+                      )}`
+                    : expense.updatedAt !== expense.createdAt
+                      ? ' · Edited'
+                      : ''
+                }`}
                 amountLabel={formatCurrency(expense.amount, currency)}
                 splitLabel={describeExpenseSplit(
                   summary.expenseSplits,

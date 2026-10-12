@@ -14,6 +14,7 @@ import type {
   CreateSettlementInput,
   Event,
   EventMember,
+  MemberRole,
   EventSummary,
   Expense,
   ExpenseSplit,
@@ -655,6 +656,28 @@ export class MockBackend implements AppBackend {
       joinedAt: new Date().toISOString(),
     };
     this.state.eventMembers.push(member);
+    return member;
+  }
+
+  async setMemberRole(eventId: string, memberId: string, role: MemberRole) {
+    const member = this.state.eventMembers.find(
+      item => item.id === memberId && item.eventId === eventId,
+    );
+
+    if (!member) {
+      throw new Error('Member not found.');
+    }
+
+    if (member.role === 'owner' && role !== 'owner') {
+      const owners = this.state.eventMembers.filter(
+        item => item.eventId === eventId && item.role === 'owner' && item.status === 'joined',
+      );
+      if (owners.length <= 1) {
+        throw new Error('Assign another owner before changing this one.');
+      }
+    }
+
+    member.role = role;
     return member;
   }
 

@@ -48,6 +48,7 @@ import {
   describeExpenseSplit,
   formatSelfDisplayName,
   isEmailAddress,
+  type MemberRosterRow,
   normalizeEmail,
   type SelectedMemberDraft,
 } from './EventScreenShared';
@@ -925,13 +926,15 @@ export function EventDashboardScreen({
 export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const styles = useEventStyles();
   const {eventId} = route.params;
-  const {summaries, addManualMember, createInvite, currentUser, error, showToast} = useApp();
+  const {summaries, addManualMember, createInvite, currentUser, error, showToast, setMemberRole} =
+    useApp();
   const summary = summaries[eventId];
   const [displayName, setDisplayName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [memberFieldError, setMemberFieldError] = useState<string>();
   const [inviteFieldError, setInviteFieldError] = useState<string>();
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [roleTarget, setRoleTarget] = useState<MemberRosterRow | null>(null);
   const [addingMember, setAddingMember] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
 
@@ -962,8 +965,14 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           ? `Joined ${formatDateLabel(member.joinedAt)}`
           : `Added ${formatDateLabel(member.joinedAt)}`,
       statusLabel: member.status === 'joined' ? ('Joined' as const) : ('Pending' as const),
+      role: member.role,
+      roleLabel: member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : undefined,
     }));
   }, [currentUser, summary]);
+
+  const isOwner = summary?.members.some(
+    member => member.userId === currentUser?.id && member.role === 'owner',
+  );
 
   if (!summary) {
     return (
@@ -1115,8 +1124,59 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       </AppCard>
 
       <SectionHeading title="Member list" detail={`${memberRows.length} total`} />
-      <MemberRosterList members={memberRows} />
+      <MemberRosterList
+        members={memberRows}
+        canManageRoles={isOwner}
+        onPressMember={member => {
+          if (member.role === 'owner') {
+            showToast('Transfer ownership before changing this role.', 'info');
+            return;
+          }
+          setRoleTarget(member);
+        }}
+      />
       <InlineError message={error ?? undefined} />
+
+      <AppModal
+        visible={roleTarget !== null}
+        title={roleTarget?.displayName ?? 'Member'}
+        subtitle="Admins can edit the event, manage members and record expenses."
+        onClose={() => setRoleTarget(null)}>
+        {(['admin', 'member', 'viewer'] as const).map(role => (
+          <SelectableRow
+            key={role}
+            label={
+              role === 'admin' ? 'Admin' : role === 'member' ? 'Member' : 'Viewer'
+            }
+            detail={
+              role === 'admin'
+                ? 'Can edit the event and manage members.'
+                : role === 'member'
+                  ? 'Can add expenses and contributions.'
+                  : 'Can view the event but not change it.'
+            }
+            selected={roleTarget?.role === role}
+            onPress={() => {
+              const target = roleTarget;
+              if (!target || target.role === role) {
+                setRoleTarget(null);
+                return;
+              }
+              setRoleTarget(null);
+              setMemberRole(eventId, target.id, role)
+                .then(() => showToast(`${target.displayName} is now a ${role}`))
+                .catch(roleError =>
+                  showToast(
+                    roleError instanceof Error
+                      ? roleError.message
+                      : 'Could not change that role.',
+                    'danger',
+                  ),
+                );
+            }}
+          />
+        ))}
+      </AppModal>
     </AppScreen>
   );
 }

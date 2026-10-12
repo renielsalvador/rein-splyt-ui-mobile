@@ -914,27 +914,45 @@ function SettleableBalanceRow({
   );
 }
 
-export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
+export function MemberRosterList({
+  members,
+  canManageRoles = false,
+  onPressMember,
+}: {
+  members: MemberRosterRow[];
+  canManageRoles?: boolean;
+  onPressMember?: (member: MemberRosterRow) => void;
+}) {
   const styles = useEventStyles();
   return (
     <View style={styles.memberRosterList}>
-      {members.map(member => (
-        <View key={member.id} style={styles.memberRow}>
-          <AppAvatar name={member.displayName} size="sm" />
-          <View style={styles.memberRowBody}>
-            <View style={styles.memberRowNameRow}>
-              <Text style={styles.memberRowName}>{member.displayName}</Text>
+      {members.map(member => {
+        const manageable = canManageRoles && Boolean(onPressMember);
+        return (
+          <Pressable
+            key={member.id}
+            accessibilityRole={manageable ? 'button' : undefined}
+            accessibilityLabel={manageable ? `Manage ${member.displayName}` : undefined}
+            disabled={!manageable}
+            onPress={() => onPressMember?.(member)}
+            style={({pressed}) => [styles.memberRow, pressed && manageable && styles.pressed]}>
+            <AppAvatar name={member.displayName} size="sm" />
+            <View style={styles.memberRowBody}>
+              <View style={styles.memberRowNameRow}>
+                <Text style={styles.memberRowName}>{member.displayName}</Text>
+              </View>
+              <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
             </View>
-            <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
-          </View>
-          <View style={styles.memberRowTrailing}>
-            <DataPill
-              label={member.statusLabel === 'Joined' ? 'Joined' : 'Invited'}
-              tone={member.statusLabel === 'Joined' ? 'success' : 'info'}
-            />
-          </View>
-        </View>
-      ))}
+            <View style={styles.memberRowTrailing}>
+              {member.roleLabel ? <DataPill label={member.roleLabel} tone="outline" /> : null}
+              <DataPill
+                label={member.statusLabel === 'Joined' ? 'Joined' : 'Invited'}
+                tone={member.statusLabel === 'Joined' ? 'success' : 'info'}
+              />
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

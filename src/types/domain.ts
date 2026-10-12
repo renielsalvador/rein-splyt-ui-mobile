@@ -120,6 +120,8 @@ export type Expense = {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  lastEditedBy?: string;
+  lastEditedAt?: string;
 };
 
 export type ExpenseSplit = {

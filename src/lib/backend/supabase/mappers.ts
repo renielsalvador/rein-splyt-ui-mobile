@@ -103,6 +103,8 @@ export function mapExpense(row: ExpenseRow) {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lastEditedBy: row.last_edited_by ?? undefined,
+    lastEditedAt: row.last_edited_at ?? undefined,
   };
 }
 
