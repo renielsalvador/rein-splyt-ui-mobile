@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {Linking} from 'react-native';
@@ -38,6 +39,13 @@ import type {
 
 const DEFAULT_USER_PREFERENCES: UserPreferences = {preferredCurrency: 'PHP'};
 
+const TOAST_DURATION_MS = 2600;
+
+export type ToastTone = 'success' | 'danger' | 'info';
+
+// id lets the host re-animate when the same message fires twice in a row.
+export type ToastMessage = {message: string; tone: ToastTone; id: number};
+
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   pushEnabled: false,
   expenses: true,
@@ -60,6 +68,8 @@ type AppContextValue = {
   notificationPreferences: NotificationPreferences;
   error: string | null;
   clearError: () => void;
+  toast: ToastMessage | null;
+  showToast: (message: string, tone?: ToastTone) => void;
   signIn: (input: AuthFormValues) => Promise<void>;
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -110,6 +120,25 @@ export function AppProvider({children}: React.PropsWithChildren) {
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((message: string, tone: ToastTone = 'success') => {
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current);
+    }
+    setToast({message, tone, id: Date.now()});
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_DURATION_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) {
+        clearTimeout(toastTimer.current);
+      }
+    },
+    [],
+  );
 
   const applySession = useCallback(async (nextBackend: AppBackend, user: UserProfile) => {
     const [
@@ -689,6 +718,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       notificationPreferences,
       error,
       clearError,
+      toast,
+      showToast,
       signIn,
       signUp,
       signInWithGoogle,
@@ -736,6 +767,8 @@ export function AppProvider({children}: React.PropsWithChildren) {
       pendingInvites,
       clearError,
       error,
+      toast,
+      showToast,
       events,
       hydrateEvent,
       joinEvent,

@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {Pressable, Share, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
@@ -6,7 +6,6 @@ import {
   AppCard,
   AppIcon,
   AppScreen,
-  AppToast,
   EmptyState,
   MoneyValue,
   ScreenBackButton,
@@ -158,20 +157,11 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
 export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>) {
   const styles = useStyles(createStyles);
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, settlements, currentUser} = useApp();
+  const {hydrateEvent, summaries, settlements, currentUser, showToast} = useApp();
   const summary = summaries[eventId];
   const instructions = settlements[eventId] ?? [];
   const recordedSettlements = summary?.settlements ?? [];
   const currentMemberId = summary?.members.find(member => member.userId === currentUser?.id)?.id;
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toast) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToast(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toast]);
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -229,7 +219,7 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
     try {
       await Share.share({message: lines.join('\n')});
     } catch {
-      setToast('Could not open the share sheet.');
+      showToast('Could not open the share sheet.', 'danger');
     }
   }
 
@@ -349,8 +339,6 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
           </Text>
         </View>
       ) : null}
-
-      {toast ? <AppToast message={toast} /> : null}
     </AppScreen>
   );
 }

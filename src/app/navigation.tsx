@@ -20,9 +20,10 @@ import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
 import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
 import {DeleteAccountScreen} from '../features/settings/DeleteAccountScreen';
 import {NotificationSettingsScreen} from '../features/settings/NotificationSettingsScreen';
-import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT} from '../components/ui';
+import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT, ToastHost} from '../components/ui';
 import type {TabName} from '../components/ui';
 import {ThemeProvider, useTheme} from '../theme/ThemeProvider';
+import {spacing} from '../theme/tokens';
 
 export type AppStackParamList = {
   Home: undefined;
@@ -255,6 +256,7 @@ function AppNavigator() {
         <View style={{flex: 1}}>
           {renderScreen(currentRoute)}
         </View>
+        <ToastHost topInset={spacing.sm} />
       </SafeAreaView>
       {isTopLevel && (
         <View
@@ -315,7 +317,14 @@ function AppStateContent() {
     return <ResetPasswordScreen />;
   }
 
-  return currentUser ? <AppNavigator /> : <AuthScreen />;
+  return currentUser ? (
+    <AppNavigator />
+  ) : (
+    <View style={{flex: 1}}>
+      <AuthScreen />
+      <ToastHost topInset={spacing.xxl} />
+    </View>
+  );
 }
 
 export function AppRoot() {

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
@@ -6,7 +6,6 @@ import {
   AppCard,
   AppInput,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   MoneyValue,
@@ -27,22 +26,13 @@ export function RecordSettlementScreen({
 }: ScreenProps<'RecordSettlement'>) {
   const styles = useStyles(createStyles);
   const {eventId, fromMemberId, toMemberId, suggestedAmount} = route.params;
-  const {summaries, settlements, recordSettlement, currentUser} = useApp();
+  const {summaries, settlements, recordSettlement, currentUser, showToast} = useApp();
   const summary = summaries[eventId];
   const [amount, setAmount] = useState(String(suggestedAmount));
   const [note, setNote] = useState('');
   const [fieldError, setFieldError] = useState<string>();
   const [submitError, setSubmitError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>();
-
-  useEffect(() => {
-    if (!successMessage) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setSuccessMessage(undefined), 2600);
-    return () => clearTimeout(timeoutId);
-  }, [successMessage]);
 
   // Re-read the live plan so a stale suggestion cannot be submitted after another
   // payment landed for the same pair.
@@ -124,7 +114,6 @@ export function RecordSettlementScreen({
 
     setFieldError(undefined);
     setSubmitError(undefined);
-    setSuccessMessage(undefined);
     setSubmitting(true);
 
     try {
@@ -139,6 +128,7 @@ export function RecordSettlementScreen({
       const stillOwed = roundAmount(outstanding - parsed.data.amount);
 
       if (stillOwed <= 0) {
+        showToast(`Settled up · ${formatCurrency(parsed.data.amount, currency)} recorded`);
         navigation.goBack();
         return;
       }
@@ -146,7 +136,7 @@ export function RecordSettlementScreen({
       // Stay put so the payer can keep chipping away at what is left.
       setNote('');
       setAmount(String(stillOwed));
-      setSuccessMessage(
+      showToast(
         `Recorded ${formatCurrency(parsed.data.amount, currency)}. ${formatCurrency(
           stillOwed,
           currency,
@@ -266,9 +256,6 @@ export function RecordSettlementScreen({
           ))}
         </AppCard>
       ) : null}
-
-      {submitError ? <AppToast message={submitError} /> : null}
-      {!submitError && successMessage ? <AppToast message={successMessage} /> : null}
     </AppScreen>
   );
 }

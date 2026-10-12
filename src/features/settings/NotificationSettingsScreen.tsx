@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {StyleSheet, Switch, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
   AppCard,
   AppScreen,
-  AppToast,
   ScreenBackButton,
   SectionHeading,
 } from '../../components/ui';
@@ -45,15 +44,14 @@ export function NotificationSettingsScreen({
 }: ScreenProps<'NotificationSettings'>) {
   const styles = useStyles(createStyles);
   const {colors} = useTheme();
-  const {notificationPreferences, updateNotificationPreferences} = useApp();
-  const [toast, setToast] = useState<string | null>(null);
+  const {notificationPreferences, updateNotificationPreferences, showToast} = useApp();
   const pushSupported = getPushProvider().isSupported();
 
   async function toggle(key: ToggleKey, value: boolean) {
     try {
       await updateNotificationPreferences({[key]: value});
     } catch {
-      setToast('Could not save that setting.');
+      showToast('Could not save that setting.', 'danger');
     }
   }
 
@@ -101,8 +99,6 @@ export function NotificationSettingsScreen({
           </View>
         ))}
       </AppCard>
-
-      {toast ? <AppToast message={toast} /> : null}
     </AppScreen>
   );
 }

@@ -10,9 +10,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import {cardSurface} from '../../theme/tokens';
+import {cardSurface, spacing} from '../../theme/tokens';
 import {useTheme} from '../../theme/ThemeProvider';
 import {IconButton} from './AppIcon';
+import {ToastHost} from './ToastHost';
 import {useAppStyles} from './styles';
 
 export function AppModal({
@@ -139,6 +140,7 @@ export function AppModal({
             {footer ? <View style={styles.modalFooter}>{footer}</View> : null}
           </View>
         </Animated.View>
+        <ToastHost topInset={spacing.xl} />
       </KeyboardAvoidingView>
     </Modal>
   );

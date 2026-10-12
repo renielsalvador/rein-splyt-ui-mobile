@@ -10,7 +10,6 @@ import {
   AppInput,
   AppModal,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   MoneyValue,
@@ -37,7 +36,8 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const styles = useStyles(createStyles);
   const {colors: c} = useTheme();
   const {eventId, expenseId} = route.params;
-  const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error} = useApp();
+  const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error, showToast} =
+    useApp();
   const summary = summaries[eventId];
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -60,7 +60,6 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const [payerModalVisible, setPayerModalVisible] = useState(false);
   const [splitModalVisible, setSplitModalVisible] = useState(false);
   const [discardVisible, setDiscardVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const existingExpense = useMemo(
@@ -145,14 +144,6 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
     amount.trim().length > 0 ||
     note.trim().length > 0 ||
     receipts.length > 0;
-
-  useEffect(() => {
-    if (!toastMessage) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToastMessage(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toastMessage]);
 
   function requestClose() {
     if (isDirty && !submitting) {
@@ -309,7 +300,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         });
       }
 
-      setToastMessage(
+      showToast(
         expenseId
           ? 'Expense updated'
           : `${formatCurrency(parsed.data.amount, currency)} added`,
@@ -326,15 +317,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
       variant="detail"
       leading={<ScreenBackButton onPress={requestClose} />}
       footerOverlay={
-        toastMessage ? (
-          <AppToast message={toastMessage} />
-        ) : (
-          <AppButton
-            label={expenseId ? 'Update expense' : 'Save expense'}
-            loading={submitting}
-            onPress={() => handleSubmit().catch(() => undefined)}
-          />
-        )
+        <AppButton
+          label={expenseId ? 'Update expense' : 'Save expense'}
+          loading={submitting}
+          onPress={() => handleSubmit().catch(() => undefined)}
+        />
       }>
       <AppCard>
         <Text style={styles.amountLabel}>Amount</Text>

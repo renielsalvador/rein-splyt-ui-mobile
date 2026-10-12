@@ -9,7 +9,6 @@ import {
   AppInput,
   AppModal,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   ScreenBackButton,
@@ -111,7 +110,7 @@ export function NotificationDetailScreen({
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const styles = useEventStyles();
-  const {contacts, createEvent, currentUser, error, preferences} = useApp();
+  const {contacts, createEvent, currentUser, error, preferences, showToast} = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>(preferences.preferredCurrency);
@@ -218,6 +217,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         ),
       });
       navigation.replace('EventDashboard', {eventId: event.id});
+      showToast(`${event.name} created`);
     } finally {
       setCreating(false);
     }
@@ -426,7 +426,16 @@ export function EventDashboardScreen({
   const styles = useEventStyles();
   const {colors} = useTheme();
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, balances, currentUser, updateEvent, deleteEvent, error} =
+  const {
+    hydrateEvent,
+    summaries,
+    balances,
+    currentUser,
+    updateEvent,
+    deleteEvent,
+    error,
+    showToast,
+  } =
     useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
   const [editModalStep, setEditModalStep] = useState<'details' | 'dates' | null>(null);
@@ -807,7 +816,10 @@ export function EventDashboardScreen({
                   startDate: parsed.data.startDate,
                   endDate: parsed.data.endDate,
                 })
-                  .then(() => setEditModalStep(null))
+                  .then(() => {
+                    setEditModalStep(null);
+                    showToast('Event updated');
+                  })
                   .catch(() => undefined)
                   .finally(() => setSavingDetails(false));
               }}
@@ -845,6 +857,7 @@ export function EventDashboardScreen({
                     setDeleteConfirmVisible(false);
                     setEditModalStep(null);
                     navigation.replace('Home');
+                    showToast(`${event.name} deleted`, 'info');
                   })
                   .catch(() => undefined)
                   .finally(() => setDeleting(false));
@@ -884,13 +897,12 @@ export function EventDashboardScreen({
 export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const styles = useEventStyles();
   const {eventId} = route.params;
-  const {summaries, addManualMember, createInvite, currentUser, error} = useApp();
+  const {summaries, addManualMember, createInvite, currentUser, error, showToast} = useApp();
   const summary = summaries[eventId];
   const [displayName, setDisplayName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [memberFieldError, setMemberFieldError] = useState<string>();
   const [inviteFieldError, setInviteFieldError] = useState<string>();
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
@@ -925,14 +937,6 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
     }));
   }, [currentUser, summary]);
 
-  useEffect(() => {
-    if (!toastMessage) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToastMessage(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toastMessage]);
-
   if (!summary) {
     return (
       <AppScreen
@@ -953,8 +957,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       variant="detail"
       title="Members"
       subtitle="Registered and placeholder members in one shared roster."
-      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
-      footerOverlay={toastMessage ? <AppToast message={toastMessage} /> : null}>
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard tone="accent">
         <View style={styles.memberCodeHeader}>
           <SectionHeading title="Event code" />
@@ -965,7 +968,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               onPress={() => {
                 setGeneratingCode(true);
                 createInvite(eventId)
-                  .then(() => setToastMessage('New event code generated'))
+                  .then(() => showToast('New event code generated'))
                   .catch(() => undefined)
                   .finally(() => setGeneratingCode(false));
               }}
@@ -984,7 +987,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
             accessibilityRole="button"
             onPress={() => {
               Clipboard.setString(latestInvite.inviteCode);
-              setToastMessage('Event code copied');
+              showToast('Event code copied');
             }}
             style={({pressed}) => [styles.inviteCodeDisplay, pressed && styles.pressed]}>
             <Text style={styles.inviteCodeLabel}>Event code</Text>
@@ -1003,7 +1006,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
             onPress={() => {
               setGeneratingCode(true);
               createInvite(eventId)
-                .then(() => setToastMessage('Event code generated'))
+                .then(() => showToast('Event code generated'))
                 .catch(() => undefined)
                 .finally(() => setGeneratingCode(false));
             }}
@@ -1075,7 +1078,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               .then(() => {
                 setInviteEmail('');
                 setInviteFieldError(undefined);
-                setToastMessage('Invite sent');
+                showToast('Invite sent');
               })
               .catch(() => undefined)
               .finally(() => setSendingInvite(false));
