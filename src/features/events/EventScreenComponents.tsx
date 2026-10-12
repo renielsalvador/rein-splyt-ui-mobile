@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import type {StyleProp, TextStyle} from 'react-native';
 import {Calendar} from 'react-native-calendars';
@@ -9,6 +9,7 @@ import {
   AppCard,
   AppIcon,
   type AppIconName,
+  AppModal,
   DataPill,
   SectionHeading,
 } from '../../components/ui';
@@ -281,13 +282,19 @@ export function EventDateRangeField({
   );
 }
 
-export function EventDateRangePicker({
+export function EventDateRangeModal({
+  visible,
+  title,
+  subtitle,
   startDate,
   endDate,
   onChange,
   onClear,
   onClose,
 }: {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
   startDate?: string;
   endDate?: string;
   onChange: (next: {startDate?: string; endDate?: string}) => void;
@@ -306,6 +313,17 @@ export function EventDateRangePicker({
     () => (hasDates ? buildMarkedDateRange(c, draftStartDate, draftEndDate) : {}),
     [c, draftEndDate, draftStartDate, hasDates],
   );
+
+  // Re-seed the draft each time the sheet opens so a cancelled edit never leaks forward.
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setDraftStartDate(startDate ?? today);
+    setDraftEndDate(endDate ?? today);
+    setHasDates(Boolean(startDate && endDate));
+    setActiveField('start');
+  }, [endDate, startDate, today, visible]);
 
   function handleDayPress(dateString: string) {
     setHasDates(true);
@@ -326,111 +344,120 @@ export function EventDateRangePicker({
   }
 
   return (
-    <View style={componentStyles.datePickerBlock}>
-      <View style={componentStyles.datePickerSummaryCard}>
-        <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
-        <Text style={componentStyles.datePickerSummaryValue}>
-          {hasDates ? formatDateRangeLabel(draftStartDate, draftEndDate) : 'No dates'}
-        </Text>
-        <View style={componentStyles.dateRangeFieldRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setActiveField('start')}
-            style={({pressed}) => [
-              componentStyles.dateAnchorChip,
-              activeField === 'start' ? componentStyles.dateAnchorChipActive : null,
-              pressed ? styles.pressed : null,
-            ]}>
-            <Text
-              style={[
-                componentStyles.dateAnchorLabel,
-                activeField === 'start' ? componentStyles.dateAnchorLabelActive : null,
-              ]}>
-              From
-            </Text>
-            <Text
-              style={[
-                componentStyles.dateAnchorValue,
-                activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
-              ]}>
-              {hasDates ? formatDateLabel(draftStartDate) : 'Not set'}
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setActiveField('end')}
-            style={({pressed}) => [
-              componentStyles.dateAnchorChip,
-              activeField === 'end' ? componentStyles.dateAnchorChipActive : null,
-              pressed ? styles.pressed : null,
-            ]}>
-            <Text
-              style={[
-                componentStyles.dateAnchorLabel,
-                activeField === 'end' ? componentStyles.dateAnchorLabelActive : null,
-              ]}>
-              To
-            </Text>
-            <Text
-              style={[
-                componentStyles.dateAnchorValue,
-                activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
-              ]}>
-              {hasDates ? formatDateLabel(draftEndDate) : 'Not set'}
-            </Text>
-          </Pressable>
+    <AppModal
+      visible={visible}
+      title={title}
+      subtitle={subtitle}
+      scrollable
+      onClose={onClose}
+      footer={
+        <View style={styles.actionRow}>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Clear dates"
+              variant="tint"
+              onPress={() => {
+                setHasDates(false);
+                onClear();
+                onClose();
+              }}
+            />
+          </View>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Apply dates"
+              icon="check"
+              onPress={() => {
+                onChange({startDate: draftStartDate, endDate: draftEndDate});
+                onClose();
+              }}
+            />
+          </View>
         </View>
-        <Text style={componentStyles.datePickerSummaryHint}>
-          {hasDates
-            ? `Select ${activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.`
-            : 'Choose dates to add a range, or clear them to keep this share ongoing.'}
-        </Text>
+      }>
+      <View style={componentStyles.datePickerBlock}>
+        <View style={componentStyles.datePickerSummaryCard}>
+          <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
+          <Text style={componentStyles.datePickerSummaryValue}>
+            {hasDates ? formatDateRangeLabel(draftStartDate, draftEndDate) : 'No dates'}
+          </Text>
+          <View style={componentStyles.dateRangeFieldRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setActiveField('start')}
+              style={({pressed}) => [
+                componentStyles.dateAnchorChip,
+                activeField === 'start' ? componentStyles.dateAnchorChipActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text
+                style={[
+                  componentStyles.dateAnchorLabel,
+                  activeField === 'start' ? componentStyles.dateAnchorLabelActive : null,
+                ]}>
+                From
+              </Text>
+              <Text
+                style={[
+                  componentStyles.dateAnchorValue,
+                  activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
+                ]}>
+                {hasDates ? formatDateLabel(draftStartDate) : 'Not set'}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setActiveField('end')}
+              style={({pressed}) => [
+                componentStyles.dateAnchorChip,
+                activeField === 'end' ? componentStyles.dateAnchorChipActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text
+                style={[
+                  componentStyles.dateAnchorLabel,
+                  activeField === 'end' ? componentStyles.dateAnchorLabelActive : null,
+                ]}>
+                To
+              </Text>
+              <Text
+                style={[
+                  componentStyles.dateAnchorValue,
+                  activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
+                ]}>
+                {hasDates ? formatDateLabel(draftEndDate) : 'Not set'}
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={componentStyles.datePickerSummaryHint}>
+            {hasDates
+              ? `Select ${activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.`
+              : 'Choose dates to add a range, or clear them to keep this share ongoing.'}
+          </Text>
+        </View>
+        <Calendar
+          markingType="period"
+          markedDates={markedDates}
+          onDayPress={({dateString}) => handleDayPress(dateString)}
+          theme={{
+            backgroundColor: c.surface,
+            calendarBackground: c.surface,
+            textSectionTitleColor: c.inkMuted,
+            selectedDayBackgroundColor: c.brand,
+            selectedDayTextColor: c.surface,
+            todayTextColor: c.brand,
+            dayTextColor: c.ink,
+            monthTextColor: c.ink,
+            arrowColor: c.brand,
+            textDisabledColor: c.hairline,
+            textDayFontWeight: '500',
+            textMonthFontWeight: '700',
+            textDayHeaderFontWeight: '600',
+          }}
+          style={componentStyles.calendar}
+        />
       </View>
-      <Calendar
-        markingType="period"
-        markedDates={markedDates}
-        onDayPress={({dateString}) => handleDayPress(dateString)}
-        theme={{
-          backgroundColor: c.surface,
-          calendarBackground: c.surface,
-          textSectionTitleColor: c.inkMuted,
-          selectedDayBackgroundColor: c.brand,
-          selectedDayTextColor: c.surface,
-          todayTextColor: c.brand,
-          dayTextColor: c.ink,
-          monthTextColor: c.ink,
-          arrowColor: c.brand,
-          textDisabledColor: c.hairline,
-          textDayFontWeight: '500',
-          textMonthFontWeight: '700',
-          textDayHeaderFontWeight: '600',
-        }}
-        style={componentStyles.calendar}
-      />
-      <View style={styles.actionRow}>
-        <View style={styles.actionRowItem}>
-          <AppButton
-            label="Clear dates"
-            variant="tint"
-            onPress={() => {
-              setHasDates(false);
-              onClear();
-              onClose();
-            }}
-          />
-        </View>
-        <View style={styles.actionRowItem}>
-          <AppButton
-            label="Apply dates"
-            icon="check"
-            onPress={() => {
-              onChange({startDate: draftStartDate, endDate: draftEndDate});
-              onClose();
-            }}
-          />
-        </View>
-      </View>
-    </View>
+    </AppModal>
   );
 }
 

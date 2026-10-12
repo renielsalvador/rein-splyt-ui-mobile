@@ -334,6 +334,12 @@ export const createAppStyles = (c: Colors) => {
       gap: spacing.md,
       paddingBottom: spacing.sm,
     },
+    modalFooter: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
+      paddingTop: spacing.md,
+      gap: spacing.sm,
+    },
     subtitle: {
       ...t.body,
       color: c.inkMuted,

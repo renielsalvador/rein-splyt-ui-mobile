@@ -28,7 +28,7 @@ import {
   DashboardBalanceSummaryCard,
   DashboardFundOverviewCard,
   EventDateRangeField,
-  EventDateRangePicker,
+  EventDateRangeModal,
   EventIconPicker,
   MemberRosterList,
   PendingInviteDetailCard,
@@ -330,28 +330,24 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         />
       </AppModal>
 
-      <AppModal
+      <EventDateRangeModal
         visible={dateModalVisible}
         title="Select event dates"
         subtitle="Choose a range or clear dates to keep this share ongoing."
-        scrollable
-        onClose={() => setDateModalVisible(false)}>
-        <EventDateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={next => {
-            setStartDate(next.startDate);
-            setEndDate(next.endDate);
-            setFieldErrors(current => ({...current, dates: undefined}));
-          }}
-          onClear={() => {
-            setStartDate(undefined);
-            setEndDate(undefined);
-            setFieldErrors(current => ({...current, dates: undefined}));
-          }}
-          onClose={() => setDateModalVisible(false)}
-        />
-      </AppModal>
+        startDate={startDate}
+        endDate={endDate}
+        onChange={next => {
+          setStartDate(next.startDate);
+          setEndDate(next.endDate);
+          setFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClear={() => {
+          setStartDate(undefined);
+          setEndDate(undefined);
+          setFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClose={() => setDateModalVisible(false)}
+      />
 
       <AppModal
         visible={memberModalVisible}
@@ -660,7 +656,15 @@ export function EventDashboardScreen({
           </Pressable>
         </View>
 
-        <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
+        <SectionHeading
+          title="Recent expenses"
+          detail={`${summary.expenses.length} total`}
+          onDetailPress={
+            summary.expenses.length > 0
+              ? () => navigation.navigate('AllExpenses', {eventId})
+              : undefined
+          }
+        />
         {summary.expenses.length === 0 ? (
           <EmptyState
             title="No expenses yet"
@@ -689,6 +693,14 @@ export function EventDashboardScreen({
             );
           })}
 
+        {summary.expenses.length > 4 ? (
+          <AppButton
+            label={`View all ${summary.expenses.length} expenses`}
+            variant="tint"
+            onPress={() => navigation.navigate('AllExpenses', {eventId})}
+          />
+        ) : null}
+
         <Pressable
           accessibilityRole="button"
           onPress={() => setDeleteConfirmVisible(true)}
@@ -699,42 +711,36 @@ export function EventDashboardScreen({
         <InlineError message={error ?? undefined} />
       </AppScreen>
 
+      <EventDateRangeModal
+        visible={editModalStep === 'dates'}
+        title="Update event dates"
+        subtitle="Set or clear dates for this event."
+        startDate={editStartDate}
+        endDate={editEndDate}
+        onChange={next => {
+          setEditStartDate(next.startDate);
+          setEditEndDate(next.endDate);
+          setEditFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClear={() => {
+          setEditStartDate(undefined);
+          setEditEndDate(undefined);
+          setEditFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClose={() => setEditModalStep('details')}
+      />
+
       <AppModal
-        visible={editModalStep !== null}
-        title={editModalStep === 'dates' ? 'Update event dates' : 'Edit event'}
-        subtitle={
-          editModalStep === 'dates'
-            ? 'Set or clear dates for this event.'
-            : 'Update the name, description, or icon.'
-        }
+        visible={editModalStep === 'details'}
+        title="Edit event"
+        subtitle="Update the name, description, or icon."
         scrollable
         onClose={() => {
-          if (editModalStep === 'dates') {
-            setEditModalStep('details');
-            return;
-          }
           setEditModalStep(null);
           setEditFieldErrors({});
         }}>
-        {editModalStep === 'dates' ? (
-          <EventDateRangePicker
-            startDate={editStartDate}
-            endDate={editEndDate}
-            onChange={next => {
-              setEditStartDate(next.startDate);
-              setEditEndDate(next.endDate);
-              setEditFieldErrors(current => ({...current, dates: undefined}));
-            }}
-            onClear={() => {
-              setEditStartDate(undefined);
-              setEditEndDate(undefined);
-              setEditFieldErrors(current => ({...current, dates: undefined}));
-            }}
-            onClose={() => setEditModalStep('details')}
-          />
-        ) : (
-          <>
-            <View style={styles.eventIconSelector}>
+        <>
+          <View style={styles.eventIconSelector}>
               <View style={styles.eventIconSelectorBadge}>
                 <AppIcon name={editIcon} tone="accent" size={28} />
               </View>
@@ -807,8 +813,7 @@ export function EventDashboardScreen({
               }}
             />
             <InlineError message={error ?? undefined} />
-          </>
-        )}
+        </>
       </AppModal>
 
       <AppModal

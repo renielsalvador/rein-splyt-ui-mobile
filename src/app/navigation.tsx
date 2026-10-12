@@ -12,6 +12,7 @@ import {HomeScreen} from '../features/events/HomeScreen';
 import {ActivityScreen} from '../features/events/ActivityScreen';
 import {BalancesOverviewScreen} from '../features/balances/BalancesOverviewScreen';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
+import {ExpenseListScreen} from '../features/expenses/ExpenseListScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
 import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
@@ -32,6 +33,7 @@ export type AppStackParamList = {
   EventDashboard: {eventId: string};
   Members: {eventId: string};
   AddExpense: {eventId: string; expenseId?: string};
+  AllExpenses: {eventId: string};
   CentralFund: {eventId: string};
   Balances: {eventId: string};
   Settlement: {eventId: string};
@@ -198,6 +200,8 @@ function AppNavigator() {
         return <MembersScreen navigation={navigation} route={route as Route<'Members'>} />;
       case 'AddExpense':
         return <AddExpenseScreen navigation={navigation} route={route as Route<'AddExpense'>} />;
+      case 'AllExpenses':
+        return <ExpenseListScreen navigation={navigation} route={route as Route<'AllExpenses'>} />;
       case 'CentralFund':
         return <CentralFundScreen navigation={navigation} route={route as Route<'CentralFund'>} />;
       case 'Balances':
