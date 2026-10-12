@@ -19,7 +19,7 @@ import {
   formatDateRangeLabel,
 } from '../../lib/utils/format';
 import {
-  EVENT_COLOR_NAMES,
+  EVENT_COLOR_PICKER_NAMES,
   cardSurface,
   createTypography,
   eventColorSchemes,
@@ -494,7 +494,7 @@ export function EventColorPicker({
 
   return (
     <View style={componentStyles.colorRow}>
-      {EVENT_COLOR_NAMES.map(name => {
+      {EVENT_COLOR_PICKER_NAMES.map(name => {
         const swatch = swatches[name];
         const selected = selectedColor === name;
         return (
@@ -506,14 +506,11 @@ export function EventColorPicker({
             onPress={() => onSelect(name)}
             style={({pressed}) => [
               componentStyles.colorSwatch,
-              {backgroundColor: swatch.soft, borderColor: swatch.accent},
+              {backgroundColor: swatch.accent},
               selected ? componentStyles.colorSwatchActive : null,
               pressed ? styles.pressed : null,
             ]}>
-            <View
-              style={[componentStyles.colorSwatchDot, {backgroundColor: swatch.accent}]}
-            />
-            {selected ? <AppIcon name="check" tone="accent" size={13} /> : null}
+            {selected ? <AppIcon name="check" color={swatch.soft} size={14} /> : null}
           </Pressable>
         );
       })}
@@ -523,38 +520,70 @@ export function EventColorPicker({
 
 export function EventIconPicker({
   selectedIcon,
+  color,
   onSelect,
 }: {
   selectedIcon: EventIconName;
+  color?: EventColorName;
   onSelect: (icon: EventIconName) => void;
 }) {
   const styles = useEventStyles();
+  const swatch = useEventSwatch(color);
   return (
     <View style={styles.iconGrid}>
-      {EVENT_ICON_OPTIONS.map(option => (
-        <Pressable
-          key={option.name}
-          accessibilityRole="button"
-          onPress={() => onSelect(option.name)}
-          style={({pressed}) => [
-            styles.iconOptionCard,
-            selectedIcon === option.name ? styles.iconOptionCardActive : null,
-            pressed ? styles.pressed : null,
-          ]}>
-          <AppIcon
-            name={option.name as AppIconName}
-            tone={selectedIcon === option.name ? 'inverted' : 'accent'}
-            size={24}
-          />
-          <Text
-            style={[
-              styles.iconOptionLabel,
-              selectedIcon === option.name ? styles.iconOptionLabelActive : null,
+      {EVENT_ICON_OPTIONS.map(option => {
+        const selected = selectedIcon === option.name;
+        return (
+          <Pressable
+            key={option.name}
+            accessibilityRole="button"
+            accessibilityState={{selected}}
+            onPress={() => onSelect(option.name)}
+            style={({pressed}) => [
+              styles.iconOptionCard,
+              {backgroundColor: selected ? swatch.accent : swatch.soft},
+              pressed ? styles.pressed : null,
             ]}>
-            {option.label}
-          </Text>
-        </Pressable>
-      ))}
+            <AppIcon
+              name={option.name as AppIconName}
+              color={selected ? swatch.soft : swatch.accent}
+              size={24}
+            />
+            <Text
+              style={[
+                styles.iconOptionLabel,
+                {color: selected ? swatch.soft : swatch.onSoft},
+              ]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Colour first: it retints the icon grid, so picking it last would undo the preview. */
+export function EventAppearancePicker({
+  selectedColor,
+  selectedIcon,
+  onSelectColor,
+  onSelectIcon,
+}: {
+  selectedColor: EventColorName;
+  selectedIcon: EventIconName;
+  onSelectColor: (color: EventColorName) => void;
+  onSelectIcon: (icon: EventIconName) => void;
+}) {
+  const componentStyles = useStyles(createComponentStyles);
+  return (
+    <View style={componentStyles.appearanceBlock}>
+      <EventColorPicker selectedColor={selectedColor} onSelect={onSelectColor} />
+      <EventIconPicker
+        selectedIcon={selectedIcon}
+        color={selectedColor}
+        onSelect={onSelectIcon}
+      />
     </View>
   );
 }
@@ -961,27 +990,27 @@ const createComponentStyles = (c: Colors) => {
   const t = createTypography(c);
 
   return StyleSheet.create({
+    appearanceBlock: {
+      gap: spacing.md,
+    },
     colorRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
+      justifyContent: 'center',
       gap: spacing.sm,
     },
     colorSwatch: {
-      width: 44,
-      height: 44,
-      borderRadius: radii.pill,
-      borderWidth: 2,
+      width: 32,
+      height: 32,
+      borderRadius: radii.sm,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 2,
+      opacity: 0.7,
     },
     colorSwatchActive: {
-      borderWidth: 3,
-    },
-    colorSwatchDot: {
-      width: 14,
-      height: 14,
-      borderRadius: radii.pill,
+      opacity: 1,
+      borderWidth: 2,
+      borderColor: c.ink,
     },
     expenseTrailing: {
       alignItems: 'flex-end',

@@ -296,8 +296,8 @@ export const createAppStyles = (c: Colors) => {
     },
     modalCard: {
       width: '100%',
-      maxHeight: '88%',
       flexShrink: 1,
+      overflow: 'hidden',
       borderTopLeftRadius: radii.xxl,
       borderTopRightRadius: radii.xxl,
       borderBottomLeftRadius: radii.xl,

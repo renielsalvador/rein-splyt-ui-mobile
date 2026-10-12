@@ -18,7 +18,7 @@ import {createTypography, radii, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName, formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   const styles = useStyles(createStyles);
@@ -296,14 +296,15 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
                 ]}>
                 <View style={styles.copy}>
                   <Text style={styles.memberName}>
-                    {formatSelfDisplayName(
+                    {formatActorName(
                       instruction.fromDisplayName,
                       instruction.fromMemberId === currentMemberId,
                     )}{' '}
-                    pays{' '}
-                    {formatSelfDisplayName(
+                    {instruction.fromMemberId === currentMemberId ? 'pay' : 'pays'}{' '}
+                    {formatActorName(
                       instruction.toDisplayName,
                       instruction.toMemberId === currentMemberId,
+                      'object',
                     )}
                   </Text>
                   <Text style={styles.rowHint}>Tap to record a full or partial payment</Text>
@@ -325,14 +326,15 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
               style={[styles.row, index > 0 ? styles.rowDivided : null]}>
               <View style={styles.copy}>
                 <Text style={styles.memberName}>
-                  {formatSelfDisplayName(
+                  {formatActorName(
                     settlement.fromDisplayName,
                     settlement.fromMemberId === currentMemberId,
                   )}{' '}
                   paid{' '}
-                  {formatSelfDisplayName(
+                  {formatActorName(
                     settlement.toDisplayName,
                     settlement.toMemberId === currentMemberId,
+                    'object',
                   )}
                 </Text>
                 <Text style={styles.rowHint}>

@@ -19,7 +19,7 @@ import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName} from '../events/EventScreenShared';
 
 export function RecordSettlementScreen({
   navigation,
@@ -99,13 +99,15 @@ export function RecordSettlementScreen({
   const currentMemberId = summary.members.find(
     member => member.userId === currentUser?.id,
   )?.id;
-  const fromName = formatSelfDisplayName(
+  const fromIsSelf = fromMemberId === currentMemberId;
+  const fromName = formatActorName(
     summary.members.find(member => member.id === fromMemberId)?.displayName ?? 'Someone',
-    fromMemberId === currentMemberId,
+    fromIsSelf,
   );
-  const toName = formatSelfDisplayName(
+  const toName = formatActorName(
     summary.members.find(member => member.id === toMemberId)?.displayName ?? 'Someone',
     toMemberId === currentMemberId,
+    'object',
   );
 
   const pairPayments = summary.settlements.filter(
@@ -215,7 +217,7 @@ export function RecordSettlementScreen({
       }>
       <AppCard tone="accent">
         <Text style={styles.heroLabel}>
-          {fromName} pays {toName}
+          {fromName} {fromIsSelf ? 'pay' : 'pays'} {toName}
         </Text>
         <MoneyValue value={outstanding} currency={currency} size="hero" absolute />
         <Text style={styles.heroMeta}>

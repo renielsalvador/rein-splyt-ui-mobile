@@ -11,7 +11,7 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {RecentExpenseListItem} from '../events/EventScreenComponents';
-import {describeExpenseSplit} from '../events/EventScreenShared';
+import {describeExpenseSplit, formatActorName} from '../events/EventScreenShared';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
 import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
@@ -112,13 +112,27 @@ export function ExpenseListScreen({navigation, route}: ScreenProps<'AllExpenses'
               <RecentExpenseListItem
                 key={expense.id}
                 title={expense.title}
-                meta={`${payer?.displayName || 'Unknown payer'}${
+                meta={`${
+                  payer
+                    ? formatActorName(
+                        payer.displayName,
+                        payer.userId === currentUser?.id,
+                        'standalone',
+                      )
+                    : 'Unknown payer'
+                }${
                   expense.paymentSource === 'central_fund' ? ' · Central fund' : ''
                 }${
                   canSeeAudit && expense.lastEditedAt
-                    ? ` · Edited by ${editor?.displayName ?? 'someone'} ${formatDateLabel(
-                        expense.lastEditedAt,
-                      )}`
+                    ? ` · Edited by ${
+                        editor
+                          ? formatActorName(
+                              editor.displayName,
+                              editor.userId === currentUser?.id,
+                              'object',
+                            )
+                          : 'someone'
+                      } ${formatDateLabel(expense.lastEditedAt)}`
                     : expense.updatedAt !== expense.createdAt
                       ? ' · Edited'
                       : ''

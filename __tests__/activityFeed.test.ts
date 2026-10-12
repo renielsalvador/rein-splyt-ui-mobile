@@ -144,5 +144,22 @@ describe('buildActivityFeed', () => {
     expect(feed[3]).toMatchObject({
       title: 'alex@example.com was added to Palawan Trip',
     });
+
+    const selfFeed = buildActivityFeed(
+      [event],
+      {[event.id]: summary},
+      balances,
+      'user_owner',
+    );
+
+    expect(selfFeed[0]).toMatchObject({
+      body: 'alex@example.com paid you ₱1,200.00.',
+    });
+    expect(selfFeed[1]).toMatchObject({
+      title: 'You added to Palawan Trip Fund',
+    });
+    expect(selfFeed[2]).toMatchObject({
+      body: 'You logged ₱2,400.00 split across 2 participants.',
+    });
   });
 });

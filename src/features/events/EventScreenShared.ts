@@ -58,6 +58,24 @@ export function formatSelfDisplayName(
   return isCurrentUser ? `${displayName} (me)` : displayName;
 }
 
+/**
+ * Transaction copy reads in the first person — "You paid Charlie", "Charlie paid
+ * you", "Paid by me" — so the reader never has to recognise their own name.
+ */
+export function formatActorName(
+  displayName: string,
+  isCurrentUser: boolean | undefined,
+  form: 'subject' | 'object' | 'standalone' = 'subject',
+) {
+  if (!isCurrentUser) {
+    return displayName;
+  }
+  if (form === 'standalone') {
+    return 'Me';
+  }
+  return form === 'subject' ? 'You' : 'you';
+}
+
 // Everyone in an event is a participant by default, so a split that covers fewer
 // people than the roster is the thing worth surfacing.
 export function describeExpenseSplit(

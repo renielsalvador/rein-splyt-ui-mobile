@@ -34,8 +34,7 @@ import {
   DashboardFundOverviewCard,
   EventDateRangeField,
   EventDateRangeModal,
-  EventColorPicker,
-  EventIconPicker,
+  EventAppearancePicker,
   MemberRosterList,
   PendingInviteDetailCard,
   RecentExpenseListItem,
@@ -46,6 +45,7 @@ import {useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {
   buildSettlementInstructions,
   describeExpenseSplit,
+  formatActorName,
   formatSelfDisplayName,
   isEmailAddress,
   type MemberRosterRow,
@@ -126,6 +126,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const [icon, setIcon] = useState<EventIconName>('event');
   // Seeded once per screen so each new event looks distinct without the user picking.
   const [color, setColor] = useState<EventColorName>(pickRandomEventColor);
+  const swatch = useEventSwatch(color);
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<{
@@ -246,19 +247,15 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           accessibilityRole="button"
           onPress={() => setIconModalVisible(true)}
           style={({pressed}) => [styles.eventIconSelector, pressed && styles.pressed]}>
-          <View style={styles.eventIconSelectorBadge}>
-            <AppIcon name={icon} tone="accent" size={28} />
+          <View style={[styles.eventIconSelectorBadge, {backgroundColor: swatch.soft}]}>
+            <AppIcon name={icon} color={swatch.accent} size={28} />
           </View>
           <View style={styles.eventIconSelectorCopy}>
-            <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+            <Text style={styles.eventIconSelectorTitle}>Event appearance</Text>
             <Text style={styles.eventMeta}>Tap to change</Text>
           </View>
           <AppIcon name="chevron" tone="muted" size={16} />
         </Pressable>
-        <View style={styles.eventIconSelectorCopy}>
-          <Text style={styles.eventIconSelectorTitle}>Event colour</Text>
-          <EventColorPicker selectedColor={color} onSelect={setColor} />
-        </View>
         <AppInput
           label="Event name"
           value={name}
@@ -333,13 +330,15 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
 
       <AppModal
         visible={iconModalVisible}
-        title="Choose an event icon"
-        subtitle="Pick a visual marker for this event."
+        title="Choose a colour and icon"
+        subtitle="Pick a colour first, then a visual marker for this event."
         scrollable
         onClose={() => setIconModalVisible(false)}>
-        <EventIconPicker
+        <EventAppearancePicker
+          selectedColor={color}
           selectedIcon={icon}
-          onSelect={nextIcon => {
+          onSelectColor={setColor}
+          onSelectIcon={nextIcon => {
             setIcon(nextIcon);
             setIconModalVisible(false);
           }}
@@ -709,9 +708,17 @@ export function EventDashboardScreen({
               <RecentExpenseListItem
                 key={expense.id}
                 title={expense.title}
-                meta={`${payer?.displayName || 'Unknown payer'} · ${formatDateLabel(
-                  expense.createdAt,
-                )}${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
+                meta={`${
+                  payer
+                    ? formatActorName(
+                        payer.displayName,
+                        payer.userId === currentUser?.id,
+                        'standalone',
+                      )
+                    : 'Unknown payer'
+                } · ${formatDateLabel(expense.createdAt)}${
+                  expense.updatedAt !== expense.createdAt ? ' · Edited' : ''
+                }`}
                 amountLabel={formatCurrency(expense.amount, event.currency)}
                 splitLabel={describeExpenseSplit(
                   summary.expenseSplits,
@@ -774,16 +781,18 @@ export function EventDashboardScreen({
         }}>
         <>
           <View style={styles.eventIconSelector}>
-              <View style={styles.eventIconSelectorBadge}>
-                <AppIcon name={editIcon} tone="accent" size={28} />
-              </View>
-              <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+            <View
+              style={[styles.eventIconSelectorBadge, {backgroundColor: eventSwatch.soft}]}>
+              <AppIcon name={editIcon} color={eventSwatch.accent} size={28} />
             </View>
-            <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
-            <View style={styles.eventIconSelectorCopy}>
-              <Text style={styles.eventIconSelectorTitle}>Event colour</Text>
-              <EventColorPicker selectedColor={editColor} onSelect={setEditColor} />
-            </View>
+            <Text style={styles.eventIconSelectorTitle}>Event appearance</Text>
+          </View>
+          <EventAppearancePicker
+            selectedColor={editColor}
+            selectedIcon={editIcon}
+            onSelectColor={setEditColor}
+            onSelectIcon={setEditIcon}
+          />
             <AppInput
               label="Event name"
               value={editName}
@@ -1141,7 +1150,8 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
         visible={roleTarget !== null}
         title={roleTarget?.displayName ?? 'Member'}
         subtitle="Admins can edit the event, manage members and record expenses."
-        onClose={() => setRoleTarget(null)}>
+        onClose={() => setRoleTarget(null)}
+        scrollable>
         {(['admin', 'member', 'viewer'] as const).map(role => (
           <SelectableRow
             key={role}

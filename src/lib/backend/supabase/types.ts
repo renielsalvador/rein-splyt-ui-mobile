@@ -44,13 +44,19 @@ export type EventRow = {
     | 'study';
   color:
     | 'forest'
+    | 'moss'
+    | 'sage'
     | 'teal'
+    | 'sky'
     | 'ocean'
     | 'indigo'
+    | 'violet'
     | 'plum'
+    | 'rose'
     | 'clay'
+    | 'amber'
     | 'ochre'
-    | 'moss';
+    | 'stone';
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;

@@ -24,7 +24,7 @@ import type {Colors} from '../../theme/tokens';
 import {useStyles, useTheme} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import type {CurrencyCode, ExpenseReceipt, ExpenseReceiptAsset} from '../../types/domain';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName, formatSelfDisplayName} from '../events/EventScreenShared';
 
 const MAX_RECEIPTS = 3;
 
@@ -222,7 +222,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   if (!summary || !payerId) {
     return (
       <AppScreen
-        title={expenseId ? 'Edit expense' : 'Add expense'}
+        title={expenseId ? 'Edit expense' : 'Track expense'}
         subtitle="Loading event details."
         variant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
@@ -312,7 +312,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   }
   return (
     <AppScreen
-      title={expenseId ? 'Edit expense' : 'Add expense'}
+      title={expenseId ? 'Edit expense' : 'Track expense'}
       subtitle={`${summary.event.name} · ${summary.event.currency}`}
       variant="detail"
       leading={<ScreenBackButton onPress={requestClose} />}
@@ -418,7 +418,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
                   <Text style={styles.payerDropdownDetail}>Paid by</Text>
                   <Text style={styles.payerDropdownLabel} numberOfLines={1}>
                     {payer
-                      ? formatSelfDisplayName(payer.displayName, payer.userId === currentUser?.id)
+                      ? formatActorName(
+                          payer.displayName,
+                          payer.userId === currentUser?.id,
+                          'standalone',
+                        )
                       : 'Select who paid'}
                   </Text>
                 </View>

@@ -25,6 +25,7 @@ import {useStyles, useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {formatCurrencyCompact, formatDateRangeLabel} from '../../lib/utils/format';
 import {joinSchema} from '../../lib/validation/forms';
 import type {Event, EventMember, Expense, MemberBalance} from '../../types/domain';
+import {formatActorName} from './EventScreenShared';
 import {getEventLifecycle, getTodayDateString, sortEventsByStartDate} from './eventStatus';
 
 type Lifecycle = 'now' | 'upcoming' | 'ended';
@@ -264,6 +265,7 @@ export function HomeScreen({
                 expenses={summaries[event.id]?.expenses ?? []}
                 balance={selfBalanceFor(event.id)}
                 dayLabel={dayOfTripLabel(event, today)}
+                currentUserId={currentUser?.id}
                 onOpen={() => navigation.navigate('EventDashboard', {eventId: event.id})}
                 onAddExpense={() => navigation.navigate('AddExpense', {eventId: event.id})}
               />
@@ -391,6 +393,7 @@ function OpenTripCard({
   expenses,
   balance,
   dayLabel,
+  currentUserId,
   onOpen,
   onAddExpense,
 }: {
@@ -399,6 +402,7 @@ function OpenTripCard({
   expenses: Expense[];
   balance?: MemberBalance;
   dayLabel?: string;
+  currentUserId?: string;
   onOpen: () => void;
   onAddExpense: () => void;
 }) {
@@ -411,8 +415,11 @@ function OpenTripCard({
       !latest || expense.createdAt > latest.createdAt ? expense : latest,
     undefined,
   );
-  const payerName = lastExpense
-    ? members.find(member => member.id === lastExpense.paidByMemberId)?.displayName
+  const lastPayer = lastExpense
+    ? members.find(member => member.id === lastExpense.paidByMemberId)
+    : undefined;
+  const payerName = lastPayer
+    ? formatActorName(lastPayer.displayName, lastPayer.userId === currentUserId)
     : undefined;
 
   return (
@@ -480,7 +487,7 @@ function OpenTripCard({
       <View style={styles.openActions}>
         <View style={styles.flex}>
           <AppButton
-            label="Add expense"
+            label="Track expense"
             icon="create"
             variant="black"
             size="sm"

@@ -328,7 +328,7 @@ function AppNavigator() {
         <View style={{flex: 1}}>
           {renderScreen(currentRoute)}
         </View>
-        <ToastHost topInset={spacing.sm} />
+        <ToastHost bottomInset={(isTopLevel ? TAB_BAR_HEIGHT : 0) + spacing.sm} />
       </SafeAreaView>
       {isTopLevel && (
         <Animated.View
@@ -402,7 +402,7 @@ function AppStateContent() {
   ) : (
     <View style={{flex: 1}}>
       <AuthScreen />
-      <ToastHost topInset={spacing.xxl} />
+      <ToastHost bottomInset={spacing.xxl} />
     </View>
   );
 }

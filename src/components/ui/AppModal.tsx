@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {cardSurface, spacing} from '../../theme/tokens';
@@ -34,6 +35,7 @@ export function AppModal({
 }>) {
   const {colors: c} = useTheme();
   const styles = useAppStyles();
+  const {height: windowHeight} = useWindowDimensions();
   const [rendered, setRendered] = useState(visible);
   const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : 28)).current;
@@ -111,7 +113,8 @@ export function AppModal({
             },
           ]}>
           <View style={styles.modalHandle} />
-          <View style={[cardSurface(c), styles.modalCard]}>
+          <View
+            style={[cardSurface(c), styles.modalCard, {maxHeight: windowHeight * 0.88}]}>
             <View style={styles.modalHeader}>
               <View style={styles.modalCopy}>
                 <Text style={styles.modalTitle}>{title}</Text>
@@ -140,7 +143,7 @@ export function AppModal({
             {footer ? <View style={styles.modalFooter}>{footer}</View> : null}
           </View>
         </Animated.View>
-        <ToastHost topInset={spacing.xl} />
+        <ToastHost bottomInset={spacing.xl} />
       </KeyboardAvoidingView>
     </Modal>
   );

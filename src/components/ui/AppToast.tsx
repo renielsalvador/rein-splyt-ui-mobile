@@ -48,7 +48,7 @@ export function AnimatedToast({
       style={{
         opacity: progress,
         transform: [
-          {translateY: progress.interpolate({inputRange: [0, 1], outputRange: [-12, 0]})},
+          {translateY: progress.interpolate({inputRange: [0, 1], outputRange: [12, 0]})},
         ],
       }}>
       <AppToast message={message} tone={tone} />
