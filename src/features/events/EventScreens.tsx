@@ -21,13 +21,20 @@ import {
   formatDateLabel,
   formatDateRangeLabel,
 } from '../../lib/utils/format';
-import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
+import type {
+  Contact,
+  CurrencyCode,
+  EventColorName,
+  EventIconName,
+} from '../../types/domain';
+import {pickRandomEventColor} from '../../theme/tokens';
 import {
   BalanceDetailsContent,
   DashboardBalanceSummaryCard,
   DashboardFundOverviewCard,
   EventDateRangeField,
   EventDateRangeModal,
+  EventColorPicker,
   EventIconPicker,
   MemberRosterList,
   PendingInviteDetailCard,
@@ -35,7 +42,7 @@ import {
   SelectedMembersPreview,
 } from './EventScreenComponents';
 import {useEventStyles} from './EventScreenStyles';
-import {useTheme} from '../../theme/ThemeProvider';
+import {useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {
   buildSettlementInstructions,
   formatSelfDisplayName,
@@ -115,6 +122,8 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>(preferences.preferredCurrency);
   const [icon, setIcon] = useState<EventIconName>('event');
+  // Seeded once per screen so each new event looks distinct without the user picking.
+  const [color, setColor] = useState<EventColorName>(pickRandomEventColor);
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<{
@@ -210,6 +219,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       const event = await createEvent({
         ...parsed.data,
         icon,
+        color,
         members: selectedMembers.map(member =>
           member.kind === 'contact'
             ? {kind: 'contact' as const, displayName: member.label, userId: member.userId}
@@ -243,6 +253,10 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           </View>
           <AppIcon name="chevron" tone="muted" size={16} />
         </Pressable>
+        <View style={styles.eventIconSelectorCopy}>
+          <Text style={styles.eventIconSelectorTitle}>Event colour</Text>
+          <EventColorPicker selectedColor={color} onSelect={setColor} />
+        </View>
         <AppInput
           label="Event name"
           value={name}
@@ -442,6 +456,8 @@ export function EventDashboardScreen({
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
+  const [editColor, setEditColor] = useState<EventColorName>('forest');
+  const eventSwatch = useEventSwatch(editColor);
   const [editStartDate, setEditStartDate] = useState<string>();
   const [editEndDate, setEditEndDate] = useState<string>();
   const [editFieldErrors, setEditFieldErrors] = useState<{
@@ -467,6 +483,7 @@ export function EventDashboardScreen({
     setEditName(event.name);
     setEditDescription(event.description ?? '');
     setEditIcon(event.icon);
+    setEditColor(event.color);
     setEditStartDate(event.startDate);
     setEditEndDate(event.endDate);
   }, [event]);
@@ -577,8 +594,8 @@ export function EventDashboardScreen({
         }>
         <AppCard tone="accent">
           <View style={styles.dashboardHeader}>
-            <View style={styles.dashboardEventIconBadge}>
-              <AppIcon name={event.icon} tone="accent" size={20} />
+            <View style={[styles.dashboardEventIconBadge, {backgroundColor: eventSwatch.soft}]}>
+              <AppIcon name={event.icon} size={20} color={eventSwatch.accent} />
             </View>
             <View style={styles.dashboardStatusRow}>
               <View style={styles.dashboardStatusCopy}>
@@ -756,6 +773,10 @@ export function EventDashboardScreen({
               <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
             </View>
             <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
+            <View style={styles.eventIconSelectorCopy}>
+              <Text style={styles.eventIconSelectorTitle}>Event colour</Text>
+              <EventColorPicker selectedColor={editColor} onSelect={setEditColor} />
+            </View>
             <AppInput
               label="Event name"
               value={editName}
@@ -812,6 +833,7 @@ export function EventDashboardScreen({
                   name: parsed.data.name,
                   description: parsed.data.description,
                   icon: editIcon,
+                  color: editColor,
                   isActive: event.isActive,
                   startDate: parsed.data.startDate,
                   endDate: parsed.data.endDate,

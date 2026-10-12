@@ -18,12 +18,20 @@ import {
   formatDateLabel,
   formatDateRangeLabel,
 } from '../../lib/utils/format';
-import {cardSurface, createTypography, radii, spacing} from '../../theme/tokens';
+import {
+  EVENT_COLOR_NAMES,
+  cardSurface,
+  createTypography,
+  eventColorSchemes,
+  radii,
+  spacing,
+} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
-import {useStyles, useTheme} from '../../theme/ThemeProvider';
+import {useStyles, useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import type {
   CurrencyCode,
   Event,
+  EventColorName,
   EventIconName,
   EventMember,
   MemberBalance,
@@ -95,12 +103,23 @@ export function HomeEventCard({
   const styles = useEventStyles();
   const memberNames = members.map(m => m.displayName);
   const badge = getEventStatusBadge(event);
+  const swatch = useEventSwatch(event.color);
 
   return (
     <Pressable onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <View style={[styles.eventCard, !event.isActive && styles.eventCardInactive]}>
-        <View style={[styles.eventIconBadge, !event.isActive && styles.eventIconBadgeInactive]}>
-          <AppIcon name={event.icon} tone={event.isActive ? 'accent' : 'muted'} size={20} />
+        <View
+          style={[
+            styles.eventIconBadge,
+            event.isActive ? {backgroundColor: swatch.soft} : null,
+            !event.isActive && styles.eventIconBadgeInactive,
+          ]}>
+          <AppIcon
+            name={event.icon}
+            tone={event.isActive ? 'accent' : 'muted'}
+            color={event.isActive ? swatch.accent : undefined}
+            size={20}
+          />
         </View>
         <View style={styles.eventBody}>
           <View style={styles.eventTitleRow}>
@@ -458,6 +477,47 @@ export function EventDateRangeModal({
         />
       </View>
     </AppModal>
+  );
+}
+
+export function EventColorPicker({
+  selectedColor,
+  onSelect,
+}: {
+  selectedColor: EventColorName;
+  onSelect: (color: EventColorName) => void;
+}) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
+  const {scheme} = useTheme();
+  const swatches = eventColorSchemes[scheme];
+
+  return (
+    <View style={componentStyles.colorRow}>
+      {EVENT_COLOR_NAMES.map(name => {
+        const swatch = swatches[name];
+        const selected = selectedColor === name;
+        return (
+          <Pressable
+            key={name}
+            accessibilityRole="button"
+            accessibilityLabel={swatch.label}
+            accessibilityState={{selected}}
+            onPress={() => onSelect(name)}
+            style={({pressed}) => [
+              componentStyles.colorSwatch,
+              {backgroundColor: swatch.soft, borderColor: swatch.accent},
+              selected ? componentStyles.colorSwatchActive : null,
+              pressed ? styles.pressed : null,
+            ]}>
+            <View
+              style={[componentStyles.colorSwatchDot, {backgroundColor: swatch.accent}]}
+            />
+            {selected ? <AppIcon name="check" tone="accent" size={13} /> : null}
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -875,6 +935,28 @@ const createComponentStyles = (c: Colors) => {
   const t = createTypography(c);
 
   return StyleSheet.create({
+    colorRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    colorSwatch: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.pill,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 2,
+    },
+    colorSwatchActive: {
+      borderWidth: 3,
+    },
+    colorSwatchDot: {
+      width: 14,
+      height: 14,
+      borderRadius: radii.pill,
+    },
     datePickerBlock: {
       gap: spacing.md,
     },

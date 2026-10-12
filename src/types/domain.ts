@@ -1,4 +1,7 @@
+import type {EventColorName} from '../theme/tokens';
+
 export type CurrencyCode = 'USD' | 'PHP';
+export type {EventColorName};
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
 export type MemberStatus = 'invited' | 'joined' | 'declined' | 'removed';
 export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked';
@@ -64,6 +67,7 @@ export type Event = {
   description?: string;
   currency: CurrencyCode;
   icon: EventIconName;
+  color: EventColorName;
   isActive: boolean;
   startDate?: string;
   endDate?: string;
@@ -207,6 +211,7 @@ export type CreateEventInput = {
   description?: string;
   currency: CurrencyCode;
   icon?: EventIconName;
+  color?: EventColorName;
   startDate?: string;
   endDate?: string;
   members?: Array<
@@ -227,6 +232,7 @@ export type UpdateEventInput = {
   name: string;
   description?: string;
   icon?: EventIconName;
+  color?: EventColorName;
   isActive?: boolean;
   startDate?: string;
   endDate?: string;

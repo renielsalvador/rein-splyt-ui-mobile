@@ -488,6 +488,7 @@ export class MockBackend implements AppBackend {
       description: input.description?.trim(),
       currency: input.currency,
       icon: input.icon ?? 'event',
+      color: input.color ?? 'forest',
       isActive: true,
       startDate: input.startDate,
       endDate: input.endDate,
@@ -535,6 +536,7 @@ export class MockBackend implements AppBackend {
     event.name = nextName;
     event.description = input.description?.trim();
     event.icon = input.icon ?? event.icon;
+    event.color = input.color ?? event.color;
     event.isActive = input.isActive ?? event.isActive;
     event.startDate = input.startDate;
     event.endDate = input.endDate;

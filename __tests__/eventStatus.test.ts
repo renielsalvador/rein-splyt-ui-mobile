@@ -12,6 +12,7 @@ function buildEvent(overrides: Partial<Event>): Event {
     name: 'Test event',
     currency: 'PHP',
     icon: 'event',
+    color: 'forest',
     isActive: true,
     startDate: '2026-05-01',
     endDate: '2026-05-10',

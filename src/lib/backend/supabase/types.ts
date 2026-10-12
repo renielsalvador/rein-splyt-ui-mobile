@@ -42,6 +42,15 @@ export type EventRow = {
     | 'shopping'
     | 'game'
     | 'study';
+  color:
+    | 'forest'
+    | 'teal'
+    | 'ocean'
+    | 'indigo'
+    | 'plum'
+    | 'clay'
+    | 'ochre'
+    | 'moss';
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;

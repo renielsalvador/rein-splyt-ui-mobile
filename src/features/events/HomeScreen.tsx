@@ -21,7 +21,7 @@ import {AccountSheet} from '../settings/AccountSheet';
 import {NotificationsSheet} from './NotificationsSheet';
 import {cardShadow, radii, spacing, typeScale} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
-import {useStyles, useTheme} from '../../theme/ThemeProvider';
+import {useStyles, useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {formatCurrencyCompact, formatDateRangeLabel} from '../../lib/utils/format';
 import {joinSchema} from '../../lib/validation/forms';
 import type {Event, EventMember, Expense, MemberBalance} from '../../types/domain';
@@ -397,6 +397,7 @@ function OpenTripCard({
 }) {
   const {colors} = useTheme();
   const styles = useStyles(createStyles);
+  const swatch = useEventSwatch(event.color);
 
   const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);  const lastExpense = expenses.reduce<Expense | undefined>(
     (latest, expense) =>
@@ -414,8 +415,8 @@ function OpenTripCard({
         accessibilityLabel={`Open ${event.name}`}
         onPress={onOpen}
         style={({pressed}) => [styles.openHead, pressed ? styles.pressed : null]}>
-        <View style={styles.badge}>
-          <AppIcon name={event.icon} tone="accent" size={22} />
+        <View style={[styles.badge, {backgroundColor: swatch.soft}]}>
+          <AppIcon name={event.icon} size={22} color={swatch.accent} />
         </View>
         <View style={styles.flex}>
           <Text style={styles.tripName} numberOfLines={1}>
@@ -503,6 +504,7 @@ function TripRow({
   onPress: () => void;
 }) {
   const styles = useStyles(createStyles);
+  const swatch = useEventSwatch(event.color);
 
   return (
     <Pressable
@@ -514,8 +516,17 @@ function TripRow({
         dimmed ? styles.tripRowDim : null,
         pressed ? styles.pressed : null,
       ]}>
-      <View style={[styles.badgeSm, dimmed ? styles.badgeDim : null]}>
-        <AppIcon name={event.icon} tone={dimmed ? 'muted' : 'accent'} size={18} />
+      <View
+        style={[
+          styles.badgeSm,
+          dimmed ? styles.badgeDim : {backgroundColor: swatch.soft},
+        ]}>
+        <AppIcon
+          name={event.icon}
+          size={18}
+          tone={dimmed ? 'muted' : undefined}
+          color={dimmed ? undefined : swatch.accent}
+        />
       </View>
       <View style={styles.flex}>
         <Text style={[styles.rowName, dimmed ? styles.dimText : null]} numberOfLines={1}>

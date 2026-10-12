@@ -50,6 +50,7 @@ export function mapEvent(row: EventRow): Event {
     description: row.description ?? undefined,
     currency: row.currency,
     icon: row.icon,
+    color: row.color ?? 'forest',
     isActive: row.is_active,
     startDate: row.start_date ?? undefined,
     endDate: row.end_date ?? undefined,

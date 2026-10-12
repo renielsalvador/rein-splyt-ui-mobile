@@ -48,6 +48,7 @@ export async function createEvent(
     p_icon: input.icon ?? 'event',
     p_start_date: input.startDate ?? null,
     p_end_date: input.endDate ?? null,
+    p_color: input.color ?? 'forest',
   });
 
   assertNoError(error, 'Unable to create the event.');
@@ -88,6 +89,7 @@ export async function updateEvent(
     p_is_active: input.isActive,
     p_start_date: input.startDate ?? null,
     p_end_date: input.endDate ?? null,
+    p_color: input.color ?? null,
   });
 
   assertNoError(error, 'Unable to update the event.');

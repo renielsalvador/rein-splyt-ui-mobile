@@ -134,6 +134,56 @@ export const colorSchemes = {light: lightColors, dark: darkColors} as const;
 
 export type ColorSchemeName = keyof typeof colorSchemes;
 
+// Event accents. Deliberately desaturated mid-tones: they sit beside the forest-green
+// brand on the same card, so a saturated ramp would read as a second brand colour.
+export const EVENT_COLOR_NAMES = [
+  'forest',
+  'teal',
+  'ocean',
+  'indigo',
+  'plum',
+  'clay',
+  'ochre',
+  'moss',
+] as const;
+
+export type EventColorName = (typeof EVENT_COLOR_NAMES)[number];
+
+export type EventSwatch = {accent: string; soft: string; onSoft: string; label: string};
+
+const lightEventColors: Record<EventColorName, EventSwatch> = {
+  forest: {label: 'Forest', accent: '#2F6F57', soft: '#E8F2EC', onSoft: '#1B4838'},
+  teal: {label: 'Teal', accent: '#2A7B82', soft: '#E4F1F2', onSoft: '#1A4F53'},
+  ocean: {label: 'Ocean', accent: '#35689C', soft: '#E7EEF7', onSoft: '#214266'},
+  indigo: {label: 'Indigo', accent: '#5A5AA8', soft: '#ECECF7', onSoft: '#3A3A6E'},
+  plum: {label: 'Plum', accent: '#8A4F7D', soft: '#F5EAF2', onSoft: '#5B3352'},
+  clay: {label: 'Clay', accent: '#B05F45', soft: '#F9EBE6', onSoft: '#743D2C'},
+  ochre: {label: 'Ochre', accent: '#9A7324', soft: '#F6EFDF', onSoft: '#654B16'},
+  moss: {label: 'Moss', accent: '#5F7A3A', soft: '#EDF2E4', onSoft: '#3E5125'},
+};
+
+const darkEventColors: Record<EventColorName, EventSwatch> = {
+  forest: {label: 'Forest', accent: '#6FCFA2', soft: '#1E3A2C', onSoft: '#BFE6D3'},
+  teal: {label: 'Teal', accent: '#6CCBD3', soft: '#173B3E', onSoft: '#B5E5E9'},
+  ocean: {label: 'Ocean', accent: '#7FB0E8', soft: '#1B3147', onSoft: '#C3DBF5'},
+  indigo: {label: 'Indigo', accent: '#9A9AE0', soft: '#272748', onSoft: '#D2D2F2'},
+  plum: {label: 'Plum', accent: '#D08FC2', soft: '#3C2437', onSoft: '#EFD2E7'},
+  clay: {label: 'Clay', accent: '#E2A089', soft: '#3F271E', onSoft: '#F6D8CC'},
+  ochre: {label: 'Ochre', accent: '#DCB65C', soft: '#3A2F15', onSoft: '#F2E2B9'},
+  moss: {label: 'Moss', accent: '#A8C77A', soft: '#2B3619', onSoft: '#DCE8C6'},
+};
+
+export const eventColorSchemes = {
+  light: lightEventColors,
+  dark: darkEventColors,
+} as const;
+
+export const DEFAULT_EVENT_COLOR: EventColorName = 'forest';
+
+export function pickRandomEventColor(): EventColorName {
+  return EVENT_COLOR_NAMES[Math.floor(Math.random() * EVENT_COLOR_NAMES.length)];
+}
+
 export const spacing = {
   xs: 4,
   sm: 8,
