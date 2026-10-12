@@ -10,9 +10,10 @@ Update this file in the same commit as the code.
 
 | Phase | Item | Status | Visual approved | Migration | Notes |
 |-------|------|--------|-----------------|-----------|-------|
-| A1 | Full expense list screen | Needs review | – | none | member-count sub-task reverted, see A3 |
-| A2 | Date picker sticky footer (`AppModal` `footer` prop) | Needs review | – | none | |
-| A3 | Balance diagnostic (₱1,333 vs ₱1,000) | Needs review | n/a | none | findings below — blocks a design decision |
+| A1 | Full expense list screen | Needs review | – | none | committed `7ac9916` |
+| A2 | Date picker sticky footer (`AppModal` `footer` prop) | Needs review | – | none | committed `7ac9916` |
+| A3 | Balance diagnostic (₱1,333 vs ₱1,000) | Done | n/a | none | no code bug — see decision below |
+| A4 | Split visibility (follow-up from A3) | Not started | – | none | new, from the A3 decision |
 | B | Global toasts, never occluded | Not started | – | none | after A2 |
 | C | Event colour coding | Not started | – | TBD | |
 | D | Balances per-person itemisation | Not started | – | none | |
@@ -151,6 +152,42 @@ deriving the distinction from `user_id IS NULL AND NOT EXISTS (pending invite)`.
 change would let us fix, coherently: the member count label, the default participant
 selection on new expenses, and the "Everyone · N" copy.
 
+---
+
+### DECISION (2026-10-12): everyone in the event is included by default
+
+The reporter confirmed that **both placeholder members and genuine pending invitees should
+be included in expense splits by default**. This settles the open question and changes the
+conclusion of A3:
+
+- **Current behaviour is correct, not buggy.** `AddExpenseScreen` seeding participants from
+  `summary.members` is the intended semantics. No change needed.
+- **No member-state model change is needed.** `status = 'invited'` can keep covering both
+  kinds for split purposes. The reverted "N joined · M invited" label stays reverted — the
+  raw `members.length` count is the honest number, because every row is a real participant.
+- **The ₱1,000 vs ₱1,333 discrepancy is therefore not a calculation or defaulting bug.**
+  The expense genuinely was split 4 ways. The tester expected 3. The app did what it was
+  told; it just never made it visible enough to catch.
+
+**Reclassified as a visibility gap, not a correctness bug.** The real failure is that
+nothing in the UI shows how many people an expense was split across, so a wrong participant
+list is invisible until someone reconciles the balances by hand. Tracked as A4 below.
+
+---
+
+### A4 — Split visibility (follow-up from A3)
+
+**Status: Not started.** Scope to confirm before building:
+
+- Show "split N ways" (and ideally the per-head amount) on each expense row — both the
+  dashboard's recent list and the new `ExpenseListScreen`.
+- Show participant names on the expense detail/edit view without having to open the picker.
+- Phase D (per-person balance itemisation) already covers the "why do I owe this?" path and
+  will surface the same information from the other direction — consider building A4 and D
+  together, since both render participant-level expense data.
+
+---
+
 **Diagnostic query for production** (read-only, run against the HK event):
 
 ```sql
@@ -173,13 +210,16 @@ order by x.created_at;
 
 - Payment submission & acceptance — needs a notification channel that does not exist yet.
   To be written into `PRODUCT.md` in Phase H.
-- Retroactive split backfill for late-joining members — superseded by the A3 finding; the
-  member-state model should be fixed first.
+- ~~Retroactive split backfill for late-joining members~~ — dropped. The A3 decision means
+  everyone is included by default, so there is nothing to backfill.
 
 ## Open questions
 
-1. **Should genuine pending invitees be included in expense splits by default?**
-   Placeholders clearly should. Pending invitees are ambiguous. Blocks the member-count
-   label, the default participant selection, and the "Everyone · N" copy.
-2. Should existing `invited` rows with no invite row be migrated to a new `placeholder`
-   status, or should the distinction stay derived at query time?
+1. ~~Should genuine pending invitees be included in expense splits by default?~~
+   **Answered 2026-10-12: yes.** Everyone in the event is a participant by default.
+   See the A3 decision section.
+2. ~~Should `invited` rows with no invite row migrate to a new `placeholder` status?~~
+   **Moot** — no longer needed for splits. Would only matter if we later want to show
+   invite-acceptance state in the roster, which no tester has asked for.
+3. Should A4 (split visibility) be folded into Phase D, given both render participant-level
+   expense data?
