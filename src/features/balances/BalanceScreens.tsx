@@ -127,7 +127,24 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
           const isSelf = balance.memberId === currentMemberId;
 
           return (
-            <View key={balance.memberId} style={[styles.row, index > 0 ? styles.rowDivided : null]}>
+            <Pressable
+              key={balance.memberId}
+              accessibilityRole={isSelf ? undefined : 'button'}
+              accessibilityLabel={
+                isSelf ? undefined : `See what makes up ${balance.displayName}'s balance`
+              }
+              disabled={isSelf}
+              onPress={() =>
+                navigation.navigate('BalanceDetail', {
+                  eventId,
+                  memberId: balance.memberId,
+                })
+              }
+              style={({pressed}) => [
+                styles.row,
+                index > 0 ? styles.rowDivided : null,
+                pressed && !isSelf ? styles.rowPressed : null,
+              ]}>
               <View style={styles.copy}>
                 <Text style={styles.memberName} numberOfLines={1}>
                   {formatSelfDisplayName(balance.displayName, isSelf)}
@@ -146,7 +163,7 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
                   absolute
                 />
               </View>
-            </View>
+            </Pressable>
           );
         })}
       </AppCard>

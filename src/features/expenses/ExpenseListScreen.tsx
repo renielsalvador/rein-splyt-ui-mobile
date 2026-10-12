@@ -11,6 +11,7 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {RecentExpenseListItem} from '../events/EventScreenComponents';
+import {describeExpenseSplit} from '../events/EventScreenShared';
 import {formatCurrency, formatDateLabel} from '../../lib/utils/format';
 import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
@@ -105,6 +106,11 @@ export function ExpenseListScreen({navigation, route}: ScreenProps<'AllExpenses'
                   expense.paymentSource === 'central_fund' ? ' · Central fund' : ''
                 }${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
                 amountLabel={formatCurrency(expense.amount, currency)}
+                splitLabel={describeExpenseSplit(
+                  summary.expenseSplits,
+                  expense.id,
+                  summary.members.length,
+                )}
                 receiptAttached={(expense.receipts?.length ?? 0) > 0}
                 onPress={() =>
                   navigation.navigate('AddExpense', {eventId, expenseId: expense.id})

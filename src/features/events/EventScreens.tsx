@@ -45,6 +45,7 @@ import {useEventStyles} from './EventScreenStyles';
 import {useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {
   buildSettlementInstructions,
+  describeExpenseSplit,
   formatSelfDisplayName,
   isEmailAddress,
   normalizeEmail,
@@ -711,6 +712,11 @@ export function EventDashboardScreen({
                   expense.createdAt,
                 )}${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
                 amountLabel={formatCurrency(expense.amount, event.currency)}
+                splitLabel={describeExpenseSplit(
+                  summary.expenseSplits,
+                  expense.id,
+                  summary.members.length,
+                )}
                 receiptAttached={(expense.receipts?.length ?? 0) > 0}
                 onPress={() =>
                   navigation.navigate('AddExpense', {eventId, expenseId: expense.id})

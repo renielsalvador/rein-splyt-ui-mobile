@@ -15,6 +15,7 @@ import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
 import {ExpenseListScreen} from '../features/expenses/ExpenseListScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
+import {BalanceDetailScreen} from '../features/balances/BalanceDetailScreen';
 import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
 import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
 import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
@@ -37,6 +38,7 @@ export type AppStackParamList = {
   AllExpenses: {eventId: string};
   CentralFund: {eventId: string};
   Balances: {eventId: string};
+  BalanceDetail: {eventId: string; memberId: string};
   Settlement: {eventId: string};
   RecordSettlement: {
     eventId: string;
@@ -207,6 +209,10 @@ function AppNavigator() {
         return <CentralFundScreen navigation={navigation} route={route as Route<'CentralFund'>} />;
       case 'Balances':
         return <BalancesScreen navigation={navigation} route={route as Route<'Balances'>} />;
+      case 'BalanceDetail':
+        return (
+          <BalanceDetailScreen navigation={navigation} route={route as Route<'BalanceDetail'>} />
+        );
       case 'Settlement':
         return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
       case 'RecordSettlement':

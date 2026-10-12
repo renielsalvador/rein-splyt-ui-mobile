@@ -770,16 +770,19 @@ export function RecentExpenseListItem({
   title,
   meta,
   amountLabel,
+  splitLabel,
   receiptAttached = false,
   onPress,
 }: {
   title: string;
   meta: string;
   amountLabel: string;
+  splitLabel?: string;
   receiptAttached?: boolean;
   onPress: () => void;
 }) {
   const styles = useEventStyles();
+  const componentStyles = useStyles(createComponentStyles);
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <View style={styles.expenseRow}>
@@ -791,7 +794,12 @@ export function RecentExpenseListItem({
           <Text style={styles.expenseMeta}>{meta}</Text>
           {receiptAttached ? <Text style={styles.expenseMeta}>Receipt attached</Text> : null}
         </View>
-        <Text style={styles.expenseAmount}>{amountLabel}</Text>
+        <View style={componentStyles.expenseTrailing}>
+          <Text style={styles.expenseAmount}>{amountLabel}</Text>
+          {splitLabel ? (
+            <Text style={styles.expenseMeta}>{splitLabel}</Text>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
@@ -956,6 +964,10 @@ const createComponentStyles = (c: Colors) => {
       width: 14,
       height: 14,
       borderRadius: radii.pill,
+    },
+    expenseTrailing: {
+      alignItems: 'flex-end',
+      gap: 2,
     },
     datePickerBlock: {
       gap: spacing.md,

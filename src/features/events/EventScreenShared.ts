@@ -1,6 +1,7 @@
 import {formatDateLabel} from '../../lib/utils/format';
 import type {
   EventIconName,
+  ExpenseSplit,
   MemberBalance,
   PendingInvite,
   SettlementInstruction,
@@ -52,6 +53,24 @@ export function formatSelfDisplayName(
   isCurrentUser: boolean | undefined,
 ) {
   return isCurrentUser ? `${displayName} (me)` : displayName;
+}
+
+// Everyone in an event is a participant by default, so a split that covers fewer
+// people than the roster is the thing worth surfacing.
+export function describeExpenseSplit(
+  splits: ExpenseSplit[],
+  expenseId: string,
+  memberCount: number,
+) {
+  const participants = splits.filter(split => split.expenseId === expenseId).length;
+
+  if (participants === 0) {
+    return undefined;
+  }
+
+  return participants === memberCount
+    ? `Split ${participants} ways`
+    : `Split ${participants} of ${memberCount}`;
 }
 
 export function normalizeEmail(value: string) {
