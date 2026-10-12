@@ -35,6 +35,7 @@ export function AppScreen({
   grayBody = false,
   hasTabBar = false,
   tabBarBottomInset = 0,
+  onScroll,
 }: React.PropsWithChildren<{
   title?: string;
   subtitle?: string;
@@ -48,6 +49,7 @@ export function AppScreen({
   grayBody?: boolean;
   hasTabBar?: boolean;
   tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
 }>) {
   const {colors} = useTheme();
   const styles = useStyles(createStyles);
@@ -108,6 +110,12 @@ export function AppScreen({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           automaticallyAdjustKeyboardInsets
+          scrollEventThrottle={16}
+          onScroll={
+            onScroll
+              ? event => onScroll(event.nativeEvent.contentOffset.y)
+              : undefined
+          }
           showsVerticalScrollIndicator={false}>
           {hasTitleRow ? (
             <View style={styles.titleRow}>

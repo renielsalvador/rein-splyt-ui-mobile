@@ -21,7 +21,12 @@ export function ActivityScreen({
   navigation,
   hasTabBar,
   tabBarBottomInset,
-}: ScreenProps<'Activity'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
+  onScroll,
+}: ScreenProps<'Activity'> & {
+  hasTabBar?: boolean;
+  tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
+}) {
   const {currentUser, pendingInvites, events, summaries, balances, hydrateEvent} = useApp();
   const styles = useStyles(createStyles);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -47,6 +52,7 @@ export function ActivityScreen({
         title="Activity"
         subtitle="Recent updates across all your trips"
         hasTabBar={hasTabBar}
+        onScroll={onScroll}
         tabBarBottomInset={tabBarBottomInset}
         headerLeft={
           <View style={styles.brandRow}>

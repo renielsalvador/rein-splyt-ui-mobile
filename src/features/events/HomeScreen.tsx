@@ -70,7 +70,12 @@ export function HomeScreen({
   navigation,
   hasTabBar,
   tabBarBottomInset,
-}: ScreenProps<'Home'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
+  onScroll,
+}: ScreenProps<'Home'> & {
+  hasTabBar?: boolean;
+  tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
+}) {
   const {
     currentUser,
     events,
@@ -184,6 +189,7 @@ export function HomeScreen({
       <AppScreen
         variant="main"
         hasTabBar={hasTabBar}
+        onScroll={onScroll}
         tabBarBottomInset={tabBarBottomInset}
         title="Your trips"
         titleActions={[
