@@ -19,7 +19,7 @@ import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName, formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'>) {
   const styles = useStyles(createStyles);
@@ -158,9 +158,10 @@ export function CentralFundScreen({navigation, route}: ScreenProps<'CentralFund'
               <View style={{gap: 2}}>
                 <Text style={styles.memberName}>
                   {member
-                    ? formatSelfDisplayName(
+                    ? formatActorName(
                         member.displayName,
                         member.userId === currentUser?.id,
+                        'standalone',
                       )
                     : 'Unknown member'}
                 </Text>

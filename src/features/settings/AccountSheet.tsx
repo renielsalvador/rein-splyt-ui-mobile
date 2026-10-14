@@ -27,12 +27,16 @@ export function AccountSheet({
   onOpenProfile,
   onOpenHelp,
   onOpenNotifications,
+  onOpenPaymentOptions,
+  onOpenDeleteAccount,
 }: {
   visible: boolean;
   onClose: () => void;
   onOpenProfile: () => void;
   onOpenHelp?: () => void;
   onOpenNotifications?: () => void;
+  onOpenPaymentOptions?: () => void;
+  onOpenDeleteAccount?: () => void;
 }) {
   const {currentUser, signOut, preferences, notificationPreferences, updatePreferences} =
     useApp();
@@ -109,6 +113,20 @@ export function AccountSheet({
           />
           <SheetRow
             divided
+            icon="settlement"
+            title="Payment options"
+            chevron
+            onPress={
+              onOpenPaymentOptions
+                ? () => {
+                    onClose();
+                    onOpenPaymentOptions();
+                  }
+                : undefined
+            }
+          />
+          <SheetRow
+            divided
             icon="sun"
             title="Appearance"
             value={preferenceLabel}
@@ -140,6 +158,21 @@ export function AccountSheet({
               onClose();
               signOut().catch(() => undefined);
             }}
+          />
+          <SheetRow
+            divided
+            icon="delete"
+            title="Delete account"
+            destructive
+            chevron
+            onPress={
+              onOpenDeleteAccount
+                ? () => {
+                    onClose();
+                    onOpenDeleteAccount();
+                  }
+                : undefined
+            }
           />
         </View>
       </AppModal>

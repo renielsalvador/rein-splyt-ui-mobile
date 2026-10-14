@@ -42,6 +42,21 @@ export type EventRow = {
     | 'shopping'
     | 'game'
     | 'study';
+  color:
+    | 'forest'
+    | 'moss'
+    | 'sage'
+    | 'teal'
+    | 'sky'
+    | 'ocean'
+    | 'indigo'
+    | 'violet'
+    | 'plum'
+    | 'rose'
+    | 'clay'
+    | 'amber'
+    | 'ochre'
+    | 'stone';
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -105,6 +120,17 @@ export type ExpenseRow = {
   created_by: string;
   created_at: string;
   updated_at: string;
+  last_edited_by: string | null;
+  last_edited_at: string | null;
+};
+
+export type PaymentMethodRow = {
+  id: string;
+  user_id: string;
+  label: string;
+  qr_path: string;
+  is_primary: boolean;
+  created_at: string;
 };
 
 export type CentralFundRow = {
@@ -138,6 +164,7 @@ export type BalanceRow = {
   owed: number | string;
   settled_out: number | string;
   settled_in: number | string;
+  fund_stake: number | string;
   net: number | string;
 };
 

@@ -10,7 +10,6 @@ import {
   AppInput,
   AppModal,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   MoneyValue,
@@ -25,7 +24,7 @@ import type {Colors} from '../../theme/tokens';
 import {useStyles, useTheme} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
 import type {CurrencyCode, ExpenseReceipt, ExpenseReceiptAsset} from '../../types/domain';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName, formatSelfDisplayName} from '../events/EventScreenShared';
 
 const MAX_RECEIPTS = 3;
 
@@ -37,7 +36,8 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const styles = useStyles(createStyles);
   const {colors: c} = useTheme();
   const {eventId, expenseId} = route.params;
-  const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error} = useApp();
+  const {hydrateEvent, summaries, addExpense, updateExpense, currentUser, error, showToast} =
+    useApp();
   const summary = summaries[eventId];
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -60,7 +60,6 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   const [payerModalVisible, setPayerModalVisible] = useState(false);
   const [splitModalVisible, setSplitModalVisible] = useState(false);
   const [discardVisible, setDiscardVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const existingExpense = useMemo(
@@ -146,14 +145,6 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
     note.trim().length > 0 ||
     receipts.length > 0;
 
-  useEffect(() => {
-    if (!toastMessage) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToastMessage(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toastMessage]);
-
   function requestClose() {
     if (isDirty && !submitting) {
       setDiscardVisible(true);
@@ -231,7 +222,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   if (!summary || !payerId) {
     return (
       <AppScreen
-        title={expenseId ? 'Edit expense' : 'Add expense'}
+        title={expenseId ? 'Edit expense' : 'Track expense'}
         subtitle="Loading event details."
         variant="detail"
         leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
@@ -309,7 +300,7 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
         });
       }
 
-      setToastMessage(
+      showToast(
         expenseId
           ? 'Expense updated'
           : `${formatCurrency(parsed.data.amount, currency)} added`,
@@ -321,20 +312,16 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
   }
   return (
     <AppScreen
-      title={expenseId ? 'Edit expense' : 'Add expense'}
+      title={expenseId ? 'Edit expense' : 'Track expense'}
       subtitle={`${summary.event.name} · ${summary.event.currency}`}
       variant="detail"
       leading={<ScreenBackButton onPress={requestClose} />}
       footerOverlay={
-        toastMessage ? (
-          <AppToast message={toastMessage} />
-        ) : (
-          <AppButton
-            label={expenseId ? 'Update expense' : 'Save expense'}
-            loading={submitting}
-            onPress={() => handleSubmit().catch(() => undefined)}
-          />
-        )
+        <AppButton
+          label={expenseId ? 'Update expense' : 'Save expense'}
+          loading={submitting}
+          onPress={() => handleSubmit().catch(() => undefined)}
+        />
       }>
       <AppCard>
         <Text style={styles.amountLabel}>Amount</Text>
@@ -431,7 +418,11 @@ export function AddExpenseScreen({navigation, route}: ScreenProps<'AddExpense'>)
                   <Text style={styles.payerDropdownDetail}>Paid by</Text>
                   <Text style={styles.payerDropdownLabel} numberOfLines={1}>
                     {payer
-                      ? formatSelfDisplayName(payer.displayName, payer.userId === currentUser?.id)
+                      ? formatActorName(
+                          payer.displayName,
+                          payer.userId === currentUser?.id,
+                          'standalone',
+                        )
                       : 'Select who paid'}
                   </Text>
                 </View>

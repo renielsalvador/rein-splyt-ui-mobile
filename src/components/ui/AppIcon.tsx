@@ -67,14 +67,17 @@ export function AppIcon({
   name,
   size = 18,
   tone = 'default',
+  color: colorOverride,
 }: {
   name: AppIconName;
   size?: number;
   tone?: 'default' | 'muted' | 'inverted' | 'accent' | 'danger' | 'white';
+  color?: string;
 }) {
   const {colors: c} = useTheme();
   const color =
-    tone === 'white'
+    colorOverride ??
+    (tone === 'white'
       ? c.onBrand
       : tone === 'inverted'
         ? c.surface
@@ -84,7 +87,7 @@ export function AppIcon({
             ? c.brand
             : tone === 'danger'
               ? c.danger
-              : c.ink;
+              : c.ink);
 
   return <MaterialCommunityIcons name={iconMap[name]} size={size} color={color} />;
 }

@@ -8,11 +8,13 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import {cardSurface} from '../../theme/tokens';
+import {cardSurface, spacing} from '../../theme/tokens';
 import {useTheme} from '../../theme/ThemeProvider';
 import {IconButton} from './AppIcon';
+import {ToastHost} from './ToastHost';
 import {useAppStyles} from './styles';
 
 export function AppModal({
@@ -21,6 +23,7 @@ export function AppModal({
   subtitle,
   onClose,
   scrollable = false,
+  footer,
   children,
 }: React.PropsWithChildren<{
   visible: boolean;
@@ -28,9 +31,11 @@ export function AppModal({
   subtitle?: string;
   onClose: () => void;
   scrollable?: boolean;
+  footer?: React.ReactNode;
 }>) {
   const {colors: c} = useTheme();
   const styles = useAppStyles();
+  const {height: windowHeight} = useWindowDimensions();
   const [rendered, setRendered] = useState(visible);
   const backdropOpacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const sheetTranslateY = useRef(new Animated.Value(visible ? 0 : 28)).current;
@@ -108,7 +113,8 @@ export function AppModal({
             },
           ]}>
           <View style={styles.modalHandle} />
-          <View style={[cardSurface(c), styles.modalCard]}>
+          <View
+            style={[cardSurface(c), styles.modalCard, {maxHeight: windowHeight * 0.88}]}>
             <View style={styles.modalHeader}>
               <View style={styles.modalCopy}>
                 <Text style={styles.modalTitle}>{title}</Text>
@@ -134,8 +140,10 @@ export function AppModal({
             ) : (
               <View style={styles.modalBody}>{children}</View>
             )}
+            {footer ? <View style={styles.modalFooter}>{footer}</View> : null}
           </View>
         </Animated.View>
+        <ToastHost bottomInset={spacing.xl} />
       </KeyboardAvoidingView>
     </Modal>
   );

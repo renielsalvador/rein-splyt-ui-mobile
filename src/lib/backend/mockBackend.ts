@@ -14,6 +14,9 @@ import type {
   CreateSettlementInput,
   Event,
   EventMember,
+  MemberRole,
+  PaymentMethod,
+  PaymentMethodAsset,
   EventSummary,
   Expense,
   ExpenseSplit,
@@ -47,6 +50,7 @@ type PersistedState = {
   centralFunds: CentralFund[];
   contributions: CentralFundContribution[];
   settlements: Settlement[];
+  paymentMethods: PaymentMethod[];
   userPreferences: Record<string, UserPreferences>;
   notificationPreferences: Record<string, NotificationPreferences>;
   deviceTokens: Array<{userId: string; token: string; platform: 'ios' | 'android'}>;
@@ -75,6 +79,7 @@ const defaultState: PersistedState = {
   centralFunds: [],
   contributions: [],
   settlements: [],
+  paymentMethods: [],
   userPreferences: {},
   notificationPreferences: {},
   deviceTokens: [],
@@ -245,6 +250,71 @@ export class MockBackend implements AppBackend {
   }
 
   async signOut() {
+    this.state.sessionUserId = undefined;
+  }
+
+  // Mirrors public.delete_own_account: solo events go, shared events keep an
+  // owner and retain an anonymised membership so other balances stay correct.
+  async deleteAccount() {
+    const userId = this.state.sessionUserId;
+
+    if (!userId) {
+      throw new Error('You must be signed in to delete your account.');
+    }
+
+    const memberships = this.state.eventMembers.filter(item => item.userId === userId);
+
+    for (const membership of memberships.filter(item => item.status === 'joined')) {
+      const others = this.state.eventMembers.filter(
+        item =>
+          item.eventId === membership.eventId &&
+          item.status === 'joined' &&
+          item.id !== membership.id,
+      );
+
+      if (others.length === 0) {
+        await this.deleteEvent(userId, membership.eventId);
+        continue;
+      }
+
+      if (membership.role === 'owner' && !others.some(item => item.role === 'owner')) {
+        const successor =
+          others.find(item => item.role === 'admin' && item.userId) ??
+          others.find(item => item.userId);
+
+        if (successor) {
+          successor.role = 'owner';
+        }
+      }
+
+      membership.userId = undefined;
+      membership.displayName = 'Deleted user';
+      membership.role = 'member';
+      membership.status = 'removed';
+    }
+
+    const retainedMemberIds = new Set(
+      this.state.eventMembers
+        .filter(item => item.displayName === 'Deleted user')
+        .map(item => item.id),
+    );
+    this.state.eventMembers = this.state.eventMembers.filter(
+      item => item.userId !== userId || retainedMemberIds.has(item.id),
+    );
+
+    const user = this.state.users.find(item => item.id === userId);
+    this.state.invites = this.state.invites.filter(
+      item => !user || item.invitedEmail?.toLowerCase() !== user.email.toLowerCase(),
+    );
+
+    this.state.users = this.state.users.filter(item => item.id !== userId);
+    this.state.credentials = this.state.credentials.filter(item => item.userId !== userId);
+    this.state.contacts = this.state.contacts.filter(
+      item => item.ownerUserId !== userId && item.userId !== userId,
+    );
+    this.state.deviceTokens = this.state.deviceTokens.filter(item => item.userId !== userId);
+    delete this.state.userPreferences[userId];
+    delete this.state.notificationPreferences[userId];
     this.state.sessionUserId = undefined;
   }
 
@@ -423,6 +493,7 @@ export class MockBackend implements AppBackend {
       description: input.description?.trim(),
       currency: input.currency,
       icon: input.icon ?? 'event',
+      color: input.color ?? 'forest',
       isActive: true,
       startDate: input.startDate,
       endDate: input.endDate,
@@ -470,6 +541,7 @@ export class MockBackend implements AppBackend {
     event.name = nextName;
     event.description = input.description?.trim();
     event.icon = input.icon ?? event.icon;
+    event.color = input.color ?? event.color;
     event.isActive = input.isActive ?? event.isActive;
     event.startDate = input.startDate;
     event.endDate = input.endDate;
@@ -589,6 +661,74 @@ export class MockBackend implements AppBackend {
     };
     this.state.eventMembers.push(member);
     return member;
+  }
+
+  async setMemberRole(eventId: string, memberId: string, role: MemberRole) {
+    const member = this.state.eventMembers.find(
+      item => item.id === memberId && item.eventId === eventId,
+    );
+
+    if (!member) {
+      throw new Error('Member not found.');
+    }
+
+    if (member.role === 'owner' && role !== 'owner') {
+      const owners = this.state.eventMembers.filter(
+        item => item.eventId === eventId && item.role === 'owner' && item.status === 'joined',
+      );
+      if (owners.length <= 1) {
+        throw new Error('Assign another owner before changing this one.');
+      }
+    }
+
+    member.role = role;
+    return member;
+  }
+
+  async listPaymentMethods(userId: string) {
+    return this.state.paymentMethods
+      .filter(method => method.userId === userId)
+      .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary));
+  }
+
+  async addPaymentMethod(userId: string, label: string, _asset: PaymentMethodAsset) {
+    const existing = this.state.paymentMethods.filter(method => method.userId === userId);
+    const method: PaymentMethod = {
+      id: createId('payment_method'),
+      userId,
+      label: label.trim(),
+      qrPath: `${userId}/${Date.now()}-qr.jpg`,
+      isPrimary: existing.length === 0,
+      createdAt: new Date().toISOString(),
+    };
+    this.state.paymentMethods.push(method);
+    return method;
+  }
+
+  async setPrimaryPaymentMethod(paymentMethodId: string) {
+    const method = this.state.paymentMethods.find(item => item.id === paymentMethodId);
+
+    if (!method) {
+      throw new Error('Payment method not found.');
+    }
+
+    for (const item of this.state.paymentMethods) {
+      if (item.userId === method.userId) {
+        item.isPrimary = item.id === paymentMethodId;
+      }
+    }
+
+    return method;
+  }
+
+  async deletePaymentMethod(paymentMethodId: string) {
+    this.state.paymentMethods = this.state.paymentMethods.filter(
+      method => method.id !== paymentMethodId,
+    );
+  }
+
+  async getPaymentMethodUrl(qrPath: string) {
+    return `mock://${qrPath}`;
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {
@@ -754,6 +894,7 @@ export class MockBackend implements AppBackend {
         owed: 0,
         settledOut: 0,
         settledIn: 0,
+        fundStake: 0,
         net: 0,
       });
     });
@@ -799,11 +940,36 @@ export class MockBackend implements AppBackend {
       }
     });
 
+    const contributed = summary.contributions.reduce(
+      (total, contribution) => total + contribution.amount,
+      0,
+    );
+    const fundSpent = summary.expenses
+      .filter(expense => expense.paymentSource === 'central_fund')
+      .reduce((total, expense) => total + expense.amount, 0);
+    const unspent = Math.max(contributed - fundSpent, 0);
+
+    if (contributed > 0) {
+      summary.contributions.forEach(contribution => {
+        const balance = balances.get(contribution.memberId);
+
+        if (balance) {
+          balance.fundStake = roundCurrency(
+            balance.fundStake + (contribution.amount * unspent) / contributed,
+          );
+        }
+      });
+    }
+
     return Array.from(balances.values())
       .map(balance => ({
         ...balance,
         net: roundCurrency(
-          balance.paid - balance.owed + balance.settledOut - balance.settledIn,
+          balance.paid -
+            balance.owed +
+            balance.settledOut -
+            balance.settledIn -
+            balance.fundStake,
         ),
       }))
       .sort((left, right) => right.net - left.net);

@@ -9,7 +9,6 @@ import {
   AppInput,
   AppModal,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   ScreenBackButton,
@@ -22,25 +21,34 @@ import {
   formatDateLabel,
   formatDateRangeLabel,
 } from '../../lib/utils/format';
-import type {Contact, CurrencyCode, EventIconName} from '../../types/domain';
+import type {
+  Contact,
+  CurrencyCode,
+  EventColorName,
+  EventIconName,
+} from '../../types/domain';
+import {pickRandomEventColor} from '../../theme/tokens';
 import {
   BalanceDetailsContent,
   DashboardBalanceSummaryCard,
   DashboardFundOverviewCard,
   EventDateRangeField,
-  EventDateRangePicker,
-  EventIconPicker,
+  EventDateRangeModal,
+  EventAppearancePicker,
   MemberRosterList,
   PendingInviteDetailCard,
   RecentExpenseListItem,
   SelectedMembersPreview,
 } from './EventScreenComponents';
 import {useEventStyles} from './EventScreenStyles';
-import {useTheme} from '../../theme/ThemeProvider';
+import {useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {
   buildSettlementInstructions,
+  describeExpenseSplit,
+  formatActorName,
   formatSelfDisplayName,
   isEmailAddress,
+  type MemberRosterRow,
   normalizeEmail,
   type SelectedMemberDraft,
 } from './EventScreenShared';
@@ -111,11 +119,14 @@ export function NotificationDetailScreen({
 
 export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
   const styles = useEventStyles();
-  const {contacts, createEvent, currentUser, error, preferences} = useApp();
+  const {contacts, createEvent, currentUser, error, preferences, showToast} = useApp();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>(preferences.preferredCurrency);
   const [icon, setIcon] = useState<EventIconName>('event');
+  // Seeded once per screen so each new event looks distinct without the user picking.
+  const [color, setColor] = useState<EventColorName>(pickRandomEventColor);
+  const swatch = useEventSwatch(color);
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<{
@@ -211,6 +222,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
       const event = await createEvent({
         ...parsed.data,
         icon,
+        color,
         members: selectedMembers.map(member =>
           member.kind === 'contact'
             ? {kind: 'contact' as const, displayName: member.label, userId: member.userId}
@@ -218,6 +230,7 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
         ),
       });
       navigation.replace('EventDashboard', {eventId: event.id});
+      showToast(`${event.name} created`);
     } finally {
       setCreating(false);
     }
@@ -234,11 +247,11 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
           accessibilityRole="button"
           onPress={() => setIconModalVisible(true)}
           style={({pressed}) => [styles.eventIconSelector, pressed && styles.pressed]}>
-          <View style={styles.eventIconSelectorBadge}>
-            <AppIcon name={icon} tone="accent" size={28} />
+          <View style={[styles.eventIconSelectorBadge, {backgroundColor: swatch.soft}]}>
+            <AppIcon name={icon} color={swatch.accent} size={28} />
           </View>
           <View style={styles.eventIconSelectorCopy}>
-            <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+            <Text style={styles.eventIconSelectorTitle}>Event appearance</Text>
             <Text style={styles.eventMeta}>Tap to change</Text>
           </View>
           <AppIcon name="chevron" tone="muted" size={16} />
@@ -317,41 +330,39 @@ export function CreateEventScreen({navigation}: ScreenProps<'CreateEvent'>) {
 
       <AppModal
         visible={iconModalVisible}
-        title="Choose an event icon"
-        subtitle="Pick a visual marker for this event."
+        title="Choose a colour and icon"
+        subtitle="Pick a colour first, then a visual marker for this event."
         scrollable
         onClose={() => setIconModalVisible(false)}>
-        <EventIconPicker
+        <EventAppearancePicker
+          selectedColor={color}
           selectedIcon={icon}
-          onSelect={nextIcon => {
+          onSelectColor={setColor}
+          onSelectIcon={nextIcon => {
             setIcon(nextIcon);
             setIconModalVisible(false);
           }}
         />
       </AppModal>
 
-      <AppModal
+      <EventDateRangeModal
         visible={dateModalVisible}
         title="Select event dates"
         subtitle="Choose a range or clear dates to keep this share ongoing."
-        scrollable
-        onClose={() => setDateModalVisible(false)}>
-        <EventDateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChange={next => {
-            setStartDate(next.startDate);
-            setEndDate(next.endDate);
-            setFieldErrors(current => ({...current, dates: undefined}));
-          }}
-          onClear={() => {
-            setStartDate(undefined);
-            setEndDate(undefined);
-            setFieldErrors(current => ({...current, dates: undefined}));
-          }}
-          onClose={() => setDateModalVisible(false)}
-        />
-      </AppModal>
+        startDate={startDate}
+        endDate={endDate}
+        onChange={next => {
+          setStartDate(next.startDate);
+          setEndDate(next.endDate);
+          setFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClear={() => {
+          setStartDate(undefined);
+          setEndDate(undefined);
+          setFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClose={() => setDateModalVisible(false)}
+      />
 
       <AppModal
         visible={memberModalVisible}
@@ -430,13 +441,24 @@ export function EventDashboardScreen({
   const styles = useEventStyles();
   const {colors} = useTheme();
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, balances, currentUser, updateEvent, deleteEvent, error} =
+  const {
+    hydrateEvent,
+    summaries,
+    balances,
+    currentUser,
+    updateEvent,
+    deleteEvent,
+    error,
+    showToast,
+  } =
     useApp();
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
   const [editModalStep, setEditModalStep] = useState<'details' | 'dates' | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIcon, setEditIcon] = useState<EventIconName>('event');
+  const [editColor, setEditColor] = useState<EventColorName>('forest');
+  const eventSwatch = useEventSwatch(editColor);
   const [editStartDate, setEditStartDate] = useState<string>();
   const [editEndDate, setEditEndDate] = useState<string>();
   const [editFieldErrors, setEditFieldErrors] = useState<{
@@ -462,6 +484,7 @@ export function EventDashboardScreen({
     setEditName(event.name);
     setEditDescription(event.description ?? '');
     setEditIcon(event.icon);
+    setEditColor(event.color);
     setEditStartDate(event.startDate);
     setEditEndDate(event.endDate);
   }, [event]);
@@ -572,8 +595,8 @@ export function EventDashboardScreen({
         }>
         <AppCard tone="accent">
           <View style={styles.dashboardHeader}>
-            <View style={styles.dashboardEventIconBadge}>
-              <AppIcon name={event.icon} tone="accent" size={20} />
+            <View style={[styles.dashboardEventIconBadge, {backgroundColor: eventSwatch.soft}]}>
+              <AppIcon name={event.icon} size={20} color={eventSwatch.accent} />
             </View>
             <View style={styles.dashboardStatusRow}>
               <View style={styles.dashboardStatusCopy}>
@@ -660,7 +683,15 @@ export function EventDashboardScreen({
           </Pressable>
         </View>
 
-        <SectionHeading title="Recent expenses" detail={`${summary.expenses.length} total`} />
+        <SectionHeading
+          title="Recent expenses"
+          detail={`${summary.expenses.length} total`}
+          onDetailPress={
+            summary.expenses.length > 0
+              ? () => navigation.navigate('AllExpenses', {eventId})
+              : undefined
+          }
+        />
         {summary.expenses.length === 0 ? (
           <EmptyState
             title="No expenses yet"
@@ -677,10 +708,23 @@ export function EventDashboardScreen({
               <RecentExpenseListItem
                 key={expense.id}
                 title={expense.title}
-                meta={`${payer?.displayName || 'Unknown payer'} · ${formatDateLabel(
-                  expense.createdAt,
-                )}${expense.updatedAt !== expense.createdAt ? ' · Edited' : ''}`}
+                meta={`${
+                  payer
+                    ? formatActorName(
+                        payer.displayName,
+                        payer.userId === currentUser?.id,
+                        'standalone',
+                      )
+                    : 'Unknown payer'
+                } · ${formatDateLabel(expense.createdAt)}${
+                  expense.updatedAt !== expense.createdAt ? ' · Edited' : ''
+                }`}
                 amountLabel={formatCurrency(expense.amount, event.currency)}
+                splitLabel={describeExpenseSplit(
+                  summary.expenseSplits,
+                  expense.id,
+                  summary.members.length,
+                )}
                 receiptAttached={(expense.receipts?.length ?? 0) > 0}
                 onPress={() =>
                   navigation.navigate('AddExpense', {eventId, expenseId: expense.id})
@@ -688,6 +732,14 @@ export function EventDashboardScreen({
               />
             );
           })}
+
+        {summary.expenses.length > 4 ? (
+          <AppButton
+            label={`View all ${summary.expenses.length} expenses`}
+            variant="tint"
+            onPress={() => navigation.navigate('AllExpenses', {eventId})}
+          />
+        ) : null}
 
         <Pressable
           accessibilityRole="button"
@@ -699,48 +751,48 @@ export function EventDashboardScreen({
         <InlineError message={error ?? undefined} />
       </AppScreen>
 
+      <EventDateRangeModal
+        visible={editModalStep === 'dates'}
+        title="Update event dates"
+        subtitle="Set or clear dates for this event."
+        startDate={editStartDate}
+        endDate={editEndDate}
+        onChange={next => {
+          setEditStartDate(next.startDate);
+          setEditEndDate(next.endDate);
+          setEditFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClear={() => {
+          setEditStartDate(undefined);
+          setEditEndDate(undefined);
+          setEditFieldErrors(current => ({...current, dates: undefined}));
+        }}
+        onClose={() => setEditModalStep('details')}
+      />
+
       <AppModal
-        visible={editModalStep !== null}
-        title={editModalStep === 'dates' ? 'Update event dates' : 'Edit event'}
-        subtitle={
-          editModalStep === 'dates'
-            ? 'Set or clear dates for this event.'
-            : 'Update the name, description, or icon.'
-        }
+        visible={editModalStep === 'details'}
+        title="Edit event"
+        subtitle="Update the name, description, or icon."
         scrollable
         onClose={() => {
-          if (editModalStep === 'dates') {
-            setEditModalStep('details');
-            return;
-          }
           setEditModalStep(null);
           setEditFieldErrors({});
         }}>
-        {editModalStep === 'dates' ? (
-          <EventDateRangePicker
-            startDate={editStartDate}
-            endDate={editEndDate}
-            onChange={next => {
-              setEditStartDate(next.startDate);
-              setEditEndDate(next.endDate);
-              setEditFieldErrors(current => ({...current, dates: undefined}));
-            }}
-            onClear={() => {
-              setEditStartDate(undefined);
-              setEditEndDate(undefined);
-              setEditFieldErrors(current => ({...current, dates: undefined}));
-            }}
-            onClose={() => setEditModalStep('details')}
-          />
-        ) : (
-          <>
-            <View style={styles.eventIconSelector}>
-              <View style={styles.eventIconSelectorBadge}>
-                <AppIcon name={editIcon} tone="accent" size={28} />
-              </View>
-              <Text style={styles.eventIconSelectorTitle}>Event icon</Text>
+        <>
+          <View style={styles.eventIconSelector}>
+            <View
+              style={[styles.eventIconSelectorBadge, {backgroundColor: eventSwatch.soft}]}>
+              <AppIcon name={editIcon} color={eventSwatch.accent} size={28} />
             </View>
-            <EventIconPicker selectedIcon={editIcon} onSelect={setEditIcon} />
+            <Text style={styles.eventIconSelectorTitle}>Event appearance</Text>
+          </View>
+          <EventAppearancePicker
+            selectedColor={editColor}
+            selectedIcon={editIcon}
+            onSelectColor={setEditColor}
+            onSelectIcon={setEditIcon}
+          />
             <AppInput
               label="Event name"
               value={editName}
@@ -797,18 +849,21 @@ export function EventDashboardScreen({
                   name: parsed.data.name,
                   description: parsed.data.description,
                   icon: editIcon,
+                  color: editColor,
                   isActive: event.isActive,
                   startDate: parsed.data.startDate,
                   endDate: parsed.data.endDate,
                 })
-                  .then(() => setEditModalStep(null))
+                  .then(() => {
+                    setEditModalStep(null);
+                    showToast('Event updated');
+                  })
                   .catch(() => undefined)
                   .finally(() => setSavingDetails(false));
               }}
             />
             <InlineError message={error ?? undefined} />
-          </>
-        )}
+        </>
       </AppModal>
 
       <AppModal
@@ -840,6 +895,7 @@ export function EventDashboardScreen({
                     setDeleteConfirmVisible(false);
                     setEditModalStep(null);
                     navigation.replace('Home');
+                    showToast(`${event.name} deleted`, 'info');
                   })
                   .catch(() => undefined)
                   .finally(() => setDeleting(false));
@@ -879,14 +935,15 @@ export function EventDashboardScreen({
 export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
   const styles = useEventStyles();
   const {eventId} = route.params;
-  const {summaries, addManualMember, createInvite, currentUser, error} = useApp();
+  const {summaries, addManualMember, createInvite, currentUser, error, showToast, setMemberRole} =
+    useApp();
   const summary = summaries[eventId];
   const [displayName, setDisplayName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [memberFieldError, setMemberFieldError] = useState<string>();
   const [inviteFieldError, setInviteFieldError] = useState<string>();
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [roleTarget, setRoleTarget] = useState<MemberRosterRow | null>(null);
   const [addingMember, setAddingMember] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(false);
 
@@ -917,16 +974,14 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
           ? `Joined ${formatDateLabel(member.joinedAt)}`
           : `Added ${formatDateLabel(member.joinedAt)}`,
       statusLabel: member.status === 'joined' ? ('Joined' as const) : ('Pending' as const),
+      role: member.role,
+      roleLabel: member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : undefined,
     }));
   }, [currentUser, summary]);
 
-  useEffect(() => {
-    if (!toastMessage) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToastMessage(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toastMessage]);
+  const isOwner = summary?.members.some(
+    member => member.userId === currentUser?.id && member.role === 'owner',
+  );
 
   if (!summary) {
     return (
@@ -948,8 +1003,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       variant="detail"
       title="Members"
       subtitle="Registered and placeholder members in one shared roster."
-      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}
-      footerOverlay={toastMessage ? <AppToast message={toastMessage} /> : null}>
+      leading={<ScreenBackButton onPress={() => navigation.goBack()} />}>
       <AppCard tone="accent">
         <View style={styles.memberCodeHeader}>
           <SectionHeading title="Event code" />
@@ -960,7 +1014,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               onPress={() => {
                 setGeneratingCode(true);
                 createInvite(eventId)
-                  .then(() => setToastMessage('New event code generated'))
+                  .then(() => showToast('New event code generated'))
                   .catch(() => undefined)
                   .finally(() => setGeneratingCode(false));
               }}
@@ -979,7 +1033,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
             accessibilityRole="button"
             onPress={() => {
               Clipboard.setString(latestInvite.inviteCode);
-              setToastMessage('Event code copied');
+              showToast('Event code copied');
             }}
             style={({pressed}) => [styles.inviteCodeDisplay, pressed && styles.pressed]}>
             <Text style={styles.inviteCodeLabel}>Event code</Text>
@@ -998,7 +1052,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
             onPress={() => {
               setGeneratingCode(true);
               createInvite(eventId)
-                .then(() => setToastMessage('Event code generated'))
+                .then(() => showToast('Event code generated'))
                 .catch(() => undefined)
                 .finally(() => setGeneratingCode(false));
             }}
@@ -1070,7 +1124,7 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
               .then(() => {
                 setInviteEmail('');
                 setInviteFieldError(undefined);
-                setToastMessage('Invite sent');
+                showToast('Invite sent');
               })
               .catch(() => undefined)
               .finally(() => setSendingInvite(false));
@@ -1079,8 +1133,60 @@ export function MembersScreen({navigation, route}: ScreenProps<'Members'>) {
       </AppCard>
 
       <SectionHeading title="Member list" detail={`${memberRows.length} total`} />
-      <MemberRosterList members={memberRows} />
+      <MemberRosterList
+        members={memberRows}
+        canManageRoles={isOwner}
+        onPressMember={member => {
+          if (member.role === 'owner') {
+            showToast('Transfer ownership before changing this role.', 'info');
+            return;
+          }
+          setRoleTarget(member);
+        }}
+      />
       <InlineError message={error ?? undefined} />
+
+      <AppModal
+        visible={roleTarget !== null}
+        title={roleTarget?.displayName ?? 'Member'}
+        subtitle="Admins can edit the event, manage members and record expenses."
+        onClose={() => setRoleTarget(null)}
+        scrollable>
+        {(['admin', 'member', 'viewer'] as const).map(role => (
+          <SelectableRow
+            key={role}
+            label={
+              role === 'admin' ? 'Admin' : role === 'member' ? 'Member' : 'Viewer'
+            }
+            detail={
+              role === 'admin'
+                ? 'Can edit the event and manage members.'
+                : role === 'member'
+                  ? 'Can add expenses and contributions.'
+                  : 'Can view the event but not change it.'
+            }
+            selected={roleTarget?.role === role}
+            onPress={() => {
+              const target = roleTarget;
+              if (!target || target.role === role) {
+                setRoleTarget(null);
+                return;
+              }
+              setRoleTarget(null);
+              setMemberRole(eventId, target.id, role)
+                .then(() => showToast(`${target.displayName} is now a ${role}`))
+                .catch(roleError =>
+                  showToast(
+                    roleError instanceof Error
+                      ? roleError.message
+                      : 'Could not change that role.',
+                    'danger',
+                  ),
+                );
+            }}
+          />
+        ))}
+      </AppModal>
     </AppScreen>
   );
 }

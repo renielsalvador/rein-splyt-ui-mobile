@@ -134,6 +134,80 @@ export const colorSchemes = {light: lightColors, dark: darkColors} as const;
 
 export type ColorSchemeName = keyof typeof colorSchemes;
 
+// Event accents. Deliberately desaturated mid-tones: they sit beside the forest-green
+// brand on the same card, so a saturated ramp would read as a second brand colour.
+// Ordered by hue so the two rows of seven read as a continuous ramp.
+export const EVENT_COLOR_NAMES = [
+  'forest',
+  'moss',
+  'sage',
+  'teal',
+  'sky',
+  'ocean',
+  'indigo',
+  'violet',
+  'plum',
+  'rose',
+  'clay',
+  'amber',
+  'ochre',
+  'stone',
+] as const;
+
+export type EventColorName = (typeof EVENT_COLOR_NAMES)[number];
+
+// Twelve-swatch subset shown in the picker; the full list stays valid for stored events.
+export const EVENT_COLOR_PICKER_NAMES: readonly EventColorName[] = EVENT_COLOR_NAMES.filter(
+  name => name !== 'sage' && name !== 'ochre',
+);
+
+export type EventSwatch = {accent: string; soft: string; onSoft: string; label: string};
+
+const lightEventColors: Record<EventColorName, EventSwatch> = {
+  forest: {label: 'Forest', accent: '#2F6F57', soft: '#E8F2EC', onSoft: '#1B4838'},
+  moss: {label: 'Moss', accent: '#5F7A3A', soft: '#EDF2E4', onSoft: '#3E5125'},
+  sage: {label: 'Sage', accent: '#6F8A5E', soft: '#EEF3E9', onSoft: '#47593B'},
+  teal: {label: 'Teal', accent: '#2A7B82', soft: '#E4F1F2', onSoft: '#1A4F53'},
+  sky: {label: 'Sky', accent: '#3C8AA8', soft: '#E6F2F6', onSoft: '#255A6E'},
+  ocean: {label: 'Ocean', accent: '#35689C', soft: '#E7EEF7', onSoft: '#214266'},
+  indigo: {label: 'Indigo', accent: '#5A5AA8', soft: '#ECECF7', onSoft: '#3A3A6E'},
+  violet: {label: 'Violet', accent: '#73519C', soft: '#F0EAF7', onSoft: '#4A3367'},
+  plum: {label: 'Plum', accent: '#8A4F7D', soft: '#F5EAF2', onSoft: '#5B3352'},
+  rose: {label: 'Rose', accent: '#B0526A', soft: '#F9E9ED', onSoft: '#743444'},
+  clay: {label: 'Clay', accent: '#B05F45', soft: '#F9EBE6', onSoft: '#743D2C'},
+  amber: {label: 'Amber', accent: '#B57A33', soft: '#F9EFE2', onSoft: '#775020'},
+  ochre: {label: 'Ochre', accent: '#9A7324', soft: '#F6EFDF', onSoft: '#654B16'},
+  stone: {label: 'Stone', accent: '#64707C', soft: '#EDEFF1', onSoft: '#414A53'},
+};
+
+const darkEventColors: Record<EventColorName, EventSwatch> = {
+  forest: {label: 'Forest', accent: '#6FCFA2', soft: '#1E3A2C', onSoft: '#BFE6D3'},
+  moss: {label: 'Moss', accent: '#A8C77A', soft: '#2B3619', onSoft: '#DCE8C6'},
+  sage: {label: 'Sage', accent: '#A9C491', soft: '#2A3521', onSoft: '#DCE8CC'},
+  teal: {label: 'Teal', accent: '#6CCBD3', soft: '#173B3E', onSoft: '#B5E5E9'},
+  sky: {label: 'Sky', accent: '#7CC2DC', soft: '#19353F', onSoft: '#C0E3EF'},
+  ocean: {label: 'Ocean', accent: '#7FB0E8', soft: '#1B3147', onSoft: '#C3DBF5'},
+  indigo: {label: 'Indigo', accent: '#9A9AE0', soft: '#272748', onSoft: '#D2D2F2'},
+  violet: {label: 'Violet', accent: '#B494E2', soft: '#2F2343', onSoft: '#E0D1F4'},
+  plum: {label: 'Plum', accent: '#D08FC2', soft: '#3C2437', onSoft: '#EFD2E7'},
+  rose: {label: 'Rose', accent: '#E08FA2', soft: '#3E2029', onSoft: '#F6D4DC'},
+  clay: {label: 'Clay', accent: '#E2A089', soft: '#3F271E', onSoft: '#F6D8CC'},
+  amber: {label: 'Amber', accent: '#E6B37A', soft: '#3D2C19', onSoft: '#F7DFC4'},
+  ochre: {label: 'Ochre', accent: '#DCB65C', soft: '#3A2F15', onSoft: '#F2E2B9'},
+  stone: {label: 'Stone', accent: '#A8B0BA', soft: '#2A2F36', onSoft: '#DADEE4'},
+};
+
+export const eventColorSchemes = {
+  light: lightEventColors,
+  dark: darkEventColors,
+} as const;
+
+export const DEFAULT_EVENT_COLOR: EventColorName = 'forest';
+
+export function pickRandomEventColor(): EventColorName {
+  return EVENT_COLOR_NAMES[Math.floor(Math.random() * EVENT_COLOR_NAMES.length)];
+}
+
 export const spacing = {
   xs: 4,
   sm: 8,

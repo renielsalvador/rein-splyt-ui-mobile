@@ -21,10 +21,11 @@ import {AccountSheet} from '../settings/AccountSheet';
 import {NotificationsSheet} from './NotificationsSheet';
 import {cardShadow, radii, spacing, typeScale} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
-import {useStyles, useTheme} from '../../theme/ThemeProvider';
+import {useStyles, useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import {formatCurrencyCompact, formatDateRangeLabel} from '../../lib/utils/format';
 import {joinSchema} from '../../lib/validation/forms';
 import type {Event, EventMember, Expense, MemberBalance} from '../../types/domain';
+import {formatActorName} from './EventScreenShared';
 import {getEventLifecycle, getTodayDateString, sortEventsByStartDate} from './eventStatus';
 
 type Lifecycle = 'now' | 'upcoming' | 'ended';
@@ -70,7 +71,12 @@ export function HomeScreen({
   navigation,
   hasTabBar,
   tabBarBottomInset,
-}: ScreenProps<'Home'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
+  onScroll,
+}: ScreenProps<'Home'> & {
+  hasTabBar?: boolean;
+  tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
+}) {
   const {
     currentUser,
     events,
@@ -184,6 +190,7 @@ export function HomeScreen({
       <AppScreen
         variant="main"
         hasTabBar={hasTabBar}
+        onScroll={onScroll}
         tabBarBottomInset={tabBarBottomInset}
         title="Your trips"
         titleActions={[
@@ -258,6 +265,7 @@ export function HomeScreen({
                 expenses={summaries[event.id]?.expenses ?? []}
                 balance={selfBalanceFor(event.id)}
                 dayLabel={dayOfTripLabel(event, today)}
+                currentUserId={currentUser?.id}
                 onOpen={() => navigation.navigate('EventDashboard', {eventId: event.id})}
                 onAddExpense={() => navigation.navigate('AddExpense', {eventId: event.id})}
               />
@@ -335,6 +343,8 @@ export function HomeScreen({
           navigation.navigate('AccountUpdate');
         }}
         onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenPaymentOptions={() => navigation.navigate('PaymentOptions')}
+        onOpenDeleteAccount={() => navigation.navigate('DeleteAccount')}
         onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
 
@@ -383,6 +393,7 @@ function OpenTripCard({
   expenses,
   balance,
   dayLabel,
+  currentUserId,
   onOpen,
   onAddExpense,
 }: {
@@ -391,19 +402,24 @@ function OpenTripCard({
   expenses: Expense[];
   balance?: MemberBalance;
   dayLabel?: string;
+  currentUserId?: string;
   onOpen: () => void;
   onAddExpense: () => void;
 }) {
   const {colors} = useTheme();
   const styles = useStyles(createStyles);
+  const swatch = useEventSwatch(event.color);
 
   const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);  const lastExpense = expenses.reduce<Expense | undefined>(
     (latest, expense) =>
       !latest || expense.createdAt > latest.createdAt ? expense : latest,
     undefined,
   );
-  const payerName = lastExpense
-    ? members.find(member => member.id === lastExpense.paidByMemberId)?.displayName
+  const lastPayer = lastExpense
+    ? members.find(member => member.id === lastExpense.paidByMemberId)
+    : undefined;
+  const payerName = lastPayer
+    ? formatActorName(lastPayer.displayName, lastPayer.userId === currentUserId)
     : undefined;
 
   return (
@@ -413,8 +429,8 @@ function OpenTripCard({
         accessibilityLabel={`Open ${event.name}`}
         onPress={onOpen}
         style={({pressed}) => [styles.openHead, pressed ? styles.pressed : null]}>
-        <View style={styles.badge}>
-          <AppIcon name={event.icon} tone="accent" size={22} />
+        <View style={[styles.badge, {backgroundColor: swatch.soft}]}>
+          <AppIcon name={event.icon} size={22} color={swatch.accent} />
         </View>
         <View style={styles.flex}>
           <Text style={styles.tripName} numberOfLines={1}>
@@ -471,7 +487,7 @@ function OpenTripCard({
       <View style={styles.openActions}>
         <View style={styles.flex}>
           <AppButton
-            label="Add expense"
+            label="Track expense"
             icon="create"
             variant="black"
             size="sm"
@@ -502,6 +518,7 @@ function TripRow({
   onPress: () => void;
 }) {
   const styles = useStyles(createStyles);
+  const swatch = useEventSwatch(event.color);
 
   return (
     <Pressable
@@ -513,8 +530,17 @@ function TripRow({
         dimmed ? styles.tripRowDim : null,
         pressed ? styles.pressed : null,
       ]}>
-      <View style={[styles.badgeSm, dimmed ? styles.badgeDim : null]}>
-        <AppIcon name={event.icon} tone={dimmed ? 'muted' : 'accent'} size={18} />
+      <View
+        style={[
+          styles.badgeSm,
+          dimmed ? styles.badgeDim : {backgroundColor: swatch.soft},
+        ]}>
+        <AppIcon
+          name={event.icon}
+          size={18}
+          tone={dimmed ? 'muted' : undefined}
+          color={dimmed ? undefined : swatch.accent}
+        />
       </View>
       <View style={styles.flex}>
         <Text style={[styles.rowName, dimmed ? styles.dimText : null]} numberOfLines={1}>

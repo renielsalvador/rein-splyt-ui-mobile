@@ -1,4 +1,7 @@
+import type {EventColorName} from '../theme/tokens';
+
 export type CurrencyCode = 'USD' | 'PHP';
+export type {EventColorName};
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
 export type MemberStatus = 'invited' | 'joined' | 'declined' | 'removed';
 export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked';
@@ -64,6 +67,7 @@ export type Event = {
   description?: string;
   currency: CurrencyCode;
   icon: EventIconName;
+  color: EventColorName;
   isActive: boolean;
   startDate?: string;
   endDate?: string;
@@ -116,6 +120,23 @@ export type Expense = {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  lastEditedBy?: string;
+  lastEditedAt?: string;
+};
+
+export type PaymentMethod = {
+  id: string;
+  userId: string;
+  label: string;
+  qrPath: string;
+  isPrimary: boolean;
+  createdAt: string;
+};
+
+export type PaymentMethodAsset = {
+  uri: string;
+  fileName?: string;
+  type?: string;
 };
 
 export type ExpenseSplit = {
@@ -176,6 +197,9 @@ export type MemberBalance = {
   settledOut: number;
   /** Recorded settlements this member has received, which debit their net. */
   settledIn: number;
+  /** Pro-rata share of the unspent central fund, owed back by the fund rather than by members. */
+  fundStake: number;
+  /** Member-to-member position only. Excludes fundStake, so it sums to zero across the event. */
   net: number;
 };
 
@@ -204,6 +228,7 @@ export type CreateEventInput = {
   description?: string;
   currency: CurrencyCode;
   icon?: EventIconName;
+  color?: EventColorName;
   startDate?: string;
   endDate?: string;
   members?: Array<
@@ -224,6 +249,7 @@ export type UpdateEventInput = {
   name: string;
   description?: string;
   icon?: EventIconName;
+  color?: EventColorName;
   isActive?: boolean;
   startDate?: string;
   endDate?: string;

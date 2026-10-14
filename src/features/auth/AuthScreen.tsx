@@ -1,8 +1,7 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {
   ActivityIndicator,
   Image,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import {useApp} from '../../app/AppProvider';
-import {AppButton, AppInput, AppToast, InlineError} from '../../components/ui';
+import {AppButton, AppInput, InlineError} from '../../components/ui';
 import {authSchema} from '../../lib/validation/forms';
 import {createTypography, radii, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
@@ -69,6 +68,7 @@ export function AuthScreen() {
     requestPasswordReset,
     error,
     clearError,
+    showToast,
   } = useApp();
   const [mode, setMode] = useState<AuthMode>('login');
   const [displayName, setDisplayName] = useState('');
@@ -76,49 +76,9 @@ export function AuthScreen() {
   const [password, setPassword] = useState('');
   const [forgotEmail, setForgotEmail] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [resetSubmitting, setResetSubmitting] = useState(false);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSubscription = Keyboard.addListener(showEvent, event => {
-      setKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
-
-  function showToast(message: string) {
-    setToastMessage(message);
-
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-
-    toastTimeoutRef.current = setTimeout(() => {
-      setToastMessage(null);
-      toastTimeoutRef.current = null;
-    }, 2500);
-  }
 
   function resetTransientState(nextMode: AuthMode) {
     clearError();
@@ -245,17 +205,6 @@ export function AuthScreen() {
           </View>
           </ScrollView>
         </KeyboardAvoidingView>
-        {toastMessage ? (
-          <View
-            style={[
-              styles.toastWrap,
-              keyboardHeight > 0
-                ? {bottom: keyboardHeight + spacing.sm}
-                : null,
-            ]}>
-            <AppToast message={toastMessage} />
-          </View>
-        ) : null}
       </SafeAreaView>
     );
   }
@@ -404,17 +353,6 @@ export function AuthScreen() {
         </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      {toastMessage ? (
-        <View
-          style={[
-            styles.toastWrap,
-            keyboardHeight > 0
-              ? {bottom: keyboardHeight + spacing.sm}
-              : null,
-          ]}>
-          <AppToast message={toastMessage} />
-        </View>
-      ) : null}
     </SafeAreaView>
   );
 }

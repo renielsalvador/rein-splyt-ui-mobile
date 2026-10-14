@@ -296,8 +296,8 @@ export const createAppStyles = (c: Colors) => {
     },
     modalCard: {
       width: '100%',
-      maxHeight: '88%',
       flexShrink: 1,
+      overflow: 'hidden',
       borderTopLeftRadius: radii.xxl,
       borderTopRightRadius: radii.xxl,
       borderBottomLeftRadius: radii.xl,
@@ -334,6 +334,12 @@ export const createAppStyles = (c: Colors) => {
       gap: spacing.md,
       paddingBottom: spacing.sm,
     },
+    modalFooter: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.hairline,
+      paddingTop: spacing.md,
+      gap: spacing.sm,
+    },
     subtitle: {
       ...t.body,
       color: c.inkMuted,
@@ -342,6 +348,10 @@ export const createAppStyles = (c: Colors) => {
     // ─── toast ───────────────────────────────────────────────────────────────────
     toast: {
       alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      maxWidth: '100%',
       backgroundColor: c.ink,
       borderRadius: radii.pill,
       paddingHorizontal: spacing.lg,
@@ -350,11 +360,27 @@ export const createAppStyles = (c: Colors) => {
       shadowOpacity: 0.16,
       shadowRadius: 16,
       shadowOffset: {width: 0, height: 8},
-      elevation: 6,
+      elevation: 24,
+    },
+    toastSuccess: {
+      backgroundColor: c.brand,
+    },
+    toastDanger: {
+      backgroundColor: c.danger,
     },
     toastText: {
       ...t.bodyStrong,
       color: c.surface,
+      flexShrink: 1,
+    },
+    // Sits above the tab bar (elevation 16) and every in-tree overlay.
+    toastHost: {
+      position: 'absolute',
+      left: spacing.md,
+      right: spacing.md,
+      alignItems: 'center',
+      zIndex: 1000,
+      elevation: 24,
     },
 
     // ─── icon + icon button ─────────────────────────────────────────────────────

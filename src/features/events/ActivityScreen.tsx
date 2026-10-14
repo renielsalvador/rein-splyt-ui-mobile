@@ -21,7 +21,12 @@ export function ActivityScreen({
   navigation,
   hasTabBar,
   tabBarBottomInset,
-}: ScreenProps<'Activity'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
+  onScroll,
+}: ScreenProps<'Activity'> & {
+  hasTabBar?: boolean;
+  tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
+}) {
   const {currentUser, pendingInvites, events, summaries, balances, hydrateEvent} = useApp();
   const styles = useStyles(createStyles);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -36,8 +41,8 @@ export function ActivityScreen({
   }, [events, hydrateEvent, summaries]);
 
   const activityFeed = useMemo(
-    () => buildActivityFeed(events, summaries, balances).slice(0, 24),
-    [balances, events, summaries],
+    () => buildActivityFeed(events, summaries, balances, currentUser?.id).slice(0, 24),
+    [balances, currentUser?.id, events, summaries],
   );
 
   return (
@@ -47,6 +52,7 @@ export function ActivityScreen({
         title="Activity"
         subtitle="Recent updates across all your trips"
         hasTabBar={hasTabBar}
+        onScroll={onScroll}
         tabBarBottomInset={tabBarBottomInset}
         headerLeft={
           <View style={styles.brandRow}>
@@ -108,6 +114,8 @@ export function ActivityScreen({
           navigation.navigate('AccountUpdate');
         }}
         onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenPaymentOptions={() => navigation.navigate('PaymentOptions')}
+        onOpenDeleteAccount={() => navigation.navigate('DeleteAccount')}
         onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
     </>

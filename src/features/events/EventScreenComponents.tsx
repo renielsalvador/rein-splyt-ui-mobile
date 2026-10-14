@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import type {StyleProp, TextStyle} from 'react-native';
 import {Calendar} from 'react-native-calendars';
@@ -9,6 +9,7 @@ import {
   AppCard,
   AppIcon,
   type AppIconName,
+  AppModal,
   DataPill,
   SectionHeading,
 } from '../../components/ui';
@@ -17,12 +18,20 @@ import {
   formatDateLabel,
   formatDateRangeLabel,
 } from '../../lib/utils/format';
-import {cardSurface, createTypography, radii, spacing} from '../../theme/tokens';
+import {
+  EVENT_COLOR_PICKER_NAMES,
+  cardSurface,
+  createTypography,
+  eventColorSchemes,
+  radii,
+  spacing,
+} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
-import {useStyles, useTheme} from '../../theme/ThemeProvider';
+import {useStyles, useEventSwatch, useTheme} from '../../theme/ThemeProvider';
 import type {
   CurrencyCode,
   Event,
+  EventColorName,
   EventIconName,
   EventMember,
   MemberBalance,
@@ -94,12 +103,23 @@ export function HomeEventCard({
   const styles = useEventStyles();
   const memberNames = members.map(m => m.displayName);
   const badge = getEventStatusBadge(event);
+  const swatch = useEventSwatch(event.color);
 
   return (
     <Pressable onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <View style={[styles.eventCard, !event.isActive && styles.eventCardInactive]}>
-        <View style={[styles.eventIconBadge, !event.isActive && styles.eventIconBadgeInactive]}>
-          <AppIcon name={event.icon} tone={event.isActive ? 'accent' : 'muted'} size={20} />
+        <View
+          style={[
+            styles.eventIconBadge,
+            event.isActive ? {backgroundColor: swatch.soft} : null,
+            !event.isActive && styles.eventIconBadgeInactive,
+          ]}>
+          <AppIcon
+            name={event.icon}
+            tone={event.isActive ? 'accent' : 'muted'}
+            color={event.isActive ? swatch.accent : undefined}
+            size={20}
+          />
         </View>
         <View style={styles.eventBody}>
           <View style={styles.eventTitleRow}>
@@ -281,13 +301,19 @@ export function EventDateRangeField({
   );
 }
 
-export function EventDateRangePicker({
+export function EventDateRangeModal({
+  visible,
+  title,
+  subtitle,
   startDate,
   endDate,
   onChange,
   onClear,
   onClose,
 }: {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
   startDate?: string;
   endDate?: string;
   onChange: (next: {startDate?: string; endDate?: string}) => void;
@@ -306,6 +332,17 @@ export function EventDateRangePicker({
     () => (hasDates ? buildMarkedDateRange(c, draftStartDate, draftEndDate) : {}),
     [c, draftEndDate, draftStartDate, hasDates],
   );
+
+  // Re-seed the draft each time the sheet opens so a cancelled edit never leaks forward.
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setDraftStartDate(startDate ?? today);
+    setDraftEndDate(endDate ?? today);
+    setHasDates(Boolean(startDate && endDate));
+    setActiveField('start');
+  }, [endDate, startDate, today, visible]);
 
   function handleDayPress(dateString: string) {
     setHasDates(true);
@@ -326,148 +363,227 @@ export function EventDateRangePicker({
   }
 
   return (
-    <View style={componentStyles.datePickerBlock}>
-      <View style={componentStyles.datePickerSummaryCard}>
-        <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
-        <Text style={componentStyles.datePickerSummaryValue}>
-          {hasDates ? formatDateRangeLabel(draftStartDate, draftEndDate) : 'No dates'}
-        </Text>
-        <View style={componentStyles.dateRangeFieldRow}>
+    <AppModal
+      visible={visible}
+      title={title}
+      subtitle={subtitle}
+      scrollable
+      onClose={onClose}
+      footer={
+        <View style={styles.actionRow}>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Clear dates"
+              variant="tint"
+              onPress={() => {
+                setHasDates(false);
+                onClear();
+                onClose();
+              }}
+            />
+          </View>
+          <View style={styles.actionRowItem}>
+            <AppButton
+              label="Apply dates"
+              icon="check"
+              onPress={() => {
+                onChange({startDate: draftStartDate, endDate: draftEndDate});
+                onClose();
+              }}
+            />
+          </View>
+        </View>
+      }>
+      <View style={componentStyles.datePickerBlock}>
+        <View style={componentStyles.datePickerSummaryCard}>
+          <Text style={componentStyles.datePickerSummaryLabel}>Selected range</Text>
+          <Text style={componentStyles.datePickerSummaryValue}>
+            {hasDates ? formatDateRangeLabel(draftStartDate, draftEndDate) : 'No dates'}
+          </Text>
+          <View style={componentStyles.dateRangeFieldRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setActiveField('start')}
+              style={({pressed}) => [
+                componentStyles.dateAnchorChip,
+                activeField === 'start' ? componentStyles.dateAnchorChipActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text
+                style={[
+                  componentStyles.dateAnchorLabel,
+                  activeField === 'start' ? componentStyles.dateAnchorLabelActive : null,
+                ]}>
+                From
+              </Text>
+              <Text
+                style={[
+                  componentStyles.dateAnchorValue,
+                  activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
+                ]}>
+                {hasDates ? formatDateLabel(draftStartDate) : 'Not set'}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setActiveField('end')}
+              style={({pressed}) => [
+                componentStyles.dateAnchorChip,
+                activeField === 'end' ? componentStyles.dateAnchorChipActive : null,
+                pressed ? styles.pressed : null,
+              ]}>
+              <Text
+                style={[
+                  componentStyles.dateAnchorLabel,
+                  activeField === 'end' ? componentStyles.dateAnchorLabelActive : null,
+                ]}>
+                To
+              </Text>
+              <Text
+                style={[
+                  componentStyles.dateAnchorValue,
+                  activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
+                ]}>
+                {hasDates ? formatDateLabel(draftEndDate) : 'Not set'}
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={componentStyles.datePickerSummaryHint}>
+            {hasDates
+              ? `Select ${activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.`
+              : 'Choose dates to add a range, or clear them to keep this share ongoing.'}
+          </Text>
+        </View>
+        <Calendar
+          markingType="period"
+          markedDates={markedDates}
+          onDayPress={({dateString}) => handleDayPress(dateString)}
+          theme={{
+            backgroundColor: c.surface,
+            calendarBackground: c.surface,
+            textSectionTitleColor: c.inkMuted,
+            selectedDayBackgroundColor: c.brand,
+            selectedDayTextColor: c.surface,
+            todayTextColor: c.brand,
+            dayTextColor: c.ink,
+            monthTextColor: c.ink,
+            arrowColor: c.brand,
+            textDisabledColor: c.hairline,
+            textDayFontWeight: '500',
+            textMonthFontWeight: '700',
+            textDayHeaderFontWeight: '600',
+          }}
+          style={componentStyles.calendar}
+        />
+      </View>
+    </AppModal>
+  );
+}
+
+export function EventColorPicker({
+  selectedColor,
+  onSelect,
+}: {
+  selectedColor: EventColorName;
+  onSelect: (color: EventColorName) => void;
+}) {
+  const componentStyles = useStyles(createComponentStyles);
+  const styles = useEventStyles();
+  const {scheme} = useTheme();
+  const swatches = eventColorSchemes[scheme];
+
+  return (
+    <View style={componentStyles.colorRow}>
+      {EVENT_COLOR_PICKER_NAMES.map(name => {
+        const swatch = swatches[name];
+        const selected = selectedColor === name;
+        return (
           <Pressable
+            key={name}
             accessibilityRole="button"
-            onPress={() => setActiveField('start')}
+            accessibilityLabel={swatch.label}
+            accessibilityState={{selected}}
+            onPress={() => onSelect(name)}
             style={({pressed}) => [
-              componentStyles.dateAnchorChip,
-              activeField === 'start' ? componentStyles.dateAnchorChipActive : null,
+              componentStyles.colorSwatch,
+              {backgroundColor: swatch.accent},
+              selected ? componentStyles.colorSwatchActive : null,
               pressed ? styles.pressed : null,
             ]}>
-            <Text
-              style={[
-                componentStyles.dateAnchorLabel,
-                activeField === 'start' ? componentStyles.dateAnchorLabelActive : null,
-              ]}>
-              From
-            </Text>
-            <Text
-              style={[
-                componentStyles.dateAnchorValue,
-                activeField === 'start' ? componentStyles.dateAnchorValueActive : null,
-              ]}>
-              {hasDates ? formatDateLabel(draftStartDate) : 'Not set'}
-            </Text>
+            {selected ? <AppIcon name="check" color={swatch.soft} size={14} /> : null}
           </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setActiveField('end')}
-            style={({pressed}) => [
-              componentStyles.dateAnchorChip,
-              activeField === 'end' ? componentStyles.dateAnchorChipActive : null,
-              pressed ? styles.pressed : null,
-            ]}>
-            <Text
-              style={[
-                componentStyles.dateAnchorLabel,
-                activeField === 'end' ? componentStyles.dateAnchorLabelActive : null,
-              ]}>
-              To
-            </Text>
-            <Text
-              style={[
-                componentStyles.dateAnchorValue,
-                activeField === 'end' ? componentStyles.dateAnchorValueActive : null,
-              ]}>
-              {hasDates ? formatDateLabel(draftEndDate) : 'Not set'}
-            </Text>
-          </Pressable>
-        </View>
-        <Text style={componentStyles.datePickerSummaryHint}>
-          {hasDates
-            ? `Select ${activeField === 'start' ? 'the start date' : 'the end date'}, then confirm.`
-            : 'Choose dates to add a range, or clear them to keep this share ongoing.'}
-        </Text>
-      </View>
-      <Calendar
-        markingType="period"
-        markedDates={markedDates}
-        onDayPress={({dateString}) => handleDayPress(dateString)}
-        theme={{
-          backgroundColor: c.surface,
-          calendarBackground: c.surface,
-          textSectionTitleColor: c.inkMuted,
-          selectedDayBackgroundColor: c.brand,
-          selectedDayTextColor: c.surface,
-          todayTextColor: c.brand,
-          dayTextColor: c.ink,
-          monthTextColor: c.ink,
-          arrowColor: c.brand,
-          textDisabledColor: c.hairline,
-          textDayFontWeight: '500',
-          textMonthFontWeight: '700',
-          textDayHeaderFontWeight: '600',
-        }}
-        style={componentStyles.calendar}
-      />
-      <View style={styles.actionRow}>
-        <View style={styles.actionRowItem}>
-          <AppButton
-            label="Clear dates"
-            variant="tint"
-            onPress={() => {
-              setHasDates(false);
-              onClear();
-              onClose();
-            }}
-          />
-        </View>
-        <View style={styles.actionRowItem}>
-          <AppButton
-            label="Apply dates"
-            icon="check"
-            onPress={() => {
-              onChange({startDate: draftStartDate, endDate: draftEndDate});
-              onClose();
-            }}
-          />
-        </View>
-      </View>
+        );
+      })}
     </View>
   );
 }
 
 export function EventIconPicker({
   selectedIcon,
+  color,
   onSelect,
 }: {
   selectedIcon: EventIconName;
+  color?: EventColorName;
   onSelect: (icon: EventIconName) => void;
 }) {
   const styles = useEventStyles();
+  const swatch = useEventSwatch(color);
   return (
     <View style={styles.iconGrid}>
-      {EVENT_ICON_OPTIONS.map(option => (
-        <Pressable
-          key={option.name}
-          accessibilityRole="button"
-          onPress={() => onSelect(option.name)}
-          style={({pressed}) => [
-            styles.iconOptionCard,
-            selectedIcon === option.name ? styles.iconOptionCardActive : null,
-            pressed ? styles.pressed : null,
-          ]}>
-          <AppIcon
-            name={option.name as AppIconName}
-            tone={selectedIcon === option.name ? 'inverted' : 'accent'}
-            size={24}
-          />
-          <Text
-            style={[
-              styles.iconOptionLabel,
-              selectedIcon === option.name ? styles.iconOptionLabelActive : null,
+      {EVENT_ICON_OPTIONS.map(option => {
+        const selected = selectedIcon === option.name;
+        return (
+          <Pressable
+            key={option.name}
+            accessibilityRole="button"
+            accessibilityState={{selected}}
+            onPress={() => onSelect(option.name)}
+            style={({pressed}) => [
+              styles.iconOptionCard,
+              {backgroundColor: selected ? swatch.accent : swatch.soft},
+              pressed ? styles.pressed : null,
             ]}>
-            {option.label}
-          </Text>
-        </Pressable>
-      ))}
+            <AppIcon
+              name={option.name as AppIconName}
+              color={selected ? swatch.soft : swatch.accent}
+              size={24}
+            />
+            <Text
+              style={[
+                styles.iconOptionLabel,
+                {color: selected ? swatch.soft : swatch.onSoft},
+              ]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Colour first: it retints the icon grid, so picking it last would undo the preview. */
+export function EventAppearancePicker({
+  selectedColor,
+  selectedIcon,
+  onSelectColor,
+  onSelectIcon,
+}: {
+  selectedColor: EventColorName;
+  selectedIcon: EventIconName;
+  onSelectColor: (color: EventColorName) => void;
+  onSelectIcon: (icon: EventIconName) => void;
+}) {
+  const componentStyles = useStyles(createComponentStyles);
+  return (
+    <View style={componentStyles.appearanceBlock}>
+      <EventColorPicker selectedColor={selectedColor} onSelect={onSelectColor} />
+      <EventIconPicker
+        selectedIcon={selectedIcon}
+        color={selectedColor}
+        onSelect={onSelectIcon}
+      />
     </View>
   );
 }
@@ -683,16 +799,19 @@ export function RecentExpenseListItem({
   title,
   meta,
   amountLabel,
+  splitLabel,
   receiptAttached = false,
   onPress,
 }: {
   title: string;
   meta: string;
   amountLabel: string;
+  splitLabel?: string;
   receiptAttached?: boolean;
   onPress: () => void;
 }) {
   const styles = useEventStyles();
+  const componentStyles = useStyles(createComponentStyles);
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({pressed}) => [pressed && styles.pressed]}>
       <View style={styles.expenseRow}>
@@ -704,7 +823,12 @@ export function RecentExpenseListItem({
           <Text style={styles.expenseMeta}>{meta}</Text>
           {receiptAttached ? <Text style={styles.expenseMeta}>Receipt attached</Text> : null}
         </View>
-        <Text style={styles.expenseAmount}>{amountLabel}</Text>
+        <View style={componentStyles.expenseTrailing}>
+          <Text style={styles.expenseAmount}>{amountLabel}</Text>
+          {splitLabel ? (
+            <Text style={styles.expenseMeta}>{splitLabel}</Text>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
@@ -819,27 +943,45 @@ function SettleableBalanceRow({
   );
 }
 
-export function MemberRosterList({members}: {members: MemberRosterRow[]}) {
+export function MemberRosterList({
+  members,
+  canManageRoles = false,
+  onPressMember,
+}: {
+  members: MemberRosterRow[];
+  canManageRoles?: boolean;
+  onPressMember?: (member: MemberRosterRow) => void;
+}) {
   const styles = useEventStyles();
   return (
     <View style={styles.memberRosterList}>
-      {members.map(member => (
-        <View key={member.id} style={styles.memberRow}>
-          <AppAvatar name={member.displayName} size="sm" />
-          <View style={styles.memberRowBody}>
-            <View style={styles.memberRowNameRow}>
-              <Text style={styles.memberRowName}>{member.displayName}</Text>
+      {members.map(member => {
+        const manageable = canManageRoles && Boolean(onPressMember);
+        return (
+          <Pressable
+            key={member.id}
+            accessibilityRole={manageable ? 'button' : undefined}
+            accessibilityLabel={manageable ? `Manage ${member.displayName}` : undefined}
+            disabled={!manageable}
+            onPress={() => onPressMember?.(member)}
+            style={({pressed}) => [styles.memberRow, pressed && manageable && styles.pressed]}>
+            <AppAvatar name={member.displayName} size="sm" />
+            <View style={styles.memberRowBody}>
+              <View style={styles.memberRowNameRow}>
+                <Text style={styles.memberRowName}>{member.displayName}</Text>
+              </View>
+              <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
             </View>
-            <Text style={styles.memberRowRole}>{member.email ?? member.joinedLabel}</Text>
-          </View>
-          <View style={styles.memberRowTrailing}>
-            <DataPill
-              label={member.statusLabel === 'Joined' ? 'Joined' : 'Invited'}
-              tone={member.statusLabel === 'Joined' ? 'success' : 'info'}
-            />
-          </View>
-        </View>
-      ))}
+            <View style={styles.memberRowTrailing}>
+              {member.roleLabel ? <DataPill label={member.roleLabel} tone="outline" /> : null}
+              <DataPill
+                label={member.statusLabel === 'Joined' ? 'Joined' : 'Invited'}
+                tone={member.statusLabel === 'Joined' ? 'success' : 'info'}
+              />
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -848,6 +990,32 @@ const createComponentStyles = (c: Colors) => {
   const t = createTypography(c);
 
   return StyleSheet.create({
+    appearanceBlock: {
+      gap: spacing.md,
+    },
+    colorRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    colorSwatch: {
+      width: 32,
+      height: 32,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.7,
+    },
+    colorSwatchActive: {
+      opacity: 1,
+      borderWidth: 2,
+      borderColor: c.ink,
+    },
+    expenseTrailing: {
+      alignItems: 'flex-end',
+      gap: 2,
+    },
     datePickerBlock: {
       gap: spacing.md,
     },

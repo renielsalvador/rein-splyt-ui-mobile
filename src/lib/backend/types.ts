@@ -7,6 +7,9 @@ import type {
   CreateSettlementInput,
   Event,
   EventMember,
+  MemberRole,
+  PaymentMethod,
+  PaymentMethodAsset,
   EventSummary,
   Invite,
   JoinEventInput,
@@ -49,6 +52,7 @@ export interface AppBackend {
   completeAuthRedirect(url: string): Promise<AuthRedirectResult | null>;
   updatePassword(password: string): Promise<void>;
   signOut(): Promise<void>;
+  deleteAccount(): Promise<void>;
   updateProfile(userId: string, input: UpdateUserProfileInput): Promise<UserProfile>;
   listPendingInvites(email: string): Promise<PendingInvite[]>;
   respondToInvite(userId: string, input: RespondToInviteInput): Promise<Event | null>;
@@ -61,6 +65,20 @@ export interface AppBackend {
   joinEvent(userId: string, input: JoinEventInput): Promise<Event>;
   getEventSummary(eventId: string): Promise<EventSummary>;
   addManualMember(eventId: string, displayName: string): Promise<EventMember>;
+  listPaymentMethods(userId: string): Promise<PaymentMethod[]>;
+  addPaymentMethod(
+    userId: string,
+    label: string,
+    asset: PaymentMethodAsset,
+  ): Promise<PaymentMethod>;
+  setPrimaryPaymentMethod(paymentMethodId: string): Promise<PaymentMethod>;
+  deletePaymentMethod(paymentMethodId: string, qrPath: string): Promise<void>;
+  getPaymentMethodUrl(qrPath: string): Promise<string | undefined>;
+  setMemberRole(
+    eventId: string,
+    memberId: string,
+    role: MemberRole,
+  ): Promise<EventMember>;
   createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient): Promise<Invite>;
   createExpense(userId: string, input: CreateExpenseInput): Promise<void>;
   updateExpense(userId: string, input: UpdateExpenseInput): Promise<void>;

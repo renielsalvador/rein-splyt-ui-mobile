@@ -6,6 +6,8 @@ import type {
   CreateEventInput,
   CreateExpenseInput,
   CreateSettlementInput,
+  MemberRole,
+  PaymentMethodAsset,
   RespondToInviteInput,
   UpdateEventInput,
   UpdateExpenseInput,
@@ -15,6 +17,7 @@ import type {
 } from '../../types/domain';
 import {
   completeAuthRedirect,
+  deleteAccount,
   getSession,
   requestPasswordReset,
   signIn,
@@ -34,6 +37,7 @@ import {
 } from './supabase/fundService';
 import {
   addManualMember,
+  setMemberRole,
   createEvent,
   deleteEvent,
   getEventSummary,
@@ -41,6 +45,13 @@ import {
   listEvents,
   updateEvent,
 } from './supabase/eventService';
+import {
+  addPaymentMethod,
+  deletePaymentMethod,
+  getPaymentMethodUrl,
+  listPaymentMethods,
+  setPrimaryPaymentMethod,
+} from './supabase/paymentMethodService';
 import {
   createInvite,
   listPendingInvites,
@@ -102,6 +113,10 @@ export class SupabaseBackend implements AppBackend {
     return signOut(this.client);
   }
 
+  async deleteAccount() {
+    return deleteAccount(this.client);
+  }
+
   async updateProfile(userId: string, input: UpdateUserProfileInput) {
     return updateProfile(this.client, userId, input);
   }
@@ -148,6 +163,30 @@ export class SupabaseBackend implements AppBackend {
 
   async addManualMember(eventId: string, displayName: string) {
     return addManualMember(this.client, eventId, displayName);
+  }
+
+  async setMemberRole(eventId: string, memberId: string, role: MemberRole) {
+    return setMemberRole(this.client, eventId, memberId, role);
+  }
+
+  async listPaymentMethods(userId: string) {
+    return listPaymentMethods(this.client, userId);
+  }
+
+  async addPaymentMethod(userId: string, label: string, asset: PaymentMethodAsset) {
+    return addPaymentMethod(this.client, userId, label, asset);
+  }
+
+  async setPrimaryPaymentMethod(paymentMethodId: string) {
+    return setPrimaryPaymentMethod(this.client, paymentMethodId);
+  }
+
+  async deletePaymentMethod(paymentMethodId: string, qrPath: string) {
+    return deletePaymentMethod(this.client, paymentMethodId, qrPath);
+  }
+
+  async getPaymentMethodUrl(qrPath: string) {
+    return getPaymentMethodUrl(this.client, qrPath);
   }
 
   async createInvite(eventId: string, invitedBy: string, recipient?: InviteRecipient) {

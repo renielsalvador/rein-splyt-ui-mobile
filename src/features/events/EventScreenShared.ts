@@ -1,7 +1,9 @@
 import {formatDateLabel} from '../../lib/utils/format';
 import type {
   EventIconName,
+  ExpenseSplit,
   MemberBalance,
+  MemberRole,
   PendingInvite,
   SettlementInstruction,
 } from '../../types/domain';
@@ -45,6 +47,8 @@ export type MemberRosterRow = {
   email?: string;
   joinedLabel: string;
   statusLabel: 'Joined' | 'Pending';
+  role: MemberRole;
+  roleLabel?: string;
 };
 
 export function formatSelfDisplayName(
@@ -52,6 +56,42 @@ export function formatSelfDisplayName(
   isCurrentUser: boolean | undefined,
 ) {
   return isCurrentUser ? `${displayName} (me)` : displayName;
+}
+
+/**
+ * Transaction copy reads in the first person — "You paid Charlie", "Charlie paid
+ * you", "Paid by me" — so the reader never has to recognise their own name.
+ */
+export function formatActorName(
+  displayName: string,
+  isCurrentUser: boolean | undefined,
+  form: 'subject' | 'object' | 'standalone' = 'subject',
+) {
+  if (!isCurrentUser) {
+    return displayName;
+  }
+  if (form === 'standalone') {
+    return 'Me';
+  }
+  return form === 'subject' ? 'You' : 'you';
+}
+
+// Everyone in an event is a participant by default, so a split that covers fewer
+// people than the roster is the thing worth surfacing.
+export function describeExpenseSplit(
+  splits: ExpenseSplit[],
+  expenseId: string,
+  memberCount: number,
+) {
+  const participants = splits.filter(split => split.expenseId === expenseId).length;
+
+  if (participants === 0) {
+    return undefined;
+  }
+
+  return participants === memberCount
+    ? `Split ${participants} ways`
+    : `Split ${participants} of ${memberCount}`;
 }
 
 export function normalizeEmail(value: string) {

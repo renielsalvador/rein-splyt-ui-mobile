@@ -3,6 +3,7 @@ import type {
   CreateEventInput,
   EventSummary,
   JoinEventInput,
+  MemberRole,
   UpdateEventInput,
 } from '../../../types/domain';
 import {
@@ -48,6 +49,7 @@ export async function createEvent(
     p_icon: input.icon ?? 'event',
     p_start_date: input.startDate ?? null,
     p_end_date: input.endDate ?? null,
+    p_color: input.color ?? 'forest',
   });
 
   assertNoError(error, 'Unable to create the event.');
@@ -88,6 +90,7 @@ export async function updateEvent(
     p_is_active: input.isActive,
     p_start_date: input.startDate ?? null,
     p_end_date: input.endDate ?? null,
+    p_color: input.color ?? null,
   });
 
   assertNoError(error, 'Unable to update the event.');
@@ -211,6 +214,23 @@ export async function addManualMember(
     .single();
 
   assertNoError(error, 'Unable to add the placeholder member.');
+
+  return mapMember(data as EventMemberRow);
+}
+
+export async function setMemberRole(
+  client: SupabaseClient,
+  eventId: string,
+  memberId: string,
+  role: MemberRole,
+) {
+  const {data, error} = await client.rpc('set_event_member_role', {
+    p_event_id: eventId,
+    p_member_id: memberId,
+    p_role: role,
+  });
+
+  assertNoError(error, 'Unable to change that member\u2019s role.');
 
   return mapMember(data as EventMemberRow);
 }

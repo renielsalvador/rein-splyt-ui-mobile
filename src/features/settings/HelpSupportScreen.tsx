@@ -4,7 +4,6 @@ import {
   AppCard,
   AppIcon,
   AppScreen,
-  AppToast,
   ScreenBackButton,
   SectionHeading,
 } from '../../components/ui';
@@ -12,6 +11,7 @@ import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
+import {useApp} from '../../app/AppProvider';
 import {version as appVersion} from '../../../package.json';
 
 const SUPPORT_EMAIL = 'reniel.salvador@gmail.com';
@@ -41,7 +41,7 @@ const FAQS: Array<{question: string; answer: string}> = [
 
 export function HelpSupportScreen({navigation}: ScreenProps<'HelpSupport'>) {
   const styles = useStyles(createStyles);
-  const [toast, setToast] = useState<string | null>(null);
+  const {showToast} = useApp();
   const [openQuestion, setOpenQuestion] = useState<string>();
 
   async function contactSupport() {
@@ -52,7 +52,7 @@ export function HelpSupportScreen({navigation}: ScreenProps<'HelpSupport'>) {
     try {
       await Linking.openURL(url);
     } catch {
-      setToast(`Email us at ${SUPPORT_EMAIL}`);
+      showToast(`Email us at ${SUPPORT_EMAIL}`, 'info');
     }
   }
 
@@ -104,8 +104,6 @@ export function HelpSupportScreen({navigation}: ScreenProps<'HelpSupport'>) {
       </AppCard>
 
       <Text style={styles.version}>Splyt v{appVersion}</Text>
-
-      {toast ? <AppToast message={toast} /> : null}
     </AppScreen>
   );
 }

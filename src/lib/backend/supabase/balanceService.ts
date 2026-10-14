@@ -23,6 +23,7 @@ export async function getBalances(
     owed: toNumber(item.owed),
     settledOut: toNumber(item.settled_out ?? 0),
     settledIn: toNumber(item.settled_in ?? 0),
+    fundStake: toNumber(item.fund_stake ?? 0),
     net: toNumber(item.net),
   }));
 }

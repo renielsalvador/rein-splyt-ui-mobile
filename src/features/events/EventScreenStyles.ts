@@ -504,9 +504,6 @@ export const createEventStyles = (c: Colors) => {
       color: c.ink,
       textAlign: 'center',
     },
-    iconOptionLabelActive: {
-      color: c.surface,
-    },
 
     // ─── currency row ───────────────────────────────────────────────────────────
     currencyRow: {

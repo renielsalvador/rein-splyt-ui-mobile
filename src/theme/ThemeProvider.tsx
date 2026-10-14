@@ -1,8 +1,8 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useColorScheme} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {colorSchemes} from './tokens';
-import type {Colors, ColorSchemeName} from './tokens';
+import {colorSchemes, eventColorSchemes} from './tokens';
+import type {Colors, ColorSchemeName, EventColorName} from './tokens';
 
 export type AppearancePreference = 'system' | 'light' | 'dark';
 
@@ -74,6 +74,11 @@ export function ThemeProvider({children}: React.PropsWithChildren) {
 
 export function useTheme() {
   return useContext(ThemeContext);
+}
+
+export function useEventSwatch(color: EventColorName | undefined) {
+  const {scheme} = useTheme();
+  return eventColorSchemes[scheme][color ?? 'forest'];
 }
 
 /**

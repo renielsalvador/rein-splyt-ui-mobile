@@ -173,6 +173,14 @@ export async function signOut(client: SupabaseClient) {
   assertNoError(error, 'Unable to sign out.');
 }
 
+export async function deleteAccount(client: SupabaseClient) {
+  const {error} = await client.rpc('delete_own_account');
+  assertNoError(error, 'Unable to delete your account.');
+
+  // The account is gone, so a failed sign-out must not surface as an error.
+  await client.auth.signOut().catch(() => undefined);
+}
+
 export async function updateProfile(
   client: SupabaseClient,
   userId: string,

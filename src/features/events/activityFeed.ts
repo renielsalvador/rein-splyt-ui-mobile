@@ -1,6 +1,7 @@
 import {formatCurrency, formatDateLabel, formatDateRangeLabel} from '../../lib/utils/format';
 import type {AppIconName} from '../../components/ui';
 import type {Event, EventSummary, MemberBalance} from '../../types/domain';
+import {formatActorName} from './EventScreenShared';
 
 export type ActivityFeedEntry = {
   id: string;
@@ -26,6 +27,7 @@ export function buildActivityFeed(
   events: Event[],
   summaries: Record<string, EventSummary>,
   balances: Record<string, MemberBalance[]>,
+  currentUserId?: string,
 ): ActivityFeedEntry[] {
   const entries: ActivityFeedEntry[] = [];
 
@@ -48,6 +50,10 @@ export function buildActivityFeed(
     if (!summary) {
       return;
     }
+
+    const isSelf = (memberId: string) =>
+      currentUserId !== undefined &&
+      summary.members.find(member => member.id === memberId)?.userId === currentUserId;
 
     summary.members.forEach(member => {
       if (
@@ -76,7 +82,10 @@ export function buildActivityFeed(
     });
 
     summary.expenses.forEach(expense => {
-      const payerName = getMemberName(summary, expense.paidByMemberId);
+      const payerName = formatActorName(
+        getMemberName(summary, expense.paidByMemberId),
+        isSelf(expense.paidByMemberId),
+      );
       const participantCount = summary.expenseSplits.filter(
         split => split.expenseId === expense.id,
       ).length;
@@ -108,7 +117,9 @@ export function buildActivityFeed(
         eventId: event.id,
         timestamp: contribution.createdAt,
         icon: 'fund',
-        title: `${memberName} added to ${event.name} Fund`,
+        title: `${formatActorName(memberName, isSelf(contribution.memberId))} added to ${
+          event.name
+        } Fund`,
         body: `${formatCurrency(contribution.amount, summary.fund.currency)} moved into the central fund.`,
         meta: formatDateLabel(contribution.createdAt),
       });
@@ -121,9 +132,14 @@ export function buildActivityFeed(
         timestamp: settlement.createdAt,
         icon: 'check',
         title: 'Payment recorded',
-        body: `${settlement.fromDisplayName} paid ${
-          settlement.toDisplayName
-        } ${formatCurrency(settlement.amount, settlement.currency)}.`,
+        body: `${formatActorName(
+          settlement.fromDisplayName,
+          isSelf(settlement.fromMemberId),
+        )} paid ${formatActorName(
+          settlement.toDisplayName,
+          isSelf(settlement.toMemberId),
+          'object',
+        )} ${formatCurrency(settlement.amount, settlement.currency)}.`,
         meta: `${event.name} • ${formatDateLabel(settlement.createdAt)}`,
       });
     });

@@ -9,6 +9,7 @@ describe('buildActivityFeed', () => {
       description: 'Island weekend',
       currency: 'PHP',
       icon: 'beach',
+    color: 'forest',
       isActive: true,
       startDate: '2026-05-10',
       endDate: '2026-05-12',
@@ -110,6 +111,7 @@ describe('buildActivityFeed', () => {
           owed: 1200,
           settledOut: 0,
           settledIn: 1200,
+          fundStake: 0,
           net: 500,
         },
       ],
@@ -141,6 +143,23 @@ describe('buildActivityFeed', () => {
     });
     expect(feed[3]).toMatchObject({
       title: 'alex@example.com was added to Palawan Trip',
+    });
+
+    const selfFeed = buildActivityFeed(
+      [event],
+      {[event.id]: summary},
+      balances,
+      'user_owner',
+    );
+
+    expect(selfFeed[0]).toMatchObject({
+      body: 'alex@example.com paid you ₱1,200.00.',
+    });
+    expect(selfFeed[1]).toMatchObject({
+      title: 'You added to Palawan Trip Fund',
+    });
+    expect(selfFeed[2]).toMatchObject({
+      body: 'You logged ₱2,400.00 split across 2 participants.',
     });
   });
 });

@@ -45,7 +45,12 @@ export function BalancesOverviewScreen({
   navigation,
   hasTabBar,
   tabBarBottomInset,
-}: ScreenProps<'BalancesOverview'> & {hasTabBar?: boolean; tabBarBottomInset?: number}) {
+  onScroll,
+}: ScreenProps<'BalancesOverview'> & {
+  hasTabBar?: boolean;
+  tabBarBottomInset?: number;
+  onScroll?: (offsetY: number) => void;
+}) {
   const {currentUser, events, summaries, settlements, hydrateEvent, pendingInvites} = useApp();
   const styles = useStyles(createStyles);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -176,6 +181,7 @@ export function BalancesOverviewScreen({
       <AppScreen
         variant="main"
         hasTabBar={hasTabBar}
+        onScroll={onScroll}
         tabBarBottomInset={tabBarBottomInset}
         title="Balances"
         headerLeft={
@@ -315,6 +321,8 @@ export function BalancesOverviewScreen({
           navigation.navigate('AccountUpdate');
         }}
         onOpenHelp={() => navigation.navigate('HelpSupport')}
+        onOpenPaymentOptions={() => navigation.navigate('PaymentOptions')}
+        onOpenDeleteAccount={() => navigation.navigate('DeleteAccount')}
         onOpenNotifications={() => navigation.navigate('NotificationSettings')}
       />
     </>

@@ -16,6 +16,7 @@ export {HeaderGradient} from './ui/HeaderGradient';
 export {AppTabBar, TAB_BAR_HEIGHT} from './ui/AppTabBar';
 export type {TabName} from './ui/AppTabBar';
 export {AppToast} from './ui/AppToast';
+export {ToastHost} from './ui/ToastHost';
 export {DataPill} from './ui/DataPill';
 export type {PillTone} from './ui/DataPill';
 export {EmptyState} from './ui/EmptyState';

@@ -1,12 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
   AppButton,
   AppCard,
   AppInput,
   AppScreen,
-  AppToast,
   EmptyState,
   InlineError,
   MoneyValue,
@@ -14,12 +13,13 @@ import {
   SectionHeading,
 } from '../../components/ui';
 import {settlementSchema} from '../../lib/validation/forms';
+import {getBackend} from '../../lib/backend';
 import {formatCurrency, toAmount} from '../../lib/utils/format';
 import {createTypography, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName} from '../events/EventScreenShared';
 
 export function RecordSettlementScreen({
   navigation,
@@ -27,22 +27,52 @@ export function RecordSettlementScreen({
 }: ScreenProps<'RecordSettlement'>) {
   const styles = useStyles(createStyles);
   const {eventId, fromMemberId, toMemberId, suggestedAmount} = route.params;
-  const {summaries, settlements, recordSettlement, currentUser} = useApp();
+  const {summaries, settlements, recordSettlement, currentUser, showToast} = useApp();
   const summary = summaries[eventId];
   const [amount, setAmount] = useState(String(suggestedAmount));
   const [note, setNote] = useState('');
   const [fieldError, setFieldError] = useState<string>();
   const [submitError, setSubmitError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>();
+  const [payeeQr, setPayeeQr] = useState<{label: string; url: string}>();
 
+  const payeeUserId = summary?.members.find(
+    member => member.id === toMemberId,
+  )?.userId;
+  const isPayer =
+    summary?.members.find(member => member.id === fromMemberId)?.userId ===
+    currentUser?.id;
+
+  // Only the person actually paying needs to see where to send the money.
   useEffect(() => {
-    if (!successMessage) {
+    if (!payeeUserId || !isPayer) {
+      setPayeeQr(undefined);
       return;
     }
-    const timeoutId = setTimeout(() => setSuccessMessage(undefined), 2600);
-    return () => clearTimeout(timeoutId);
-  }, [successMessage]);
+
+    let cancelled = false;
+
+    getBackend()
+      .then(async backend => {
+        const methods = await backend.listPaymentMethods(payeeUserId);
+        const primary = methods.find(method => method.isPrimary) ?? methods[0];
+        if (!primary) {
+          return undefined;
+        }
+        const url = await backend.getPaymentMethodUrl(primary.qrPath);
+        return url ? {label: primary.label, url} : undefined;
+      })
+      .then(next => {
+        if (!cancelled) {
+          setPayeeQr(next);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPayer, payeeUserId]);
 
   // Re-read the live plan so a stale suggestion cannot be submitted after another
   // payment landed for the same pair.
@@ -69,13 +99,15 @@ export function RecordSettlementScreen({
   const currentMemberId = summary.members.find(
     member => member.userId === currentUser?.id,
   )?.id;
-  const fromName = formatSelfDisplayName(
+  const fromIsSelf = fromMemberId === currentMemberId;
+  const fromName = formatActorName(
     summary.members.find(member => member.id === fromMemberId)?.displayName ?? 'Someone',
-    fromMemberId === currentMemberId,
+    fromIsSelf,
   );
-  const toName = formatSelfDisplayName(
+  const toName = formatActorName(
     summary.members.find(member => member.id === toMemberId)?.displayName ?? 'Someone',
     toMemberId === currentMemberId,
+    'object',
   );
 
   const pairPayments = summary.settlements.filter(
@@ -124,7 +156,6 @@ export function RecordSettlementScreen({
 
     setFieldError(undefined);
     setSubmitError(undefined);
-    setSuccessMessage(undefined);
     setSubmitting(true);
 
     try {
@@ -139,6 +170,7 @@ export function RecordSettlementScreen({
       const stillOwed = roundAmount(outstanding - parsed.data.amount);
 
       if (stillOwed <= 0) {
+        showToast(`Settled up · ${formatCurrency(parsed.data.amount, currency)} recorded`);
         navigation.goBack();
         return;
       }
@@ -146,7 +178,7 @@ export function RecordSettlementScreen({
       // Stay put so the payer can keep chipping away at what is left.
       setNote('');
       setAmount(String(stillOwed));
-      setSuccessMessage(
+      showToast(
         `Recorded ${formatCurrency(parsed.data.amount, currency)}. ${formatCurrency(
           stillOwed,
           currency,
@@ -185,7 +217,7 @@ export function RecordSettlementScreen({
       }>
       <AppCard tone="accent">
         <Text style={styles.heroLabel}>
-          {fromName} pays {toName}
+          {fromName} {fromIsSelf ? 'pay' : 'pays'} {toName}
         </Text>
         <MoneyValue value={outstanding} currency={currency} size="hero" absolute />
         <Text style={styles.heroMeta}>
@@ -253,6 +285,18 @@ export function RecordSettlementScreen({
         {submitError ? <InlineError message={submitError} /> : null}
       </AppCard>
 
+      {payeeQr ? (
+        <AppCard>
+          <SectionHeading title="Pay with QR" detail={payeeQr.label} />
+          <Image
+            source={{uri: payeeQr.url}}
+            style={styles.payeeQr}
+            resizeMode="contain"
+            accessibilityLabel={`${payeeQr.label} QR code`}
+          />
+        </AppCard>
+      ) : null}
+
       {pairPayments.length > 0 ? (
         <AppCard>
           <SectionHeading title="Payments so far" />
@@ -266,9 +310,6 @@ export function RecordSettlementScreen({
           ))}
         </AppCard>
       ) : null}
-
-      {submitError ? <AppToast message={submitError} /> : null}
-      {!submitError && successMessage ? <AppToast message={successMessage} /> : null}
     </AppScreen>
   );
 }
@@ -301,6 +342,10 @@ const createStyles = (c: Colors) => {
       flexDirection: 'row',
       gap: spacing.xs,
       marginTop: spacing.xs,
+    },
+    payeeQr: {
+      width: '100%',
+      height: 220,
     },
     historyRow: {
       flexDirection: 'row',

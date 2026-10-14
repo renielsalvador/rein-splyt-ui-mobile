@@ -1,5 +1,14 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {BackHandler, Platform, SafeAreaView, StatusBar, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  Animated,
+  BackHandler,
+  Easing,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  Text,
+  View,
+} from 'react-native';
 import {AppProvider, useApp} from './AppProvider';
 import {AuthScreen, ResetPasswordScreen} from '../features/auth/AuthScreen';
 import {
@@ -12,15 +21,20 @@ import {HomeScreen} from '../features/events/HomeScreen';
 import {ActivityScreen} from '../features/events/ActivityScreen';
 import {BalancesOverviewScreen} from '../features/balances/BalancesOverviewScreen';
 import {AddExpenseScreen} from '../features/expenses/AddExpenseScreen';
+import {ExpenseListScreen} from '../features/expenses/ExpenseListScreen';
 import {CentralFundScreen} from '../features/funds/CentralFundScreen';
 import {BalancesScreen, SettlementScreen} from '../features/balances/BalanceScreens';
+import {BalanceDetailScreen} from '../features/balances/BalanceDetailScreen';
 import {RecordSettlementScreen} from '../features/balances/RecordSettlementScreen';
 import {AccountUpdateScreen} from '../features/settings/SettingsScreen';
 import {HelpSupportScreen} from '../features/settings/HelpSupportScreen';
+import {PaymentOptionsScreen} from '../features/settings/PaymentOptionsScreen';
+import {DeleteAccountScreen} from '../features/settings/DeleteAccountScreen';
 import {NotificationSettingsScreen} from '../features/settings/NotificationSettingsScreen';
-import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT} from '../components/ui';
+import {AppCard, AppScreen, AppTabBar, HeaderGradient, TAB_BAR_HEIGHT, ToastHost} from '../components/ui';
 import type {TabName} from '../components/ui';
 import {ThemeProvider, useTheme} from '../theme/ThemeProvider';
+import {spacing} from '../theme/tokens';
 
 export type AppStackParamList = {
   Home: undefined;
@@ -31,8 +45,10 @@ export type AppStackParamList = {
   EventDashboard: {eventId: string};
   Members: {eventId: string};
   AddExpense: {eventId: string; expenseId?: string};
+  AllExpenses: {eventId: string};
   CentralFund: {eventId: string};
   Balances: {eventId: string};
+  BalanceDetail: {eventId: string; memberId: string};
   Settlement: {eventId: string};
   RecordSettlement: {
     eventId: string;
@@ -42,6 +58,8 @@ export type AppStackParamList = {
   };
   AccountUpdate: undefined;
   HelpSupport: undefined;
+  PaymentOptions: undefined;
+  DeleteAccount: undefined;
   NotificationSettings: undefined;
 };
 
@@ -97,8 +115,47 @@ const SCREEN_TAB: Partial<Record<ScreenName, TabName>> = {
 
 function AppNavigator() {
   const {colors} = useTheme();
+  const {clearError} = useApp();
   const [currentTab, setCurrentTab] = useState<TabName>('Home');
   const [stack, setStack] = useState<AnyRoute[]>([{name: 'Home'}]);
+  const tabBarOffset = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const tabBarHidden = useRef(false);
+
+  const setTabBarHidden = useCallback(
+    (hidden: boolean) => {
+      if (tabBarHidden.current === hidden) {
+        return;
+      }
+      tabBarHidden.current = hidden;
+      Animated.timing(tabBarOffset, {
+        toValue: hidden ? 1 : 0,
+        duration: 180,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    },
+    [tabBarOffset],
+  );
+
+  // Hide once the user is meaningfully past the top and still heading down;
+  // any upward movement brings it straight back.
+  const handleScroll = useCallback(
+    (offsetY: number) => {
+      const delta = offsetY - lastScrollY.current;
+      lastScrollY.current = offsetY;
+
+      if (offsetY <= 0) {
+        setTabBarHidden(false);
+        return;
+      }
+      if (Math.abs(delta) < 6) {
+        return;
+      }
+      setTabBarHidden(delta > 0 && offsetY > 24);
+    },
+    [setTabBarHidden],
+  );
 
   const navigation = useMemo<Navigator>(
     () => ({
@@ -131,6 +188,8 @@ function AppNavigator() {
   function handleTabPress(tab: TabName) {
     setCurrentTab(tab);
     setStack([{name: TAB_ROOT[tab]} as AnyRoute]);
+    lastScrollY.current = 0;
+    setTabBarHidden(false);
   }
 
   // Screens that guard unsaved work register their own listener; RN runs the most
@@ -150,6 +209,20 @@ function AppNavigator() {
   const currentRoute = stack[stack.length - 1];
   const isTopLevel = stack.length === 1 && TAB_SCREENS.has(currentRoute.name);
 
+  // The provider holds a single error string, so a failure on one screen would
+  // otherwise keep showing on the next one the user opens.
+  useEffect(() => {
+    clearError();
+  }, [clearError, currentRoute.name]);
+
+  // A pushed screen hides the tab bar entirely, so it must come back visible.
+  useEffect(() => {
+    if (!isTopLevel) {
+      lastScrollY.current = 0;
+      setTabBarHidden(false);
+    }
+  }, [isTopLevel, setTabBarHidden]);
+
   function renderScreen(route: AnyRoute) {
     switch (route.name) {
       case 'Home':
@@ -159,6 +232,7 @@ function AppNavigator() {
             route={route as Route<'Home'>}
             hasTabBar={isTopLevel}
             tabBarBottomInset={bottomInset}
+            onScroll={handleScroll}
           />
         );
       case 'BalancesOverview':
@@ -168,6 +242,7 @@ function AppNavigator() {
             route={route as Route<'BalancesOverview'>}
             hasTabBar={isTopLevel}
             tabBarBottomInset={bottomInset}
+            onScroll={handleScroll}
           />
         );
       case 'Activity':
@@ -177,6 +252,7 @@ function AppNavigator() {
             route={route as Route<'Activity'>}
             hasTabBar={isTopLevel}
             tabBarBottomInset={bottomInset}
+            onScroll={handleScroll}
           />
         );
       case 'NotificationDetail':
@@ -189,10 +265,16 @@ function AppNavigator() {
         return <MembersScreen navigation={navigation} route={route as Route<'Members'>} />;
       case 'AddExpense':
         return <AddExpenseScreen navigation={navigation} route={route as Route<'AddExpense'>} />;
+      case 'AllExpenses':
+        return <ExpenseListScreen navigation={navigation} route={route as Route<'AllExpenses'>} />;
       case 'CentralFund':
         return <CentralFundScreen navigation={navigation} route={route as Route<'CentralFund'>} />;
       case 'Balances':
         return <BalancesScreen navigation={navigation} route={route as Route<'Balances'>} />;
+      case 'BalanceDetail':
+        return (
+          <BalanceDetailScreen navigation={navigation} route={route as Route<'BalanceDetail'>} />
+        );
       case 'Settlement':
         return <SettlementScreen navigation={navigation} route={route as Route<'Settlement'>} />;
       case 'RecordSettlement':
@@ -206,6 +288,14 @@ function AppNavigator() {
         return <AccountUpdateScreen navigation={navigation} route={route as Route<'AccountUpdate'>} />;
       case 'HelpSupport':
         return <HelpSupportScreen navigation={navigation} route={route as Route<'HelpSupport'>} />;
+      case 'PaymentOptions':
+        return (
+          <PaymentOptionsScreen navigation={navigation} route={route as Route<'PaymentOptions'>} />
+        );
+      case 'DeleteAccount':
+        return (
+          <DeleteAccountScreen navigation={navigation} route={route as Route<'DeleteAccount'>} />
+        );
       case 'NotificationSettings':
         return (
           <NotificationSettingsScreen
@@ -238,21 +328,30 @@ function AppNavigator() {
         <View style={{flex: 1}}>
           {renderScreen(currentRoute)}
         </View>
+        <ToastHost bottomInset={(isTopLevel ? TAB_BAR_HEIGHT : 0) + spacing.sm} />
       </SafeAreaView>
       {isTopLevel && (
-        <View
+        <Animated.View
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
+            transform: [
+              {
+                translateY: tabBarOffset.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, TAB_BAR_HEIGHT + bottomInset],
+                }),
+              },
+            ],
           }}>
           <AppTabBar
             currentTab={currentTab}
             onTabPress={handleTabPress}
             bottomInset={bottomInset}
           />
-        </View>
+        </Animated.View>
       )}
     </View>
   );
@@ -298,7 +397,14 @@ function AppStateContent() {
     return <ResetPasswordScreen />;
   }
 
-  return currentUser ? <AppNavigator /> : <AuthScreen />;
+  return currentUser ? (
+    <AppNavigator />
+  ) : (
+    <View style={{flex: 1}}>
+      <AuthScreen />
+      <ToastHost bottomInset={spacing.xxl} />
+    </View>
+  );
 }
 
 export function AppRoot() {

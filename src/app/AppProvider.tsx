@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {Linking} from 'react-native';
@@ -23,6 +24,7 @@ import type {
   Invite,
   JoinEventInput,
   MemberBalance,
+  MemberRole,
   NotificationPreferences,
   PendingInvite,
   RespondToInviteInput,
@@ -37,6 +39,13 @@ import type {
 } from '../types/domain';
 
 const DEFAULT_USER_PREFERENCES: UserPreferences = {preferredCurrency: 'PHP'};
+
+const TOAST_DURATION_MS = 2600;
+
+export type ToastTone = 'success' | 'danger' | 'info';
+
+// id lets the host re-animate when the same message fires twice in a row.
+export type ToastMessage = {message: string; tone: ToastTone; id: number};
 
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   pushEnabled: false,
@@ -60,12 +69,15 @@ type AppContextValue = {
   notificationPreferences: NotificationPreferences;
   error: string | null;
   clearError: () => void;
+  toast: ToastMessage | null;
+  showToast: (message: string, tone?: ToastTone) => void;
   signIn: (input: AuthFormValues) => Promise<void>;
   signUp: (input: Required<AuthFormValues>) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   updateProfile: (input: UpdateUserProfileInput) => Promise<void>;
   refreshEvents: () => Promise<void>;
   refreshContacts: () => Promise<void>;
@@ -76,6 +88,11 @@ type AppContextValue = {
   joinEvent: (input: JoinEventInput) => Promise<Event>;
   hydrateEvent: (eventId: string) => Promise<void>;
   addManualMember: (eventId: string, displayName: string) => Promise<EventMember>;
+  setMemberRole: (
+    eventId: string,
+    memberId: string,
+    role: MemberRole,
+  ) => Promise<EventMember>;
   createInvite: (eventId: string, recipient?: InviteRecipient) => Promise<Invite>;
   respondToInvite: (input: RespondToInviteInput) => Promise<Event | null>;
   addExpense: (input: CreateExpenseInput) => Promise<void>;
@@ -109,6 +126,25 @@ export function AppProvider({children}: React.PropsWithChildren) {
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((message: string, tone: ToastTone = 'success') => {
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current);
+    }
+    setToast({message, tone, id: Date.now()});
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_DURATION_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) {
+        clearTimeout(toastTimer.current);
+      }
+    },
+    [],
+  );
 
   const applySession = useCallback(async (nextBackend: AppBackend, user: UserProfile) => {
     const [
@@ -356,6 +392,21 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [applySession, backend, mutate],
   );
 
+  const clearError = useCallback(() => setError(null), []);
+
+  const clearSessionState = useCallback(() => {
+    setRecoveryUser(null);
+    setCurrentUser(null);
+    setEvents([]);
+    setContacts([]);
+    setPendingInvites([]);
+    setSummaries({});
+    setBalances({});
+    setSettlements({});
+    setPreferences(DEFAULT_USER_PREFERENCES);
+    setNotificationPreferences(DEFAULT_NOTIFICATION_PREFERENCES);
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!backend) {
       return;
@@ -363,18 +414,20 @@ export function AppProvider({children}: React.PropsWithChildren) {
 
     await mutate(async () => {
       await backend.signOut();
-      setRecoveryUser(null);
-      setCurrentUser(null);
-      setEvents([]);
-      setContacts([]);
-      setPendingInvites([]);
-      setSummaries({});
-      setBalances({});
-      setSettlements({});
-      setPreferences(DEFAULT_USER_PREFERENCES);
-      setNotificationPreferences(DEFAULT_NOTIFICATION_PREFERENCES);
+      clearSessionState();
     });
-  }, [backend, mutate]);
+  }, [backend, clearSessionState, mutate]);
+
+  const deleteAccount = useCallback(async () => {
+    if (!backend) {
+      return;
+    }
+
+    await mutate(async () => {
+      await backend.deleteAccount();
+      clearSessionState();
+    });
+  }, [backend, clearSessionState, mutate]);
 
   const updateProfile = useCallback(
     async (input: UpdateUserProfileInput) => {
@@ -532,6 +585,22 @@ export function AppProvider({children}: React.PropsWithChildren) {
     [backend, hydrateEvent, mutate],
   );
 
+  const setMemberRole = useCallback(
+    async (eventId: string, memberId: string, role: MemberRole) => {
+      if (!backend) {
+        throw new Error('Backend is not ready.');
+      }
+
+      let member!: EventMember;
+      await mutate(async () => {
+        member = await backend.setMemberRole(eventId, memberId, role);
+        await hydrateEvent(eventId);
+      });
+      return member;
+    },
+    [backend, hydrateEvent, mutate],
+  );
+
   const createInvite = useCallback(
     async (eventId: string, recipient?: InviteRecipient) => {
       if (!backend || !currentUser) {
@@ -670,13 +739,16 @@ export function AppProvider({children}: React.PropsWithChildren) {
       preferences,
       notificationPreferences,
       error,
-      clearError: () => setError(null),
+      clearError,
+      toast,
+      showToast,
       signIn,
       signUp,
       signInWithGoogle,
       requestPasswordReset,
       updatePassword,
       signOut,
+      deleteAccount,
       updateProfile,
       refreshEvents,
       refreshContacts,
@@ -687,6 +759,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       joinEvent,
       hydrateEvent,
       addManualMember,
+      setMemberRole,
       createInvite,
       respondToInvite,
       addExpense,
@@ -706,6 +779,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       addExpense,
       updateExpense,
       addManualMember,
+      setMemberRole,
       backendReady,
       createEvent,
       updateEvent,
@@ -715,7 +789,10 @@ export function AppProvider({children}: React.PropsWithChildren) {
       recoveryUser,
       contacts,
       pendingInvites,
+      clearError,
       error,
+      toast,
+      showToast,
       events,
       hydrateEvent,
       joinEvent,
@@ -728,6 +805,7 @@ export function AppProvider({children}: React.PropsWithChildren) {
       signIn,
       signInWithGoogle,
       signOut,
+      deleteAccount,
       signUp,
       updatePassword,
       updateProfile,

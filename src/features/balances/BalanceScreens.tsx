@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {Pressable, Share, StyleSheet, Text, View} from 'react-native';
 import {useApp} from '../../app/AppProvider';
 import {
@@ -6,7 +6,6 @@ import {
   AppCard,
   AppIcon,
   AppScreen,
-  AppToast,
   EmptyState,
   MoneyValue,
   ScreenBackButton,
@@ -19,7 +18,7 @@ import {createTypography, radii, spacing} from '../../theme/tokens';
 import type {Colors} from '../../theme/tokens';
 import {useStyles} from '../../theme/ThemeProvider';
 import type {ScreenProps} from '../../app/navigation';
-import {formatSelfDisplayName} from '../events/EventScreenShared';
+import {formatActorName, formatSelfDisplayName} from '../events/EventScreenShared';
 
 export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   const styles = useStyles(createStyles);
@@ -47,6 +46,14 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
   }
 
   const currency = summary.event.currency;
+  const fundContributed = summary.contributions.reduce(
+    (total, contribution) => total + contribution.amount,
+    0,
+  );
+  const fundSpent = summary.expenses
+    .filter(expense => expense.paymentSource === 'central_fund')
+    .reduce((total, expense) => total + expense.amount, 0);
+  const fundRemaining = fundContributed - fundSpent;
 
   return (
     <AppScreen
@@ -65,6 +72,54 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
         </AppCard>
       ) : null}
 
+      {fundContributed > 0 ? (
+        <>
+          <SectionHeading
+            title="Central fund"
+            detail={fundRemaining < 0 ? 'Needs topping up' : 'Held by the group'}
+          />
+          <AppCard>
+            <View style={styles.row}>
+              <View style={styles.copy}>
+                <Text style={styles.memberName}>
+                  {fundRemaining < 0 ? 'Fund shortfall' : 'Left in the fund'}
+                </Text>
+                <Text style={styles.meta}>
+                  {formatCurrency(fundContributed, currency)} in ·{' '}
+                  {formatCurrency(fundSpent, currency)} spent
+                </Text>
+              </View>
+              <View style={styles.value}>
+                <MoneyValue
+                  value={fundRemaining}
+                  currency={currency}
+                  tone={fundRemaining < 0 ? 'negative' : 'positive'}
+                  absolute
+                />
+              </View>
+            </View>
+            {selfBalance && selfBalance.fundStake > 0.005 ? (
+              <View style={[styles.row, styles.rowDivided]}>
+                <View style={styles.copy}>
+                  <Text style={styles.memberName}>Your share of what is left</Text>
+                  <Text style={styles.meta}>
+                    Returned to you by the fund, not owed by other members.
+                  </Text>
+                </View>
+                <View style={styles.value}>
+                  <MoneyValue
+                    value={selfBalance.fundStake}
+                    currency={currency}
+                    tone="positive"
+                    absolute
+                  />
+                </View>
+              </View>
+            ) : null}
+          </AppCard>
+        </>
+      ) : null}
+
       <SectionHeading title="Everyone" detail={`${eventBalances.length} members`} />
 
       <AppCard>
@@ -72,7 +127,24 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
           const isSelf = balance.memberId === currentMemberId;
 
           return (
-            <View key={balance.memberId} style={[styles.row, index > 0 ? styles.rowDivided : null]}>
+            <Pressable
+              key={balance.memberId}
+              accessibilityRole={isSelf ? undefined : 'button'}
+              accessibilityLabel={
+                isSelf ? undefined : `See what makes up ${balance.displayName}'s balance`
+              }
+              disabled={isSelf}
+              onPress={() =>
+                navigation.navigate('BalanceDetail', {
+                  eventId,
+                  memberId: balance.memberId,
+                })
+              }
+              style={({pressed}) => [
+                styles.row,
+                index > 0 ? styles.rowDivided : null,
+                pressed && !isSelf ? styles.rowPressed : null,
+              ]}>
               <View style={styles.copy}>
                 <Text style={styles.memberName} numberOfLines={1}>
                   {formatSelfDisplayName(balance.displayName, isSelf)}
@@ -91,7 +163,7 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
                   absolute
                 />
               </View>
-            </View>
+            </Pressable>
           );
         })}
       </AppCard>
@@ -102,20 +174,11 @@ export function BalancesScreen({navigation, route}: ScreenProps<'Balances'>) {
 export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>) {
   const styles = useStyles(createStyles);
   const {eventId} = route.params;
-  const {hydrateEvent, summaries, settlements, currentUser} = useApp();
+  const {hydrateEvent, summaries, settlements, currentUser, showToast} = useApp();
   const summary = summaries[eventId];
   const instructions = settlements[eventId] ?? [];
   const recordedSettlements = summary?.settlements ?? [];
   const currentMemberId = summary?.members.find(member => member.userId === currentUser?.id)?.id;
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!toast) {
-      return;
-    }
-    const timeoutId = setTimeout(() => setToast(null), 2200);
-    return () => clearTimeout(timeoutId);
-  }, [toast]);
 
   useEffect(() => {
     hydrateEvent(eventId).catch(() => undefined);
@@ -173,7 +236,7 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
     try {
       await Share.share({message: lines.join('\n')});
     } catch {
-      setToast('Could not open the share sheet.');
+      showToast('Could not open the share sheet.', 'danger');
     }
   }
 
@@ -233,14 +296,15 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
                 ]}>
                 <View style={styles.copy}>
                   <Text style={styles.memberName}>
-                    {formatSelfDisplayName(
+                    {formatActorName(
                       instruction.fromDisplayName,
                       instruction.fromMemberId === currentMemberId,
                     )}{' '}
-                    pays{' '}
-                    {formatSelfDisplayName(
+                    {instruction.fromMemberId === currentMemberId ? 'pay' : 'pays'}{' '}
+                    {formatActorName(
                       instruction.toDisplayName,
                       instruction.toMemberId === currentMemberId,
+                      'object',
                     )}
                   </Text>
                   <Text style={styles.rowHint}>Tap to record a full or partial payment</Text>
@@ -262,14 +326,15 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
               style={[styles.row, index > 0 ? styles.rowDivided : null]}>
               <View style={styles.copy}>
                 <Text style={styles.memberName}>
-                  {formatSelfDisplayName(
+                  {formatActorName(
                     settlement.fromDisplayName,
                     settlement.fromMemberId === currentMemberId,
                   )}{' '}
                   paid{' '}
-                  {formatSelfDisplayName(
+                  {formatActorName(
                     settlement.toDisplayName,
                     settlement.toMemberId === currentMemberId,
+                    'object',
                   )}
                 </Text>
                 <Text style={styles.rowHint}>
@@ -293,8 +358,6 @@ export function SettlementScreen({navigation, route}: ScreenProps<'Settlement'>)
           </Text>
         </View>
       ) : null}
-
-      {toast ? <AppToast message={toast} /> : null}
     </AppScreen>
   );
 }

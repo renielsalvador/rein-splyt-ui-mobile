@@ -50,6 +50,7 @@ export function mapEvent(row: EventRow): Event {
     description: row.description ?? undefined,
     currency: row.currency,
     icon: row.icon,
+    color: row.color ?? 'forest',
     isActive: row.is_active,
     startDate: row.start_date ?? undefined,
     endDate: row.end_date ?? undefined,
@@ -102,6 +103,8 @@ export function mapExpense(row: ExpenseRow) {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lastEditedBy: row.last_edited_by ?? undefined,
+    lastEditedAt: row.last_edited_at ?? undefined,
   };
 }
 
